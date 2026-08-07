@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('why_choose_us', function (Blueprint $table) {
+        Schema::create('why_choose_us_items', function (Blueprint $table) {
             $table->id();
             $table->string('name');
             $table->text('description');
@@ -24,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('why_choose_us');
+        Schema::dropIfExists('why_choose_us_items');
     }
 };

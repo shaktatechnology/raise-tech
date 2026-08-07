@@ -9,16 +9,26 @@ use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\AboutController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\SoftwareController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\OrderController;
 
 //public endpoints
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/google-login', [AuthController::class, 'googleLogin']);
 Route::get('/settings', [SettingController::class, 'index']);
 Route::post('/inquiry', [ContactController::class, 'store']);
 Route::get('/services', [ServiceController::class, 'index']);
 Route::get('/about', [AboutController::class,'index']);
 Route::get('/team', [TeamController::class, 'index']);
 Route::get('/software', [SoftwareController::class, 'index']);
+
+// Products (public)
+Route::get('/products', [ProductController::class, 'index']);
+Route::get('/products/{slug}', [ProductController::class, 'show']);
+
+// Orders (public - guest checkout)
+Route::post('/orders', [OrderController::class, 'store']);
 
 
 //Authenticated endpoints
@@ -56,4 +66,20 @@ Route::middleware('auth:sanctum')->group(function() {
     Route::post('/software', [SoftwareController::class, 'store']);
     Route::post('/software/{software}', [SoftwareController::class, 'update']);
     Route::delete('/software/{software}', [SoftwareController::class, 'destroy']);
+
+    // Products (admin)
+    Route::get('/admin/products', [ProductController::class, 'adminIndex']);
+    Route::post('/products', [ProductController::class, 'store']);
+    Route::post('/products/{product}', [ProductController::class, 'update']);
+    Route::delete('/products/{product}', [ProductController::class, 'destroy']);
+    Route::delete('/products/gallery/{gallery}', [ProductController::class, 'destroyGalleryImage']);
+
+    // Orders (authenticated user)
+    Route::get('/my-orders', [OrderController::class, 'myOrders']);
+
+    // Orders (admin)
+    Route::get('/admin/orders', [OrderController::class, 'adminIndex']);
+    Route::get('/admin/orders/{order}', [OrderController::class, 'adminShow']);
+    Route::post('/admin/orders/{order}/status', [OrderController::class, 'updateStatus']);
+    Route::delete('/admin/orders/{order}', [OrderController::class, 'destroy']);
 });

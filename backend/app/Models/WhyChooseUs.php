@@ -9,7 +9,7 @@ class WhyChooseUs extends Model
 {
     /** @use HasFactory<\Database\Factories\WhyChooseUsFactory> */
     use HasFactory;
-    protected $table = "why_choose_us";
+    protected $table = "why_choose_us_items";
     protected $fillable = [
         'name',
         'description',
