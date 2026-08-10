@@ -1,5 +1,4 @@
 {
-  "/our-product/paper-roll-label-sticker/page": "app/our-product/paper-roll-label-sticker/page.js",
-  "/our-product/software/page": "app/our-product/software/page.js",
+  "/about/page": "app/about/page.js",
   "/page": "app/page.js"
 }
