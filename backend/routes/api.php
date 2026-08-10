@@ -23,6 +23,9 @@ Route::get('/about', [AboutController::class,'index']);
 Route::get('/team', [TeamController::class, 'index']);
 Route::get('/software', [SoftwareController::class, 'index']);
 
+// API Documentation redirect
+Route::redirect('/docs', '/docs/api');
+
 // Products (public)
 Route::get('/products', [ProductController::class, 'index']);
 Route::get('/products/{slug}', [ProductController::class, 'show']);
