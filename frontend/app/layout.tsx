@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Inter, Carattere } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
-import TopBar from "@/components/layout/TopBar";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 
@@ -36,7 +35,6 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-white text-[#404040]">
         <Providers>
-          <TopBar />
           <Header />
           <main className="flex-1">{children}</main>
           <Footer />
@@ -45,3 +43,4 @@ export default function RootLayout({
     </html>
   );
 }
+

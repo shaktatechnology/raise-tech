@@ -60,7 +60,7 @@ export default function Header() {
           </Link>
 
           {/* Desktop Navigation Links */}
-          <nav aria-label="Main Navigation" className="hidden md:flex items-center gap-8">
+          <nav aria-label="Main Navigation" className="hidden md:flex items-center gap-8 ml-auto">
             {NAV_LINKS.map((link) => {
               const isActive = pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href));
 
@@ -83,18 +83,18 @@ export default function Header() {
                       }}
                       aria-expanded={dropdownOpen}
                       aria-haspopup="true"
-                      className={`flex items-center gap-1.5 text-sm font-semibold transition-colors py-2 focus-visible:outline-2 focus-visible:outline-[#01A7E5] rounded-md ${
-                        isActive || dropdownOpen ? 'text-[#01A7E5]' : 'text-[#404040] hover:text-[#01A7E5]'
+                      className={`flex items-center gap-1.5 text-sm font-medium transition-colors py-2 focus-visible:outline-2 focus-visible:outline-[#01A7E5] rounded-md ${
+                        isActive || dropdownOpen ? 'text-[#01A7E5]' : 'text-gray-900 hover:text-[#01A7E5]'
                       }`}
                     >
                       <span>{link.label}</span>
                       <svg
-                        className={`w-4 h-4 transition-transform duration-200 ${dropdownOpen ? 'rotate-180 text-[#01A7E5]' : 'text-gray-400'}`}
+                        className={`w-3.5 h-3.5 transition-transform duration-200 ${dropdownOpen ? 'rotate-180 text-[#01A7E5]' : 'text-gray-600'}`}
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
                       >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
                       </svg>
                     </button>
 
@@ -128,8 +128,8 @@ export default function Header() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`text-sm font-semibold transition-colors relative py-2 focus-visible:outline-2 focus-visible:outline-[#01A7E5] rounded-md ${
-                    isActive ? 'text-[#01A7E5]' : 'text-[#404040] hover:text-[#01A7E5]'
+                  className={`text-sm font-medium transition-colors relative py-2 focus-visible:outline-2 focus-visible:outline-[#01A7E5] rounded-md ${
+                    isActive ? 'text-[#01A7E5] font-semibold' : 'text-gray-900 hover:text-[#01A7E5]'
                   }`}
                 >
                   {link.label}
@@ -141,19 +141,11 @@ export default function Header() {
             })}
           </nav>
 
-          {/* Action CTA & Mobile Menu Toggle */}
-          <div className="flex items-center gap-4">
-            <Link
-              href="/contact"
-              className="hidden lg:inline-flex items-center justify-center px-5 py-2.5 text-sm font-semibold text-white bg-[#01A7E5] hover:bg-[#018bc0] transition-colors rounded-lg shadow-sm focus-visible:outline-2 focus-visible:outline-[#01A7E5]"
-            >
-              Get in Touch
-            </Link>
-
-            {/* Mobile Hamburger Button */}
+          {/* Mobile Menu Toggle */}
+          <div className="flex items-center md:hidden">
             <button
               onClick={() => setMobileNavOpen(true)}
-              className="md:hidden p-2 text-gray-700 hover:text-[#01A7E5] rounded-lg hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-[#01A7E5]"
+              className="p-2 text-gray-700 hover:text-[#01A7E5] rounded-lg hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-[#01A7E5]"
               aria-label="Open mobile navigation menu"
               aria-expanded={mobileNavOpen}
             >
