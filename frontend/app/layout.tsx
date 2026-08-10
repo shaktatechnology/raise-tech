@@ -1,37 +1,45 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, Carattere } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
+import TopBar from "@/components/layout/TopBar";
+import Header from "@/components/layout/Header";
+import Footer from "@/components/layout/Footer";
 
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const carattere = Carattere({
+  weight: "400",
+  variable: "--font-carattere",
   subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Raise Tech Platform",
-  description: "Empower your business with us. We build secure, scalable, and user-friendly web, mobile, and desktop software tailored to your business needs.",
+  title: "Raise Tech Pvt. Ltd. | Always Deliver More Than Expected",
+  description: "Empower your business with Raise Tech. We build secure, scalable, and user-friendly web, mobile, desktop software, and paper roll e-commerce solutions tailored to your enterprise needs.",
 };
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${inter.variable} ${carattere.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full flex flex-col bg-white text-[#404040]">
         <Providers>
-          {children}
+          <TopBar />
+          <Header />
+          <main className="flex-1">{children}</main>
+          <Footer />
         </Providers>
       </body>
     </html>

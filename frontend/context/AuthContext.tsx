@@ -35,6 +35,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
+  const clearCookies = () => {
+    document.cookie = "auth_token=; path=/; max-age=0";
+    document.cookie = "user_data=; path=/; max-age=0";
+  };
+
+  const logoutLocally = () => {
+    localStorage.removeItem("auth_token");
+    localStorage.removeItem("user_data");
+    clearCookies();
+    setToken(null);
+    setUser(null);
+  };
+
   useEffect(() => {
     const initAuth = async () => {
       const storedToken = localStorage.getItem("auth_token");
@@ -45,7 +58,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (storedUser) {
           try {
             setUser(JSON.parse(storedUser));
-          } catch (e) {}
+          } catch {}
         }
         // Verify current session with Laravel API
         try {
@@ -65,19 +78,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const maxAge = 60 * 60 * 24 * 7; // 7 days
     document.cookie = `auth_token=${token}; path=/; max-age=${maxAge}; SameSite=Lax`;
     document.cookie = `user_data=${encodeURIComponent(JSON.stringify(user))}; path=/; max-age=${maxAge}; SameSite=Lax`;
-  };
-
-  const clearCookies = () => {
-    document.cookie = "auth_token=; path=/; max-age=0";
-    document.cookie = "user_data=; path=/; max-age=0";
-  };
-
-  const logoutLocally = () => {
-    localStorage.removeItem("auth_token");
-    localStorage.removeItem("user_data");
-    clearCookies();
-    setToken(null);
-    setUser(null);
   };
 
   const login = async (email: string, password: string): Promise<User> => {

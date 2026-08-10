@@ -1,9 +1,16 @@
-import React from 'react'
+import React from 'react';
+import HeroSection from '@/components/home/HeroSection';
+import ServicesSection from '@/components/home/ServicesSection';
+import PortfolioSection from '@/components/home/PortfolioSection';
+import TestimonialsSection from '@/components/home/TestimonialsSection';
 
-const ComponentName = () => {
+export default function HomePage() {
   return (
-    <div>homepage</div>
-  )
+    <>
+      <HeroSection />
+      <ServicesSection />
+      <PortfolioSection />
+      <TestimonialsSection />
+    </>
+  );
 }
-
-export default ComponentName
