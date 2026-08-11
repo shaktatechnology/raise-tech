@@ -4,14 +4,17 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { NAV_LINKS } from '@/lib/data/homeData';
+import { useAuth } from '@/context/AuthContext';
 
 interface MobileNavProps {
   isOpen: boolean;
   onClose: () => void;
+  onOpenLogin: () => void;
 }
 
-export default function MobileNav({ isOpen, onClose }: MobileNavProps) {
+export default function MobileNav({ isOpen, onClose, onOpenLogin }: MobileNavProps) {
   const pathname = usePathname();
+  const { user, logout } = useAuth();
   const [productSubmenuOpen, setProductSubmenuOpen] = useState(false);
 
   // Close menu on route change
@@ -134,15 +137,37 @@ export default function MobileNav({ isOpen, onClose }: MobileNavProps) {
           })}
         </div>
 
-        {/* Contact CTA in Mobile Menu */}
-        <div className="p-4 border-t border-gray-100 bg-gray-50">
-          <Link
-            href="/contact"
-            onClick={onClose}
-            className="block w-full py-3 text-center bg-[#01A7E5] text-white font-semibold rounded-lg shadow-sm hover:bg-[#0190c7] transition-colors"
-          >
-            Contact Us
-          </Link>
+        {/* Auth CTA in Mobile Menu */}
+        <div className="p-4 border-t border-gray-100 bg-gray-50 space-y-2">
+          {user ? (
+            <div className="space-y-2">
+              <div className="text-sm font-medium text-gray-700 px-1">
+                Signed in as <span className="font-bold text-[#01A7E5]">{user.name}</span>
+              </div>
+              {user.role === "admin" && (
+                <Link
+                  href="/admin"
+                  onClick={onClose}
+                  className="block w-full py-2.5 text-center bg-indigo-600 text-white font-medium text-sm rounded-lg shadow-xs"
+                >
+                  Go to Admin Panel
+                </Link>
+              )}
+              <button
+                onClick={() => { logout(); onClose(); }}
+                className="block w-full py-2.5 text-center bg-red-50 hover:bg-red-100 text-red-600 font-medium text-sm rounded-lg transition"
+              >
+                Logout
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => { onClose(); onOpenLogin(); }}
+              className="block w-full py-3 text-center bg-[#01A7E5] text-white font-semibold rounded-lg shadow-sm hover:bg-[#0190c7] transition-colors cursor-pointer"
+            >
+              Sign In / Register
+            </button>
+          )}
         </div>
       </div>
     </div>
