@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { NAV_LINKS } from '@/lib/data/homeData';
@@ -18,8 +18,12 @@ export default function MobileNav({ isOpen, onClose, onOpenLogin }: MobileNavPro
   const [productSubmenuOpen, setProductSubmenuOpen] = useState(false);
 
   // Close menu on route change
+  const prevPathnameRef = useRef(pathname);
   useEffect(() => {
-    onClose();
+    if (prevPathnameRef.current !== pathname) {
+      prevPathnameRef.current = pathname;
+      onClose();
+    }
   }, [pathname, onClose]);
 
   // Handle escape key and body overflow lock
