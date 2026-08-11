@@ -1,12 +1,22 @@
-import { readFileSync } from "fs";
+import React from 'react';
+import type { Metadata } from 'next';
+import TeamHero from '@/components/team/TeamHero';
+import TeamGrid from '@/components/team/TeamGrid';
 
-readFileSync;
-import React from 'react'
+export const metadata: Metadata = {
+  title: 'Our Team | Raise Tech Pvt. Ltd.',
+  description:
+    'Meet the dedicated team of leaders, software engineers, UI/UX designers, and tech experts at Raise Tech Pvt. Ltd. delivering innovative enterprise IT solutions.',
+};
 
-const page = () => {
+export default function TeamPage() {
   return (
-    <div>team</div>
-  )
-}
+    <article className="w-full bg-white">
+      {/* 1. Hero Banner */}
+      <TeamHero />
 
-export default page
+      {/* 2. Team Members Grid */}
+      <TeamGrid />
+    </article>
+  );
+}
