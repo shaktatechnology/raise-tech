@@ -215,9 +215,10 @@ export default function AdminProductsPage() {
               </button>
               <button
                 onClick={() => {
+                  const generatedSku = `SKU-${Date.now().toString().slice(-6)}-${Math.floor(100 + Math.random() * 900)}`;
                   setEditingProduct({
                     title: "",
-                    sku: "",
+                    sku: generatedSku,
                     original_price: 100,
                     stock_quantity: 100,
                     is_active: true,
@@ -410,12 +411,24 @@ export default function AdminProductsPage() {
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-slate-400 mb-1">SKU Code</label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-slate-400">SKU Code (Auto-generated)</label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newSku = `SKU-${Date.now().toString().slice(-6)}-${Math.floor(100 + Math.random() * 900)}`;
+                            setEditingProduct({ ...editingProduct, sku: newSku });
+                          }}
+                          className="text-[10px] text-cyan-400 hover:text-cyan-300 font-semibold cursor-pointer"
+                        >
+                          ↻ Regenerate
+                        </button>
+                      </div>
                       <input
                         type="text"
                         value={editingProduct?.sku || ""}
                         onChange={(e) => setEditingProduct({ ...editingProduct, sku: e.target.value })}
-                        className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-cyan-500"
+                        className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white font-mono font-bold focus:outline-none focus:border-cyan-500"
                       />
                     </div>
                     <div>
