@@ -36,11 +36,7 @@ export function middleware(request: NextRequest) {
   }
 
   // ── Customer auth pages (/login, /signup) ──────────────────────────────────
-  // If already logged in as customer, skip login/signup
   if (pathname === "/login" || pathname === "/signup") {
-    if (isLoggedIn && !isAdmin) {
-      return NextResponse.redirect(new URL("/", request.url));
-    }
     return NextResponse.next();
   }
 

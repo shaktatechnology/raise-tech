@@ -7,12 +7,15 @@ import { usePathname } from 'next/navigation';
 import { NAV_LINKS } from '@/lib/data/homeData';
 import { useCart } from '@/context/CartContext';
 import MobileNav from './MobileNav';
+import { useAuth } from '@/context/AuthContext';
+import LoginModal from '@/components/auth/LoginModal';
 
 export default function Header() {
   const pathname = usePathname();
   const { totalItems } = useCart();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown on click outside or escape key
@@ -37,29 +40,30 @@ export default function Header() {
   }, []);
 
   return (
-    <header role="banner" className="sticky top-0 z-40 bg-white shadow-xs border-b border-gray-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
-          {/* Brand Logo */}
-          <Link href="/" className="flex items-center gap-3 group focus-visible:outline-2 focus-visible:outline-[#01A7E5]">
-            <div className="relative w-12 h-12 shrink-0">
-              <Image
-                src="/images/home/logo.png"
-                alt="Raise Tech Logo"
-                fill
-                className="object-contain"
-                priority
-              />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xl font-extrabold tracking-tight text-[#01A7E5] group-hover:text-[#018bc0] transition-colors">
-                Raise Tech
-              </span>
-              <span className="text-[11px] font-medium text-gray-500 tracking-wider uppercase">
-                Pvt. Ltd.
-              </span>
-            </div>
-          </Link>
+    <>
+      <header role="banner" className="sticky top-0 z-40 bg-white shadow-xs border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-20">
+            {/* Brand Logo */}
+            <Link href="/" className="flex items-center gap-3 group focus-visible:outline-2 focus-visible:outline-[#01A7E5]">
+              <div className="relative w-12 h-12 shrink-0">
+                <Image
+                  src="/images/home/logo.png"
+                  alt="Raise Tech Logo"
+                  fill
+                  className="object-contain"
+                  priority
+                />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xl font-extrabold tracking-tight text-[#01A7E5] group-hover:text-[#018bc0] transition-colors">
+                  Raise Tech
+                </span>
+                <span className="text-[11px] font-medium text-gray-500 tracking-wider uppercase">
+                  Pvt. Ltd.
+                </span>
+              </div>
+            </Link>
 
           {/* Desktop Navigation Links & Cart Icon */}
           <div className="hidden md:flex items-center gap-8 ml-auto">
@@ -189,10 +193,20 @@ export default function Header() {
             </button>
           </div>
         </div>
-      </div>
 
-      {/* Mobile Drawer */}
-      <MobileNav isOpen={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
-    </header>
+        {/* Mobile Drawer */}
+        <MobileNav
+          isOpen={mobileNavOpen}
+          onClose={() => setMobileNavOpen(false)}
+          onOpenLogin={() => setLoginModalOpen(true)}
+        />
+      </header>
+
+      {/* Login Modal Popup */}
+      <LoginModal
+        isOpen={loginModalOpen}
+        onClose={() => setLoginModalOpen(false)}
+      />
+    </>
   );
 }
