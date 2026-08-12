@@ -4,6 +4,8 @@ import React, { useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter, usePathname } from "next/navigation";
 
+import AdminSidebar from "@/components/admin/AdminSidebar";
+
 export default function AdminLayout({
   children,
 }: {
@@ -14,8 +16,8 @@ export default function AdminLayout({
   const pathname = usePathname();
 
   useEffect(() => {
-    // Don't run auth check on the login page itself
-    if (pathname === "/admin/login") return;
+    // Don't run auth check on login/signup pages
+    if (pathname === "/admin/login" || pathname === "/admin/signup") return;
 
     if (!isLoading) {
       if (!user) {
@@ -26,8 +28,8 @@ export default function AdminLayout({
     }
   }, [user, isLoading, router, pathname]);
 
-  // Always render the login page without any guard
-  if (pathname === "/admin/login") {
+  // Always render login/signup pages without any guard or sidebar
+  if (pathname === "/admin/login" || pathname === "/admin/signup") {
     return <>{children}</>;
   }
 
@@ -43,5 +45,10 @@ export default function AdminLayout({
     );
   }
 
-  return <>{children}</>;
+  return (
+    <div className="min-h-screen bg-slate-950 flex flex-col lg:flex-row">
+      <AdminSidebar />
+      <main className="flex-1 w-full min-w-0">{children}</main>
+    </div>
+  );
 }

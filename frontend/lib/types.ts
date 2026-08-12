@@ -44,3 +44,104 @@ export interface ContactInquiry {
   updated_at: string | null;
 }
 
+export interface OrderItem {
+  id: number;
+  order_id: number;
+  product_id: number;
+  product_title: string;
+  product_sku: string | null;
+  unit_price: number;
+  quantity: number;
+  subtotal: number;
+}
+
+export interface Order {
+  id: number;
+  user_id: number | null;
+  customer_name: string;
+  customer_email: string;
+  customer_phone: string;
+  shipping_address: string;
+  city: string;
+  payment_method: string;
+  status: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  subtotal: number;
+  shipping_charge: number;
+  total: number;
+  notes: string | null;
+  created_at: string;
+  items?: OrderItem[];
+}
+
+export interface ProductGallery {
+  id: number;
+  product_id: number;
+  image: string;
+  thumbnail?: string;
+}
+
+export interface Product {
+  id: number;
+  title: string;
+  slug: string;
+  sku: string | null;
+  short_description: string | null;
+  description: string | null;
+  original_price: number;
+  discount_type: 'percentage' | 'fixed' | null;
+  discount_value: number | null;
+  stock_quantity: number;
+  featured_image: string;
+  is_active: boolean;
+  meta_title?: string | null;
+  meta_description?: string | null;
+  galleries?: ProductGallery[];
+  created_at?: string;
+}
+
+export interface AdminService {
+  id: number;
+  title: string;
+  slogan: string | null;
+  description: string;
+  image: string | null;
+  order: number;
+  is_active: boolean;
+}
+
+export interface TeamMember {
+  id: number;
+  name: string;
+  position: string;
+  image: string | null;
+  description: string;
+  is_active: boolean;
+}
+
+export interface SoftwareItem {
+  id: number;
+  title: string;
+  slogan: string | null;
+  description: string | null;
+  image: string | null;
+  is_active: boolean;
+}
+
+export interface SiteSettings {
+  short_description?: string;
+  facebook_url?: string;
+  twitter_url?: string;
+  instagram_url?: string;
+  linkedin_url?: string;
+  tiktok_url?: string;
+  whatsapp_url?: string;
+  phone1?: string;
+  phone2?: string;
+  email1?: string;
+  email2?: string;
+  location?: string;
+  map_url?: string;
+  is_cod_enabled?: boolean;
+}
+
+

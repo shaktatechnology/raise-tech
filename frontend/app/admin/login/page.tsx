@@ -93,10 +93,19 @@ function AdminLoginContent() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-lg transition disabled:opacity-50 mt-2 text-sm"
+            className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-lg transition disabled:opacity-50 mt-2 text-sm cursor-pointer"
           >
             {isSubmitting ? "Signing in..." : "Sign In as Admin"}
           </button>
+
+          <div className="text-center mt-4">
+            <p className="text-xs text-slate-400">
+              Need an admin account?{" "}
+              <a href="/admin/signup" className="text-indigo-400 hover:underline font-semibold">
+                Register Admin
+              </a>
+            </p>
+          </div>
         </form>
       </div>
     </div>

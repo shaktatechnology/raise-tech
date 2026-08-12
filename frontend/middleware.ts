@@ -18,8 +18,8 @@ export function middleware(request: NextRequest) {
   const isAdmin = role === "admin";
 
   // ── Admin area (/admin/*) ──────────────────────────────────────────────────
-  // /admin/login is always accessible (client-side layout handles redirect if already logged in)
-  if (pathname.startsWith("/admin/login")) {
+  // /admin/login and /admin/signup are always accessible
+  if (pathname.startsWith("/admin/login") || pathname.startsWith("/admin/signup")) {
     return NextResponse.next();
   }
 

@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { fetchApi } from "@/lib/api";
+import AdminHeader from "@/components/admin/AdminHeader";
 
 export default function AdminDashboardPage() {
   const [unreadInquiries, setUnreadInquiries] = useState<number>(0);
@@ -33,7 +34,7 @@ export default function AdminDashboardPage() {
     },
     {
       title: "Orders Management",
-      description: "Manage client product and software order requests.",
+      description: "Manage client product and paper roll order requests.",
       href: "/admin/orders",
       badge: null,
       icon: (
@@ -44,7 +45,7 @@ export default function AdminDashboardPage() {
     },
     {
       title: "Products & Paper Rolls",
-      description: "Update paper roll catalog items, pricing, and specs.",
+      description: "Update paper roll catalog items, pricing, stock, and specs.",
       href: "/admin/products",
       badge: null,
       icon: (
@@ -54,9 +55,42 @@ export default function AdminDashboardPage() {
       ),
     },
     {
+      title: "Services Management",
+      description: "Manage IT services, custom software development offerings, and headers.",
+      href: "/admin/services",
+      badge: null,
+      icon: (
+        <svg className="w-6 h-6 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-6z" />
+        </svg>
+      ),
+    },
+    {
+      title: "Team Members",
+      description: "Add, update or remove company executive and developer profiles.",
+      href: "/admin/team",
+      badge: null,
+      icon: (
+        <svg className="w-6 h-6 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 100 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+        </svg>
+      ),
+    },
+    {
+      title: "Software Products",
+      description: "Manage pre-built software solutions, POS systems, and tools.",
+      href: "/admin/software",
+      badge: null,
+      icon: (
+        <svg className="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+        </svg>
+      ),
+    },
+    {
       title: "Site Navigation & Settings",
-      description: "Main site parameters and enterprise configuration.",
-      href: "/",
+      description: "Main site contact parameters, social links, and COD settings.",
+      href: "/admin/settings",
       badge: null,
       icon: (
         <svg className="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -68,8 +102,8 @@ export default function AdminDashboardPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white p-6 sm:p-10">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen bg-slate-950 text-white">
+      <div className="max-w-7xl mx-auto p-6 sm:p-10 space-y-8">
         <div className="flex items-center justify-between border-b border-slate-800 pb-6">
           <div>
             <span className="text-xs font-bold uppercase tracking-wider text-cyan-400">Administration Control Panel</span>
@@ -83,7 +117,7 @@ export default function AdminDashboardPage() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {adminModules.map((mod) => (
             <Link
               key={mod.title}
@@ -119,3 +153,4 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
+
