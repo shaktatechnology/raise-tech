@@ -1,0 +1,172 @@
+"use client";
+
+import React from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useCart } from '@/context/CartContext';
+
+export default function CartItemList() {
+  const { items, removeItem, updateQuantity, totalItems, subtotal } = useCart();
+  const deliveryFee = items.length > 0 ? 100 : 0;
+  const grandTotal = subtotal + deliveryFee;
+
+  if (items.length === 0) {
+    return (
+      <div className="bg-white rounded-3xl p-12 sm:p-16 text-center shadow-xs border border-gray-100 max-w-2xl mx-auto my-12">
+        <div className="w-20 h-20 bg-cyan-50 rounded-full flex items-center justify-center text-4xl mx-auto mb-6">
+          🛒
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Your Shopping Cart is Empty</h2>
+        <p className="text-sm text-gray-600 max-w-md mx-auto mb-8">
+          Browse our thermal paper rolls, POS receipt supplies, and barcode label stickers to add items to your order.
+        </p>
+        <Link
+          href="/products/shop"
+          className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#01A7E5] hover:bg-[#018bc0] text-white font-bold rounded-xl shadow-md transition-colors text-sm"
+        >
+          <span>Browse Product Shop</span>
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+          </svg>
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col lg:flex-row gap-8 items-start">
+      {/* Items List */}
+      <div className="flex-1 w-full space-y-4">
+        {items.map((item) => (
+          <div
+            key={`${item.id}-${item.size}`}
+            className="bg-white rounded-2xl p-4 sm:p-6 shadow-xs border border-gray-100 flex flex-col sm:flex-row items-center gap-4 sm:gap-6 justify-between"
+          >
+            {/* Image & Product Info */}
+            <div className="flex items-center gap-4 w-full sm:w-auto flex-1 min-w-0">
+              <div className="relative w-20 h-20 bg-slate-50 rounded-xl overflow-hidden shrink-0 border border-gray-100">
+                <Image
+                  src={item.image}
+                  alt={item.name}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+              <div className="min-w-0 flex-1">
+                <span className="text-xs font-semibold text-[#01A7E5] uppercase tracking-wider block mb-1">
+                  {item.category}
+                </span>
+                <Link href={`/products/shop/${item.productSlug}`}>
+                  <h3 className="text-base font-bold text-gray-900 hover:text-[#01A7E5] transition-colors leading-snug truncate">
+                    {item.name}
+                  </h3>
+                </Link>
+                {item.size && (
+                  <p className="text-xs text-gray-500 mt-1">Package: <span className="font-semibold text-gray-700">{item.size}</span></p>
+                )}
+                <p className="text-sm font-extrabold text-[#01A7E5] sm:hidden mt-1">
+                  NPR {item.price.toLocaleString()}
+                </p>
+              </div>
+            </div>
+
+            {/* Quantity Controls & Line Total */}
+            <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto pt-3 sm:pt-0 border-t sm:border-t-0 border-gray-100">
+              {/* Unit Price (Desktop) */}
+              <div className="hidden sm:block text-right">
+                <span className="block text-xs text-gray-400">Unit Price</span>
+                <span className="text-sm font-bold text-gray-800">NPR {item.price.toLocaleString()}</span>
+              </div>
+
+              {/* Quantity Counter */}
+              <div className="flex items-center border border-gray-200 rounded-xl overflow-hidden bg-slate-50">
+                <button
+                  onClick={() => updateQuantity(item.id, item.quantity - 1, item.size)}
+                  className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-200 font-bold transition-colors cursor-pointer"
+                  aria-label="Decrease quantity"
+                >
+                  -
+                </button>
+                <span className="w-10 text-center text-sm font-bold text-gray-900">
+                  {item.quantity}
+                </span>
+                <button
+                  onClick={() => updateQuantity(item.id, item.quantity + 1, item.size)}
+                  className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-200 font-bold transition-colors cursor-pointer"
+                  aria-label="Increase quantity"
+                >
+                  +
+                </button>
+              </div>
+
+              {/* Item Subtotal */}
+              <div className="text-right min-w-[90px]">
+                <span className="block text-xs text-gray-400">Total</span>
+                <span className="text-base font-extrabold text-gray-900">
+                  NPR {(item.price * item.quantity).toLocaleString()}
+                </span>
+              </div>
+
+              {/* Remove Button */}
+              <button
+                onClick={() => removeItem(item.id, item.size)}
+                className="p-2 text-gray-400 hover:text-rose-600 transition-colors rounded-lg hover:bg-rose-50"
+                aria-label={`Remove ${item.name} from cart`}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        ))}
+
+        <div className="pt-4 flex justify-between items-center">
+          <Link
+            href="/products/shop"
+            className="inline-flex items-center gap-2 text-sm font-bold text-[#01A7E5] hover:text-[#018bc0]"
+          >
+            <span>← Continue Shopping</span>
+          </Link>
+        </div>
+      </div>
+
+      {/* Order Summary Sidebar */}
+      <div className="w-full lg:w-80 shrink-0">
+        <div className="bg-white rounded-2xl p-6 shadow-xs border border-gray-100 sticky top-24 space-y-6">
+          <h3 className="text-lg font-bold text-gray-900 border-b border-gray-100 pb-3">
+            Order Summary
+          </h3>
+
+          <div className="space-y-3 text-sm">
+            <div className="flex justify-between text-gray-600">
+              <span>Items Total ({totalItems})</span>
+              <span className="font-semibold text-gray-900">NPR {subtotal.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between text-gray-600">
+              <span>Estimated Delivery Fee</span>
+              <span className="font-semibold text-gray-900">NPR {deliveryFee.toLocaleString()}</span>
+            </div>
+            <div className="pt-3 border-t border-gray-100 flex justify-between items-baseline">
+              <span className="text-base font-bold text-gray-900">Grand Total</span>
+              <span className="text-xl font-extrabold text-[#01A7E5]">
+                NPR {grandTotal.toLocaleString()}
+              </span>
+            </div>
+          </div>
+
+          <Link
+            href="/checkout"
+            className="w-full py-3.5 bg-[#01A7E5] hover:bg-[#018bc0] text-white font-bold rounded-xl shadow-md transition-colors text-center block text-base"
+          >
+            Proceed to Checkout →
+          </Link>
+
+          <p className="text-xs text-gray-400 text-center">
+            Free shipping on orders over NPR 5,000 in Kathmandu Valley.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}

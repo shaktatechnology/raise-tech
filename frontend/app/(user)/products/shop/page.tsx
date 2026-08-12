@@ -1,12 +1,22 @@
 import React from 'react';
+import type { Metadata } from 'next';
+import ShopHero from '@/components/products/shop/ShopHero';
+import ShopCatalog from '@/components/products/shop/ShopCatalog';
+
+export const metadata: Metadata = {
+  title: 'Paper Roll & Label Sticker Shop | Raise Tech Pvt. Ltd.',
+  description:
+    'Buy thermal paper rolls, POS receipt rolls, dot matrix continuous paper, and self-adhesive barcode label stickers online from Raise Tech Pvt. Ltd.',
+};
 
 export default function ShopPage() {
   return (
-    <div className="max-w-7xl mx-auto px-4 py-16 text-center space-y-4">
-      <h1 className="text-3xl font-extrabold text-[#404040]">Paper Roll & Label Sticker Shop</h1>
-      <p className="text-gray-600 max-w-xl mx-auto">
-        Browse thermal paper rolls, POS rolls, dot matrix paper, and high-quality label stickers. (Full e-commerce page implementation coming next).
-      </p>
-    </div>
+    <article className="w-full bg-[#f2fcff] min-h-screen">
+      {/* Shop Hero Banner */}
+      <ShopHero />
+
+      {/* Interactive Shop Catalog */}
+      <ShopCatalog />
+    </article>
   );
 }
