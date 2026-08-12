@@ -1,12 +1,22 @@
 import React from 'react';
+import type { Metadata } from 'next';
+import SoftwareHero from '@/components/products/software/SoftwareHero';
+import SoftwareProductsGrid from '@/components/products/software/SoftwareProductsGrid';
+
+export const metadata: Metadata = {
+  title: 'Software Solutions | Raise Tech Pvt. Ltd.',
+  description:
+    'Explore Trackingmandu GPS tracking, eCalculo POS billing suite, custom CRM software, and ERP enterprise solutions from Raise Tech Pvt. Ltd.',
+};
 
 export default function SoftwarePage() {
   return (
-    <div className="max-w-7xl mx-auto px-4 py-16 text-center space-y-4">
-      <h1 className="text-3xl font-extrabold text-[#404040]">Software Solutions</h1>
-      <p className="text-gray-600 max-w-xl mx-auto">
-        Discover custom enterprise software solutions developed by Raise Tech Pvt. Ltd. (Full page implementation coming next).
-      </p>
-    </div>
+    <article className="w-full bg-[#f2fcff] min-h-screen">
+      {/* Software Hero Banner */}
+      <SoftwareHero />
+
+      {/* Software Showcase Grid */}
+      <SoftwareProductsGrid />
+    </article>
   );
 }
