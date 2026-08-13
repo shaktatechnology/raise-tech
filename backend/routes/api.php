@@ -11,6 +11,7 @@ use App\Http\Controllers\TeamController;
 use App\Http\Controllers\SoftwareController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\HomeController;
 
 //public endpoints
 Route::post('/register', [AuthController::class, 'register']);
@@ -22,6 +23,7 @@ Route::get('/services', [ServiceController::class, 'index']);
 Route::get('/about', [AboutController::class,'index']);
 Route::get('/team', [TeamController::class, 'index']);
 Route::get('/software', [SoftwareController::class, 'index']);
+Route::get('/home', [HomeController::class, 'index']);
 
 // API Documentation redirect
 Route::redirect('/docs', '/docs/api');
@@ -69,6 +71,21 @@ Route::middleware('auth:sanctum')->group(function() {
     Route::post('/software', [SoftwareController::class, 'store']);
     Route::post('/software/{software}', [SoftwareController::class, 'update']);
     Route::delete('/software/{software}', [SoftwareController::class, 'destroy']);
+
+    //Home
+    Route::post('/home/banner/update', [HomeController::class, 'updateBanner']);
+
+    Route::post('/home/services/store', [HomeController::class, 'storeService']);
+    Route::post('/home/services/{homeService}', [HomeController::class, 'updateService']);
+    Route::delete('/home/services/{homeService}', [HomeController::class, 'destroyService']);
+
+    Route::post('/home/portfolio/store', [HomeController::class, 'storePortfolio']);
+    Route::post('/home/portfolio/{portfolio}', [HomeController::class, 'updatePortfolio']);
+    Route::delete('/home/portfolio/{portfolio}', [HomeController::class, 'destroyPortfolio']);
+
+    Route::post('/home/testimonials/store', [HomeController::class, 'storeTestimonial']);
+    Route::post('/home/testimonials/{testimonial}', [HomeController::class, 'updateTestimonial']);
+    Route::delete('/home/testimonials/{testimonial}', [HomeController::class, 'destroyTestimonial']);
 
     // Products (admin)
     Route::get('/admin/products', [ProductController::class, 'adminIndex']);
