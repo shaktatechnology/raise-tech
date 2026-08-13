@@ -1,12 +1,19 @@
 import React from 'react';
 import Image from 'next/image';
+import { isValidImageSrc } from '@/lib/data/getAboutPageData';
 
-export default function AboutHero() {
+interface AboutHeroProps {
+  heroImage?: string | null;
+}
+
+export default function AboutHero({ heroImage }: AboutHeroProps) {
+  const imageSrc = isValidImageSrc(heroImage) ? heroImage : '/images/about/about-hero.png';
+
   return (
     <section className="relative w-full h-[320px] sm:h-[420px] md:h-[500px] lg:h-[560px] overflow-hidden bg-[#022c43]">
       {/* Hero Image */}
       <Image
-        src="/images/about/about-hero.png"
+        src={imageSrc}
         alt="Raise Tech Office and Technology Workspace Banner"
         fill
         priority

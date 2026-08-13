@@ -2,7 +2,18 @@ import React from 'react';
 import { ABOUT_PAGE_COPY } from '@/lib/data/aboutData';
 import ExpertiseDiagram from './ExpertiseDiagram';
 
-export default function CompanyIntroduction() {
+interface CompanyIntroductionProps {
+  aboutDescription?: string | null;
+}
+
+export default function CompanyIntroduction({ aboutDescription }: CompanyIntroductionProps) {
+  // Admin writes one free-text description; split on blank lines into paragraphs.
+  // Falls back to the static two-paragraph copy if the admin hasn't set one yet.
+  const paragraphs =
+    aboutDescription && aboutDescription.trim()
+      ? aboutDescription.split(/\n{2,}/).filter(Boolean)
+      : [ABOUT_PAGE_COPY.companyDescParagraph1, ABOUT_PAGE_COPY.companyDescParagraph2];
+
   return (
     <section className="py-12 sm:py-16 lg:py-20 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -19,8 +30,9 @@ export default function CompanyIntroduction() {
             </div>
 
             <div className="space-y-4 text-gray-700 text-base sm:text-lg leading-relaxed text-justify">
-              <p>{ABOUT_PAGE_COPY.companyDescParagraph1}</p>
-              <p>{ABOUT_PAGE_COPY.companyDescParagraph2}</p>
+              {paragraphs.map((para, idx) => (
+                <p key={idx}>{para}</p>
+              ))}
             </div>
           </div>
 

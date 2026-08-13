@@ -215,10 +215,6 @@ export default function AdminAboutPage() {
                 <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
                   About Page Management
                 </h1>
-                <span className="px-2.5 py-0.5 bg-emerald-950 text-emerald-400 border border-emerald-800 text-xs font-semibold rounded-full flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                  API Connected
-                </span>
               </div>
               <p className="text-slate-400 text-sm mt-1">
                 Manage company mission, vision, about descriptions, banner images, and feature sections.
@@ -285,7 +281,7 @@ export default function AdminAboutPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-slate-300 font-semibold mb-1">
-                        Company Mission Statement
+                        Company Mission and Vision Statement
                       </label>
                       <textarea
                         rows={3}
@@ -296,22 +292,7 @@ export default function AdminAboutPage() {
                         placeholder="Mission statement..."
                         className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-cyan-500"
                       />
-                    </div>
-
-                    <div>
-                      <label className="block text-slate-300 font-semibold mb-1">
-                        Company Vision Statement
-                      </label>
-                      <textarea
-                        rows={3}
-                        value={aboutSettings.vision || ""}
-                        onChange={(e) =>
-                          setAboutSettings({ ...aboutSettings, vision: e.target.value })
-                        }
-                        placeholder="Vision statement..."
-                        className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-cyan-500"
-                      />
-                    </div>
+                    </div>                    
                   </div>
                 </div>
 
