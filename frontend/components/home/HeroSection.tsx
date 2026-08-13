@@ -1,7 +1,14 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { Carattere } from 'next/font/google';
 import type { Banner } from '@/lib/types/home';
+
+const carattere = Carattere({
+  subsets: ['latin'],
+  weight: '400',
+  display: 'swap',
+});
 
 interface HeroSectionProps {
   banner: Banner | null;
@@ -13,6 +20,10 @@ export default function HeroSection({ banner }: HeroSectionProps) {
   const description =
     banner?.description ||
     'Remember, constantly delivering more than expected requires dedication, effort, and a genuine desire to provide outstanding value. By embodying this principle, you can set yourself apart and create a lasting positive impression on those you interact with.';
+
+  // Split so the first word can be styled larger than the rest of the headline.
+  const [firstWord, ...restOfTitle] = title.trim().split(/\s+/);
+  const remainingTitle = restOfTitle.join(' ');
 
   return (
     <section className="relative bg-[#022c43] text-white overflow-hidden py-16 lg:h-[800px] flex items-center">
@@ -31,8 +42,13 @@ export default function HeroSection({ banner }: HeroSectionProps) {
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <div className="max-w-xl space-y-6">
           {/* Main Headline (dynamic, from admin-managed banner) */}
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-light tracking-wide text-white drop-shadow-md leading-tight">
-            {title}
+          <h1
+            className={`${carattere.className} font-normal text-white drop-shadow-md leading-tight`}
+          >
+            <span className="text-[150px]">{firstWord}</span>
+            {remainingTitle && (
+              <span className="text-[55px]"> {remainingTitle}</span>
+            )}
           </h1>
 
           {/* Supporting Description */}

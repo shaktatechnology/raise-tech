@@ -395,11 +395,7 @@ export default function AdminHomePage() {
               <div className="flex items-center gap-3">
                 <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
                   Homepage Management
-                </h1>
-                <span className="px-2.5 py-0.5 bg-emerald-950 text-emerald-400 border border-emerald-800 text-xs font-semibold rounded-full flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                  API Connected
-                </span>
+                </h1>                
               </div>
               <p className="text-slate-400 text-sm mt-1">
                 Manage the homepage banner, services, portfolio, and testimonials.
