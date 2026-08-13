@@ -9,8 +9,10 @@ export async function fetchApi<T = any>(
   // Retrieve auth token from localStorage
   const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
 
+  const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
+
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
+    ...(isFormData ? {} : { "Content-Type": "application/json" }),
     "Accept": "application/json",
     ...(options.headers as Record<string, string>),
   };

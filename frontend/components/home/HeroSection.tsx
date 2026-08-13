@@ -1,14 +1,25 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import type { Banner } from '@/lib/types/home';
 
-export default function HeroSection() {
+interface HeroSectionProps {
+  banner: Banner | null;
+}
+
+export default function HeroSection({ banner }: HeroSectionProps) {
+  const heroImage = banner?.image || '/images/home/hero-bg.png';
+  const title = banner?.title || 'Always deliver more than Expected.';
+  const description =
+    banner?.description ||
+    'Remember, constantly delivering more than expected requires dedication, effort, and a genuine desire to provide outstanding value. By embodying this principle, you can set yourself apart and create a lasting positive impression on those you interact with.';
+
   return (
     <section className="relative bg-[#022c43] text-white overflow-hidden py-16 lg:py-24 min-h-[85vh] flex items-center">
       {/* Background Hero Image */}
       <div className="absolute inset-0 z-0">
         <Image
-          src="/images/home/hero-bg.png"
+          src={heroImage}
           alt="Technology Hero Background"
           fill
           priority
@@ -19,21 +30,14 @@ export default function HeroSection() {
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <div className="max-w-xl space-y-6">
-          {/* Main Headline */}
-          <div className="space-y-1">
-            <h1 className="text-white">
-              <span className="font-carattere text-7xl sm:text-8xl lg:text-[130px] leading-tight block text-white drop-shadow-md">
-                Always
-              </span>
-              <span className="text-3xl sm:text-4xl lg:text-5xl font-light tracking-wide text-white block -mt-4">
-                deliver more than Expected.
-              </span>
-            </h1>
-          </div>
+          {/* Main Headline (dynamic, from admin-managed banner) */}
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-light tracking-wide text-white drop-shadow-md leading-tight">
+            {title}
+          </h1>
 
           {/* Supporting Description */}
           <p className="text-sm sm:text-base text-slate-200 leading-relaxed font-normal pt-2">
-            Remember, constantly delivering more than expected requires dedication, effort, and a genuine desire to provide outstanding value. By embodying this principle, you can set yourself apart and create a lasting positive impression on those you interact with.
+            {description}
           </p>
 
           {/* CTA Action */}
@@ -50,6 +54,3 @@ export default function HeroSection() {
     </section>
   );
 }
-
-
-

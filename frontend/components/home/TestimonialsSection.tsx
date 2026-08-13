@@ -1,11 +1,37 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
-import { TESTIMONIALS_DATA } from '@/lib/data/homeData';
+import type { Testimonial } from '@/lib/types/home';
 
-export default function TestimonialsSection() {
-  const current = TESTIMONIALS_DATA[0];
+interface TestimonialsSectionProps {
+  testimonials: Testimonial[];
+}
+
+function getInitials(name: string) {
+  return name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('');
+}
+
+export default function TestimonialsSection({ testimonials }: TestimonialsSectionProps) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const current = testimonials[activeIndex];
+
+  const goToPrev = () => {
+    setActiveIndex((i) => (i - 1 + testimonials.length) % testimonials.length);
+  };
+
+  const goToNext = () => {
+    setActiveIndex((i) => (i + 1) % testimonials.length);
+  };
+
+  if (!current) {
+    return null;
+  }
 
   return (
     <section className="py-20 bg-[#f7fdff] text-[#404040] overflow-hidden">
@@ -64,10 +90,16 @@ export default function TestimonialsSection() {
                     </svg>
                   </div>
 
-                  {/* 5 Stars */}
+                  {/* Star Rating (dynamic, from testimonial.rating) */}
                   <div className="flex items-center gap-1 text-white">
                     {[...Array(5)].map((_, i) => (
-                      <svg key={i} className="w-5 h-5 fill-current" viewBox="0 0 20 20">
+                      <svg
+                        key={i}
+                        className={`w-5 h-5 fill-current ${
+                          i < current.rating ? 'opacity-100' : 'opacity-30'
+                        }`}
+                        viewBox="0 0 20 20"
+                      >
                         <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                       </svg>
                     ))}
@@ -76,25 +108,67 @@ export default function TestimonialsSection() {
 
                 {/* Testimonial Quote */}
                 <blockquote className="text-white text-sm sm:text-base font-normal leading-relaxed mb-8">
-                  {current.quote}
+                  {current.description}
                 </blockquote>
               </div>
 
               {/* Author Info */}
               <div className="flex items-center gap-4 pt-4 border-t border-white/20">
                 <div className="w-12 h-12 rounded-full bg-white/20 border-2 border-white flex items-center justify-center font-bold text-white text-base shrink-0">
-                  SD
+                  {getInitials(current.name)}
                 </div>
                 <div>
                   <h4 className="font-bold text-white text-base leading-snug">{current.name}</h4>
-                  <p className="text-xs text-cyan-100 font-medium">{current.role}</p>
+                  <p className="text-xs text-cyan-100 font-medium">
+                    {[current.role, current.company_name].filter(Boolean).join(' · ')}
+                  </p>
                 </div>
               </div>
             </div>
+
+            {/* Swipe Navigation (only when there's more than one testimonial) */}
+            {testimonials.length > 1 && (
+              <div className="flex items-center justify-between mt-6">
+                <button
+                  type="button"
+                  onClick={goToPrev}
+                  aria-label="Previous testimonial"
+                  className="w-10 h-10 rounded-full bg-white border border-cyan-100 shadow-sm flex items-center justify-center text-[#01A7E5] hover:bg-[#01A7E5] hover:text-white transition-colors duration-200"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+
+                {/* Pagination Indicators */}
+                <div className="flex items-center gap-2">
+                  {testimonials.map((_, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setActiveIndex(idx)}
+                      className={`h-2 rounded-full transition-all duration-300 ${
+                        activeIndex === idx ? 'w-8 bg-[#01A7E5]' : 'w-2 bg-cyan-200'
+                      }`}
+                      aria-label={`Go to testimonial ${idx + 1}`}
+                    />
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={goToNext}
+                  aria-label="Next testimonial"
+                  className="w-10 h-10 rounded-full bg-white border border-cyan-100 shadow-sm flex items-center justify-center text-[#01A7E5] hover:bg-[#01A7E5] hover:text-white transition-colors duration-200"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
     </section>
   );
 }
-
