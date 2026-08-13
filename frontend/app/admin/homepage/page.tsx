@@ -133,7 +133,6 @@ export default function AdminHomePage() {
       } else {
         body = JSON.stringify({
           title: banner.title?.trim() || null,
-          image: banner.image?.trim() || null,
           description: banner.description?.trim() || null,
         });
       }
@@ -259,7 +258,6 @@ export default function AdminHomePage() {
       } else {
         body = JSON.stringify({
           title: portfolioForm.title.trim(),
-          image: portfolioForm.image.trim() || null,
           description: portfolioForm.description.trim(),
         });
       }
