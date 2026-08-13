@@ -148,6 +148,13 @@ export default function MobileNav({ isOpen, onClose, onOpenLogin }: MobileNavPro
               <div className="text-sm font-medium text-gray-700 px-1">
                 Signed in as <span className="font-bold text-[#01A7E5]">{user.name}</span>
               </div>
+              <Link
+                href="/my-orders"
+                onClick={onClose}
+                className="block w-full py-2.5 text-center bg-[#01A7E5] text-white font-medium text-sm rounded-lg shadow-xs"
+              >
+                My Orders
+              </Link>
               {user.role === "admin" && (
                 <Link
                   href="/admin"

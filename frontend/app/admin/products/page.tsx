@@ -3,7 +3,35 @@
 import React, { useState, useEffect, useCallback } from "react";
 import ProtectedRoute from "@/components/guards/ProtectedRoute";
 import { fetchApi } from "@/lib/api";
-import { Product } from "@/lib/types";
+
+interface ProductGallery {
+  id: number;
+  image: string;
+}
+
+interface Product {
+  id: number;
+  title: string;
+  slug: string;
+  sku: string | null;
+  short_description?: string | null;
+  description?: string | null;
+  original_price: number;
+  discount_type?: "percentage" | "fixed" | null;
+  discount_value?: number | null;
+  stock_quantity?: number | null;
+  is_active: boolean;
+  featured_image?: string | null;
+  meta_title?: string | null;
+  meta_description?: string | null;
+  galleries?: ProductGallery[];
+}
+
+const generateSkuCode = (): string => {
+  const part1 = Math.floor(100000 + Math.random() * 900000);
+  const part2 = Math.floor(100 + Math.random() * 900);
+  return `SKU-${part1}-${part2}`;
+};
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -121,7 +149,11 @@ export default function AdminProductsPage() {
       const formData = new FormData();
       formData.append("title", editingProduct.title || "");
       if (editingProduct.slug) formData.append("slug", editingProduct.slug);
-      if (editingProduct.sku) formData.append("sku", editingProduct.sku);
+      
+      // Auto generate SKU if empty
+      const finalSku = editingProduct.sku?.trim() || generateSkuCode();
+      formData.append("sku", finalSku);
+
       if (editingProduct.short_description) formData.append("short_description", editingProduct.short_description);
       if (editingProduct.description) formData.append("description", editingProduct.description);
       formData.append("original_price", String(editingProduct.original_price));
@@ -217,7 +249,7 @@ export default function AdminProductsPage() {
                 onClick={() => {
                   setEditingProduct({
                     title: "",
-                    sku: "",
+                    sku: generateSkuCode(),
                     original_price: 100,
                     stock_quantity: 100,
                     is_active: true,
@@ -330,10 +362,10 @@ export default function AdminProductsPage() {
                           <td className="py-3.5 px-4">
                             <span
                               className={`font-semibold ${
-                                product.stock_quantity > 0 ? "text-slate-200" : "text-red-400"
+                                (product.stock_quantity ?? 0) > 0 ? "text-slate-200" : "text-red-400"
                               }`}
                             >
-                              {product.stock_quantity > 0 ? `${product.stock_quantity} units` : "Out of stock"}
+                              {(product.stock_quantity ?? 0) > 0 ? `${product.stock_quantity} units` : "Out of stock"}
                             </span>
                           </td>
                           <td className="py-3.5 px-4">
@@ -410,12 +442,27 @@ export default function AdminProductsPage() {
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-slate-400 mb-1">SKU Code</label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-slate-400">SKU Code</label>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setEditingProduct((prev) => ({
+                              ...prev,
+                              sku: generateSkuCode(),
+                            }))
+                          }
+                          className="text-[10px] text-cyan-400 hover:text-cyan-300 font-medium hover:underline"
+                        >
+                          ⚡ Auto Generate
+                        </button>
+                      </div>
                       <input
                         type="text"
                         value={editingProduct?.sku || ""}
                         onChange={(e) => setEditingProduct({ ...editingProduct, sku: e.target.value })}
-                        className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-cyan-500"
+                        placeholder="Auto generated e.g. SKU-741809-936"
+                        className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-cyan-500 font-mono text-xs"
                       />
                     </div>
                     <div>

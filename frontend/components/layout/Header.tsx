@@ -5,12 +5,14 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { NAV_LINKS } from '@/lib/data/homeData';
+import { useCart } from '@/context/CartContext';
 import MobileNav from './MobileNav';
 import { useAuth } from '@/context/AuthContext';
 import LoginModal from '@/components/auth/LoginModal';
 
 export default function Header() {
   const pathname = usePathname();
+  const { totalItems } = useCart();
   const { user, logout } = useAuth();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -64,8 +66,9 @@ export default function Header() {
               </div>
             </Link>
 
-            {/* Desktop Navigation Links & Auth Button */}
-            <nav aria-label="Main Navigation" className="hidden md:flex items-center gap-8 ml-auto">
+          {/* Desktop Navigation Links & Cart Icon */}
+          <div className="hidden md:flex items-center gap-8 ml-auto">
+            <nav aria-label="Main Navigation" className="flex items-center gap-8">
               {NAV_LINKS.map((link) => {
                 const isActive = pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href));
 
@@ -88,7 +91,7 @@ export default function Header() {
                         }}
                         aria-expanded={dropdownOpen}
                         aria-haspopup="true"
-                        className={`flex items-center gap-1.5 text-sm font-medium transition-colors py-2 focus-visible:outline-2 focus-visible:outline-[#01A7E5] rounded-md ${
+                        className={`flex items-center gap-1.5 text-sm font-medium transition-colors py-2 focus-visible:outline-2 focus-visible:outline-[#01A7E5] rounded-md cursor-pointer ${
                           isActive || dropdownOpen ? 'text-[#01A7E5]' : 'text-gray-900 hover:text-[#01A7E5]'
                         }`}
                       >
@@ -105,7 +108,7 @@ export default function Header() {
 
                       {/* Dropdown Menu */}
                       {dropdownOpen && (
-                        <div className="absolute left-0 mt-1 w-60 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                        <div className="absolute left-0 mt-1 w-64 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
                           {link.dropdown.map((subItem) => {
                             const isSubActive = pathname === subItem.href;
                             return (
@@ -134,7 +137,7 @@ export default function Header() {
                     key={link.href}
                     href={link.href}
                     className={`text-sm font-medium transition-colors relative py-2 focus-visible:outline-2 focus-visible:outline-[#01A7E5] rounded-md ${
-                      isActive ? 'text-[#01A7E5]' : 'text-gray-900 hover:text-[#01A7E5]'
+                      isActive ? 'text-[#01A7E5] font-semibold' : 'text-gray-900 hover:text-[#01A7E5]'
                     }`}
                   >
                     {link.label}
@@ -144,58 +147,97 @@ export default function Header() {
                   </Link>
                 );
               })}
-
-              {/* Login / Auth Button */}
-              <div className="border-l border-gray-200 pl-6 flex items-center">
-                {user ? (
-                  <div className="flex items-center gap-3">
-                    {user.role === "admin" && (
-                      <Link
-                        href="/admin"
-                        className="text-xs font-semibold px-2.5 py-1 bg-indigo-50 text-indigo-600 rounded-md border border-indigo-100 hover:bg-indigo-100 transition"
-                      >
-                        Admin Panel
-                      </Link>
-                    )}
-                    <span className="text-sm font-medium text-gray-700">
-                      Hi, {user.name.split(" ")[0]}
-                    </span>
-                    <button
-                      onClick={() => logout()}
-                      className="text-xs font-medium text-gray-500 hover:text-red-600 transition cursor-pointer"
-                    >
-                      Logout
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setLoginModalOpen(true)}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-[#01A7E5] hover:bg-[#0190c7] text-white text-sm font-semibold rounded-lg transition-all shadow-xs hover:shadow-md cursor-pointer"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-                    </svg>
-                    <span>Login</span>
-                  </button>
-                )}
-              </div>
+              {user && (
+                <Link
+                  href="/my-orders"
+                  className={`text-sm font-medium transition-colors relative py-2 focus-visible:outline-2 focus-visible:outline-[#01A7E5] rounded-md ${
+                    pathname === "/my-orders"
+                      ? "text-[#01A7E5] font-semibold"
+                      : "text-gray-900 hover:text-[#01A7E5]"
+                  }`}
+                >
+                  My Orders
+                  {pathname === "/my-orders" && (
+                    <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#01A7E5] rounded-full" />
+                  )}
+                </Link>
+              )}
             </nav>
 
-            {/* Mobile Menu Toggle */}
-            <div className="flex items-center md:hidden">
-              <button
-                onClick={() => setMobileNavOpen(true)}
-                className="p-2 text-gray-700 hover:text-[#01A7E5] rounded-lg hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-[#01A7E5]"
-                aria-label="Open mobile navigation menu"
-                aria-expanded={mobileNavOpen}
+            {/* Header Cart Button & User Auth */}
+            <div className="flex items-center gap-3">
+              <Link
+                href="/cart"
+                className="relative p-2.5 text-gray-700 hover:text-[#01A7E5] transition-colors focus-visible:outline-2 focus-visible:outline-[#01A7E5] rounded-full hover:bg-gray-50"
+                aria-label={`Shopping cart with ${totalItems} items`}
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" />
                 </svg>
-              </button>
+                {totalItems > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 bg-[#01A7E5] text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center shadow-xs">
+                    {totalItems}
+                  </span>
+                )}
+              </Link>
+
+              {user ? (
+                <div className="flex items-center gap-2">
+                  {user.role === "admin" && (
+                    <Link
+                      href="/admin"
+                      className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-xs rounded-lg transition"
+                    >
+                      Admin
+                    </Link>
+                  )}
+                  <button
+                    onClick={logout}
+                    className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium text-xs rounded-lg transition"
+                  >
+                    Logout
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setLoginModalOpen(true)}
+                  className="px-4 py-2 bg-[#01A7E5] hover:bg-[#018bc0] text-white text-xs font-bold rounded-xl shadow-2xs transition"
+                >
+                  Sign In
+                </button>
+              )}
             </div>
           </div>
+
+          {/* Mobile Menu Toggle & Cart Icon */}
+          <div className="flex items-center gap-2 md:hidden">
+            <Link
+              href="/cart"
+              className="relative p-2 text-gray-700 hover:text-[#01A7E5] rounded-lg focus-visible:outline-2 focus-visible:outline-[#01A7E5]"
+              aria-label={`Shopping cart with ${totalItems} items`}
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" />
+              </svg>
+              {totalItems > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 bg-[#01A7E5] text-white text-xs font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                  {totalItems}
+                </span>
+              )}
+            </Link>
+            <button
+              onClick={() => setMobileNavOpen(true)}
+              className="p-2 text-gray-700 hover:text-[#01A7E5] rounded-lg hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-[#01A7E5]"
+              aria-label="Open mobile navigation menu"
+              aria-expanded={mobileNavOpen}
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          </div>
         </div>
+      </div>
 
         {/* Mobile Drawer */}
         <MobileNav
