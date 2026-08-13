@@ -2,10 +2,21 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
-import { PORTFOLIO_DATA } from '@/lib/data/homeData';
+import type { Portfolio } from '@/lib/types/home';
 
-export default function PortfolioSection() {
+interface PortfolioSectionProps {
+  portfolio: Portfolio[];
+}
+
+export default function PortfolioSection({ portfolio }: PortfolioSectionProps) {
   const [activeIndex, setActiveIndex] = useState(0);
+
+  // The original design is a fixed 3-column showcase — show up to 3 featured items.
+  const items = portfolio.slice(0, 3);
+
+  if (items.length === 0) {
+    return null;
+  }
 
   return (
     <section className="py-20 bg-[#f7fdff] text-[#404040]">
@@ -14,7 +25,7 @@ export default function PortfolioSection() {
           {/* Left Column: Project Cards Row & Pagination */}
           <div className="lg:col-span-7 space-y-6">
             <div className="grid grid-cols-3 gap-4 sm:gap-6 items-center">
-              {PORTFOLIO_DATA.map((project, idx) => (
+              {items.map((project, idx) => (
                 <div
                   key={project.id}
                   onClick={() => setActiveIndex(idx)}
@@ -24,19 +35,25 @@ export default function PortfolioSection() {
                       : 'opacity-90 hover:opacity-100'
                   }`}
                 >
-                  <Image
-                    src={project.image}
-                    alt={project.title}
-                    fill
-                    className="object-cover object-center"
-                  />
+                  {project.image ? (
+                    <Image
+                      src={project.image}
+                      alt={project.title}
+                      fill
+                      className="object-cover object-center"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-emerald-100 flex items-center justify-center text-emerald-600 text-xs font-semibold p-2 text-center">
+                      {project.title}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
 
             {/* Pagination Indicators */}
             <div className="flex items-center gap-2 pt-2">
-              {PORTFOLIO_DATA.map((_, idx) => (
+              {items.map((_, idx) => (
                 <button
                   key={idx}
                   onClick={() => setActiveIndex(idx)}
@@ -67,4 +84,3 @@ export default function PortfolioSection() {
     </section>
   );
 }
-
