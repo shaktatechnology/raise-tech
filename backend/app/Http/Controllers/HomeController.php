@@ -7,6 +7,7 @@ use App\Models\HomeService;
 use App\Models\Portfolio;
 use App\Models\Testimonial;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class HomeController extends Controller
 {
@@ -38,11 +39,25 @@ class HomeController extends Controller
     {
         $validated = $request->validate([
             'title' => 'nullable|string|max:255',
-            'image' => 'nullable|string',
+            'image' => ['nullable', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'description' => 'nullable|string',
         ]);
 
         $banner = Banner::firstOrCreate(['id' => 1]);
+
+        if ($request->hasFile('image')) {
+            // Remove old image file if it was one of ours
+            if ($banner->image) {
+                $oldPath = str_replace(Storage::disk('public')->url(''), '', $banner->image);
+                Storage::disk('public')->delete($oldPath);
+            }
+            $validated['image'] = Storage::disk('public')->url(
+                $request->file('image')->store('banner', 'public')
+            );
+        } else {
+            unset($validated['image']); // keep existing image
+        }
+
         $banner->update($validated);
 
         return response()->json([
@@ -106,9 +121,17 @@ class HomeController extends Controller
     {
         $validated = $request->validate([
             'title' => 'required|string|max:255',
-            'image' => 'nullable|string',
+            'image' => ['nullable', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'description' => 'required|string',
         ]);
+
+        if ($request->hasFile('image')) {
+            $validated['image'] = Storage::disk('public')->url(
+                $request->file('image')->store('portfolio', 'public')
+            );
+        } else {
+            unset($validated['image']);
+        }
 
         $portfolio = Portfolio::create($validated);
 
@@ -125,9 +148,22 @@ class HomeController extends Controller
     {
         $validated = $request->validate([
             'title' => 'required|string|max:255',
-            'image' => 'nullable|string',
+            'image' => ['nullable', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'description' => 'required|string',
         ]);
+
+        if ($request->hasFile('image')) {
+            // Remove old image file if it was one of ours
+            if ($portfolio->image) {
+                $oldPath = str_replace(Storage::disk('public')->url(''), '', $portfolio->image);
+                Storage::disk('public')->delete($oldPath);
+            }
+            $validated['image'] = Storage::disk('public')->url(
+                $request->file('image')->store('portfolio', 'public')
+            );
+        } else {
+            unset($validated['image']); // keep existing image
+        }
 
         $portfolio->update($validated);
 
