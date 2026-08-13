@@ -11,7 +11,6 @@ class OrderItem extends Model
     use HasFactory;
 
     protected $fillable = [
-        'order_id',
         'product_id',
         'product_title',
         'product_sku',
@@ -24,8 +23,8 @@ class OrderItem extends Model
     {
         return [
             'unit_price' => 'decimal:2',
-            'subtotal'   => 'decimal:2',
-            'quantity'   => 'integer',
+            'subtotal' => 'decimal:2',
+            'quantity' => 'integer',
         ];
     }
 

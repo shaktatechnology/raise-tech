@@ -2,21 +2,20 @@
 
 namespace App\Models;
 
+use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
-use Database\Factories\UserFactory;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Attributes\Hidden;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
 
-    protected $fillable =[
+    protected $fillable = [
         'name',
         'email',
         'phone',
@@ -43,13 +42,18 @@ class User extends Authenticatable implements MustVerifyEmail
         ];
     }
 
-    public function isAdmin():bool
+    public function isAdmin(): bool
     {
         return $this->role === 'admin';
     }
 
-    public function isCustomer():bool
+    public function isCustomer(): bool
     {
         return $this->role === 'customer';
+    }
+
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
     }
 }
