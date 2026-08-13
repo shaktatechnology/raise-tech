@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
 import type { Testimonial } from '@/lib/types/home';
 
@@ -18,7 +18,16 @@ function getInitials(name: string) {
 }
 
 export default function TestimonialsSection({ testimonials }: TestimonialsSectionProps) {
-  const current = testimonials[0];
+  const [activeIndex, setActiveIndex] = useState(0);
+  const current = testimonials[activeIndex];
+
+  const goToPrev = () => {
+    setActiveIndex((i) => (i - 1 + testimonials.length) % testimonials.length);
+  };
+
+  const goToNext = () => {
+    setActiveIndex((i) => (i + 1) % testimonials.length);
+  };
 
   if (!current) {
     return null;
@@ -116,6 +125,47 @@ export default function TestimonialsSection({ testimonials }: TestimonialsSectio
                 </div>
               </div>
             </div>
+
+            {/* Swipe Navigation (only when there's more than one testimonial) */}
+            {testimonials.length > 1 && (
+              <div className="flex items-center justify-between mt-6">
+                <button
+                  type="button"
+                  onClick={goToPrev}
+                  aria-label="Previous testimonial"
+                  className="w-10 h-10 rounded-full bg-white border border-cyan-100 shadow-sm flex items-center justify-center text-[#01A7E5] hover:bg-[#01A7E5] hover:text-white transition-colors duration-200"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+
+                {/* Pagination Indicators */}
+                <div className="flex items-center gap-2">
+                  {testimonials.map((_, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setActiveIndex(idx)}
+                      className={`h-2 rounded-full transition-all duration-300 ${
+                        activeIndex === idx ? 'w-8 bg-[#01A7E5]' : 'w-2 bg-cyan-200'
+                      }`}
+                      aria-label={`Go to testimonial ${idx + 1}`}
+                    />
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={goToNext}
+                  aria-label="Next testimonial"
+                  className="w-10 h-10 rounded-full bg-white border border-cyan-100 shadow-sm flex items-center justify-center text-[#01A7E5] hover:bg-[#01A7E5] hover:text-white transition-colors duration-200"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
