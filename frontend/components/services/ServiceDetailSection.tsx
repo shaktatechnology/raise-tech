@@ -80,8 +80,8 @@ export default function ServiceDetailSection({ service }: ServiceDetailSectionPr
                 src={service.imagePath}
                 alt={service.imageAlt}
                 width={650}
-                height={480}
-                className="w-full h-auto max-h-[460px] object-contain drop-shadow-sm transition-transform duration-300 hover:scale-[1.02]"
+                height={1200}
+                className="w-full h-full max-h-[1600px] object-cover drop-shadow-sm transition-transform duration-300 hover:scale-[1.02]"
                 priority={service.id === 'web-development'}
               />
             </div>

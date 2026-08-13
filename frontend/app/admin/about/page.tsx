@@ -53,12 +53,14 @@ export default function AdminAboutPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [isSavingSettings, setIsSavingSettings] = useState<boolean>(false);
 
-  // Modals for adding sub-items
+  // Modals for adding/editing sub-items
   const [isWhatWeDoModalOpen, setIsWhatWeDoModalOpen] = useState<boolean>(false);
+  const [editingWhatWeDoId, setEditingWhatWeDoId] = useState<number | null>(null);
   const [newWhatWeDo, setNewWhatWeDo] = useState({ title: "", description: "" });
   const [isAddingWhatWeDo, setIsAddingWhatWeDo] = useState<boolean>(false);
 
   const [isWhyChooseUsModalOpen, setIsWhyChooseUsModalOpen] = useState<boolean>(false);
+  const [editingWhyChooseUsId, setEditingWhyChooseUsId] = useState<number | null>(null);
   const [newWhyChooseUs, setNewWhyChooseUs] = useState({ name: "", description: "" });
   const [isAddingWhyChooseUs, setIsAddingWhyChooseUs] = useState<boolean>(false);
 
@@ -134,8 +136,21 @@ export default function AdminAboutPage() {
     }
   };
 
-  // POST /api/about/what_we_do/store
-  const handleAddWhatWeDo = async (e: React.FormEvent) => {
+  // ---------- What We Do ----------
+  const openAddWhatWeDo = () => {
+    setEditingWhatWeDoId(null);
+    setNewWhatWeDo({ title: "", description: "" });
+    setIsWhatWeDoModalOpen(true);
+  };
+
+  const openEditWhatWeDo = (item: WhatWeDoItemData) => {
+    setEditingWhatWeDoId(item.id);
+    setNewWhatWeDo({ title: item.title, description: item.description });
+    setIsWhatWeDoModalOpen(true);
+  };
+
+  // POST /api/about/what_we_do/store (create) or /api/about/what_we_do/{id} (update)
+  const handleSaveWhatWeDo = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newWhatWeDo.title.trim() || !newWhatWeDo.description.trim()) {
       toast.error("Title and Description are required.");
@@ -144,33 +159,70 @@ export default function AdminAboutPage() {
 
     setIsAddingWhatWeDo(true);
     try {
-      const res = await fetchApi<{ message: string; data: WhatWeDoItemData }>(
-        "/about/what_we_do/store",
-        {
-          method: "POST",
-          body: JSON.stringify({
-            title: newWhatWeDo.title.trim(),
-            description: newWhatWeDo.description.trim(),
-          }),
-        }
-      );
+      const payload = {
+        title: newWhatWeDo.title.trim(),
+        description: newWhatWeDo.description.trim(),
+      };
 
-      if (res && res.data) {
+      if (editingWhatWeDoId) {
+        const res = await fetchApi<{ message: string; data: WhatWeDoItemData }>(
+          `/about/what_we_do/${editingWhatWeDoId}`,
+          { method: "POST", body: JSON.stringify(payload) }
+        );
+        setWhatWeDoItems((prev) =>
+          prev.map((item) => (item.id === editingWhatWeDoId ? res.data : item))
+        );
+        toast.success(res.message || "What We Do item updated successfully");
+      } else {
+        const res = await fetchApi<{ message: string; data: WhatWeDoItemData }>(
+          "/about/what_we_do/store",
+          { method: "POST", body: JSON.stringify(payload) }
+        );
         setWhatWeDoItems((prev) => [...prev, res.data]);
+        toast.success(res.message || "What We Do item created successfully");
       }
-      toast.success(res.message || "What We Do item created successfully");
+
       setNewWhatWeDo({ title: "", description: "" });
+      setEditingWhatWeDoId(null);
       setIsWhatWeDoModalOpen(false);
     } catch (err: any) {
-      console.error("Failed to add What We Do item:", err);
-      toast.error(err.message || "Failed to create What We Do item.");
+      console.error("Failed to save What We Do item:", err);
+      toast.error(err.message || "Failed to save What We Do item.");
     } finally {
       setIsAddingWhatWeDo(false);
     }
   };
 
-  // POST /api/about/why_choose_us/store
-  const handleAddWhyChooseUs = async (e: React.FormEvent) => {
+  // DELETE /api/about/what_we_do/{id}
+  const handleDeleteWhatWeDo = async (id: number) => {
+    if (!window.confirm("Delete this What We Do item? This cannot be undone.")) return;
+    try {
+      const res = await fetchApi<{ message: string }>(`/about/what_we_do/${id}`, {
+        method: "DELETE",
+      });
+      setWhatWeDoItems((prev) => prev.filter((item) => item.id !== id));
+      toast.success(res.message || "What We Do item deleted successfully");
+    } catch (err: any) {
+      console.error("Failed to delete What We Do item:", err);
+      toast.error(err.message || "Failed to delete What We Do item.");
+    }
+  };
+
+  // ---------- Why Choose Us ----------
+  const openAddWhyChooseUs = () => {
+    setEditingWhyChooseUsId(null);
+    setNewWhyChooseUs({ name: "", description: "" });
+    setIsWhyChooseUsModalOpen(true);
+  };
+
+  const openEditWhyChooseUs = (item: WhyChooseUsItemData) => {
+    setEditingWhyChooseUsId(item.id);
+    setNewWhyChooseUs({ name: item.name, description: item.description });
+    setIsWhyChooseUsModalOpen(true);
+  };
+
+  // POST /api/about/why_choose_us/store (create) or /api/about/why_choose_us/{id} (update)
+  const handleSaveWhyChooseUs = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newWhyChooseUs.name.trim() || !newWhyChooseUs.description.trim()) {
       toast.error("Name and Description are required.");
@@ -179,28 +231,52 @@ export default function AdminAboutPage() {
 
     setIsAddingWhyChooseUs(true);
     try {
-      const res = await fetchApi<{ message: string; data: WhyChooseUsItemData }>(
-        "/about/why_choose_us/store",
-        {
-          method: "POST",
-          body: JSON.stringify({
-            name: newWhyChooseUs.name.trim(),
-            description: newWhyChooseUs.description.trim(),
-          }),
-        }
-      );
+      const payload = {
+        name: newWhyChooseUs.name.trim(),
+        description: newWhyChooseUs.description.trim(),
+      };
 
-      if (res && res.data) {
+      if (editingWhyChooseUsId) {
+        const res = await fetchApi<{ message: string; data: WhyChooseUsItemData }>(
+          `/about/why_choose_us/${editingWhyChooseUsId}`,
+          { method: "POST", body: JSON.stringify(payload) }
+        );
+        setWhyChooseUsItems((prev) =>
+          prev.map((item) => (item.id === editingWhyChooseUsId ? res.data : item))
+        );
+        toast.success(res.message || "Why Choose Us item updated successfully");
+      } else {
+        const res = await fetchApi<{ message: string; data: WhyChooseUsItemData }>(
+          "/about/why_choose_us/store",
+          { method: "POST", body: JSON.stringify(payload) }
+        );
         setWhyChooseUsItems((prev) => [...prev, res.data]);
+        toast.success(res.message || "Why Choose Us item created successfully");
       }
-      toast.success(res.message || "Why Choose Us item created successfully");
+
       setNewWhyChooseUs({ name: "", description: "" });
+      setEditingWhyChooseUsId(null);
       setIsWhyChooseUsModalOpen(false);
     } catch (err: any) {
-      console.error("Failed to add Why Choose Us item:", err);
-      toast.error(err.message || "Failed to create Why Choose Us item.");
+      console.error("Failed to save Why Choose Us item:", err);
+      toast.error(err.message || "Failed to save Why Choose Us item.");
     } finally {
       setIsAddingWhyChooseUs(false);
+    }
+  };
+
+  // DELETE /api/about/why_choose_us/{id}
+  const handleDeleteWhyChooseUs = async (id: number) => {
+    if (!window.confirm("Delete this Why Choose Us item? This cannot be undone.")) return;
+    try {
+      const res = await fetchApi<{ message: string }>(`/about/why_choose_us/${id}`, {
+        method: "DELETE",
+      });
+      setWhyChooseUsItems((prev) => prev.filter((item) => item.id !== id));
+      toast.success(res.message || "Why Choose Us item deleted successfully");
+    } catch (err: any) {
+      console.error("Failed to delete Why Choose Us item:", err);
+      toast.error(err.message || "Failed to delete Why Choose Us item.");
     }
   };
 
@@ -371,7 +447,7 @@ export default function AdminAboutPage() {
                   </div>
 
                   <button
-                    onClick={() => setIsWhatWeDoModalOpen(true)}
+                    onClick={openAddWhatWeDo}
                     className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs rounded-xl shadow-lg transition cursor-pointer"
                   >
                     + Add What We Do Item
@@ -389,7 +465,23 @@ export default function AdminAboutPage() {
                         key={item.id}
                         className="bg-slate-950 p-4 rounded-xl border border-slate-800 text-xs space-y-2"
                       >
-                        <h4 className="font-bold text-white text-sm">{item.title}</h4>
+                        <div className="flex items-start justify-between gap-2">
+                          <h4 className="font-bold text-white text-sm">{item.title}</h4>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <button
+                              onClick={() => openEditWhatWeDo(item)}
+                              className="text-cyan-400 hover:text-cyan-300 font-semibold"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDeleteWhatWeDo(item.id)}
+                              className="text-red-400 hover:text-red-300 font-semibold"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
                         <p className="text-slate-400 leading-relaxed line-clamp-3">{item.description}</p>
                       </div>
                     ))}
@@ -410,7 +502,7 @@ export default function AdminAboutPage() {
                   </div>
 
                   <button
-                    onClick={() => setIsWhyChooseUsModalOpen(true)}
+                    onClick={openAddWhyChooseUs}
                     className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs rounded-xl shadow-lg transition cursor-pointer"
                   >
                     + Add Feature Item
@@ -428,7 +520,23 @@ export default function AdminAboutPage() {
                         key={item.id}
                         className="bg-slate-950 p-4 rounded-xl border border-slate-800 text-xs space-y-2"
                       >
-                        <h4 className="font-bold text-cyan-400 text-sm">{item.name}</h4>
+                        <div className="flex items-start justify-between gap-2">
+                          <h4 className="font-bold text-cyan-400 text-sm">{item.name}</h4>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <button
+                              onClick={() => openEditWhyChooseUs(item)}
+                              className="text-cyan-400 hover:text-cyan-300 font-semibold"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDeleteWhyChooseUs(item.id)}
+                              className="text-red-400 hover:text-red-300 font-semibold"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
                         <p className="text-slate-400 leading-relaxed line-clamp-3">{item.description}</p>
                       </div>
                     ))}
@@ -438,18 +546,23 @@ export default function AdminAboutPage() {
             </>
           )}
 
-          {/* Modal 1: Add What We Do Item */}
+          {/* Modal 1: Add/Edit What We Do Item */}
           {isWhatWeDoModalOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xs">
               <form
-                onSubmit={handleAddWhatWeDo}
+                onSubmit={handleSaveWhatWeDo}
                 className="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-4"
               >
                 <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                  <h3 className="text-lg font-bold text-white">Add &quot;What We Do&quot; Item</h3>
+                  <h3 className="text-lg font-bold text-white">
+                    {editingWhatWeDoId ? 'Edit "What We Do" Item' : 'Add "What We Do" Item'}
+                  </h3>
                   <button
                     type="button"
-                    onClick={() => setIsWhatWeDoModalOpen(false)}
+                    onClick={() => {
+                      setIsWhatWeDoModalOpen(false);
+                      setEditingWhatWeDoId(null);
+                    }}
                     className="text-slate-400 hover:text-white"
                   >
                     ✕
@@ -485,7 +598,10 @@ export default function AdminAboutPage() {
                 <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
                   <button
                     type="button"
-                    onClick={() => setIsWhatWeDoModalOpen(false)}
+                    onClick={() => {
+                      setIsWhatWeDoModalOpen(false);
+                      setEditingWhatWeDoId(null);
+                    }}
                     className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-semibold"
                   >
                     Cancel
@@ -495,25 +611,34 @@ export default function AdminAboutPage() {
                     disabled={isAddingWhatWeDo}
                     className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-semibold shadow-lg disabled:opacity-50"
                   >
-                    {isAddingWhatWeDo ? "Creating..." : "Create Item"}
+                    {isAddingWhatWeDo
+                      ? "Saving..."
+                      : editingWhatWeDoId
+                      ? "Save Changes"
+                      : "Create Item"}
                   </button>
                 </div>
               </form>
             </div>
           )}
 
-          {/* Modal 2: Add Why Choose Us Item */}
+          {/* Modal 2: Add/Edit Why Choose Us Item */}
           {isWhyChooseUsModalOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xs">
               <form
-                onSubmit={handleAddWhyChooseUs}
+                onSubmit={handleSaveWhyChooseUs}
                 className="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-4"
               >
                 <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                  <h3 className="text-lg font-bold text-white">Add &quot;Why Choose Us&quot; Feature</h3>
+                  <h3 className="text-lg font-bold text-white">
+                    {editingWhyChooseUsId ? 'Edit "Why Choose Us" Feature' : 'Add "Why Choose Us" Feature'}
+                  </h3>
                   <button
                     type="button"
-                    onClick={() => setIsWhyChooseUsModalOpen(false)}
+                    onClick={() => {
+                      setIsWhyChooseUsModalOpen(false);
+                      setEditingWhyChooseUsId(null);
+                    }}
                     className="text-slate-400 hover:text-white"
                   >
                     ✕
@@ -549,7 +674,10 @@ export default function AdminAboutPage() {
                 <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
                   <button
                     type="button"
-                    onClick={() => setIsWhyChooseUsModalOpen(false)}
+                    onClick={() => {
+                      setIsWhyChooseUsModalOpen(false);
+                      setEditingWhyChooseUsId(null);
+                    }}
                     className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-semibold"
                   >
                     Cancel
@@ -559,7 +687,11 @@ export default function AdminAboutPage() {
                     disabled={isAddingWhyChooseUs}
                     className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-semibold shadow-lg disabled:opacity-50"
                   >
-                    {isAddingWhyChooseUs ? "Creating..." : "Create Feature"}
+                    {isAddingWhyChooseUs
+                      ? "Saving..."
+                      : editingWhyChooseUsId
+                      ? "Save Changes"
+                      : "Create Feature"}
                   </button>
                 </div>
               </form>

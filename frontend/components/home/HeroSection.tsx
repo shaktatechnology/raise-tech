@@ -15,7 +15,7 @@ export default function HeroSection({ banner }: HeroSectionProps) {
     'Remember, constantly delivering more than expected requires dedication, effort, and a genuine desire to provide outstanding value. By embodying this principle, you can set yourself apart and create a lasting positive impression on those you interact with.';
 
   return (
-    <section className="relative bg-[#022c43] text-white overflow-hidden py-16 lg:py-24 min-h-[85vh] flex items-center">
+    <section className="relative bg-[#022c43] text-white overflow-hidden py-16 lg:h-[800px] flex items-center">
       {/* Background Hero Image */}
       <div className="absolute inset-0 z-0">
         <Image
