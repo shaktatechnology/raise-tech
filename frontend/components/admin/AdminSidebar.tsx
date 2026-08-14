@@ -1,14 +1,37 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { fetchApi } from "@/lib/api";
+import { ContactInquiry } from "@/lib/types";
+
+const INQUIRY_POLL_INTERVAL_MS = 30000; // 30s
 
 export default function AdminSidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [unreadInquiryCount, setUnreadInquiryCount] = useState<number>(0);
+
+  const loadInquiryCount = useCallback(async () => {
+    try {
+      const res = await fetchApi<{ contacts: ContactInquiry[] }>("/inquiries");
+      const unread = (res.contacts || []).filter((c) => c.is_read === 0).length;
+      setUnreadInquiryCount(unread);
+    } catch {
+      // Silently ignore — sidebar badge shouldn't disrupt admin navigation
+      // on a failed poll (e.g. transient network issue, expired session
+      // handled elsewhere by ProtectedRoute).
+    }
+  }, []);
+
+  useEffect(() => {
+    loadInquiryCount();
+    const interval = setInterval(loadInquiryCount, INQUIRY_POLL_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }, [loadInquiryCount]);
 
   const navLinks = [
     {
@@ -174,7 +197,12 @@ export default function AdminSidebar() {
                   <span className={isActive ? "text-cyan-400" : "text-slate-500"}>
                     {link.icon}
                   </span>
-                  <span>{link.label}</span>
+                  <span className="flex-1">{link.label}</span>
+                  {link.href === "/admin/inquiries" && unreadInquiryCount > 0 && (
+                    <span className="min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-cyan-500 text-slate-950 text-[10px] font-bold leading-none">
+                      {unreadInquiryCount > 99 ? "99+" : unreadInquiryCount}
+                    </span>
+                  )}
                 </Link>                
               );
             })}

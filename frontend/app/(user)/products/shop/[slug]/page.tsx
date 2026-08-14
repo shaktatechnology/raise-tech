@@ -9,11 +9,27 @@ import { fetchApi } from "@/lib/api";
 import { useCart } from "@/context/CartContext";
 import { useToast } from "@/context/ToastContext";
 
+interface ProductReview {
+  id?: string | number;
+  customer_name?: string;
+  user_name?: string;
+  name?: string;
+  created_at?: string;
+  rating?: number;
+  comment?: string;
+  review?: string;
+  body?: string;
+}
+
+type ProductWithReviews = Product & {
+  reviews?: ProductReview[] | { data?: ProductReview[] };
+};
+
 export default function ProductDetailPage() {
   const params = useParams();
   const slug = params?.slug as string;
 
-  const { addItem } = useCart();
+  const { addItem, isLoading: isCartLoading, isUpdating: isCartUpdating } = useCart();
   const { toast } = useToast();
 
   const [product, setProduct] = useState<Product | null>(null);
@@ -24,7 +40,7 @@ export default function ProductDetailPage() {
   const [selectedImageIndex, setSelectedImageIndex] = useState<number>(0);
   const [addedToast, setAddedToast] = useState<boolean>(false);
 
-  const [reviews, setReviews] = useState<any[]>([]);
+  const [reviews, setReviews] = useState<ProductReview[]>([]);
   const [reviewName, setReviewName] = useState<string>("");
   const [reviewComment, setReviewComment] = useState<string>("");
   const [reviewRating, setReviewRating] = useState<number>(0);
@@ -37,10 +53,12 @@ export default function ProductDetailPage() {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetchApi<{ status: string; data: Product }>(`/products/${slug}`);
+        const res = await fetchApi<{ status: string; data: ProductWithReviews }>(
+          `/products/${slug}`
+        );
         if (res && res.data) {
           setProduct(res.data);
-          const rawReviews = (res.data as any).reviews;
+          const rawReviews = res.data.reviews;
           const seeded = Array.isArray(rawReviews)
             ? rawReviews
             : Array.isArray(rawReviews?.data)
@@ -50,9 +68,9 @@ export default function ProductDetailPage() {
         } else {
           setError("Product not found");
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Failed to fetch product detail:", err);
-        setError(err.message || "Failed to load product details.");
+        setError(err instanceof Error ? err.message : "Failed to load product details.");
       } finally {
         setLoading(false);
       }
@@ -156,23 +174,30 @@ export default function ProductDetailPage() {
     ...(product.galleries?.map((g) => getImageUrl(g.image)) || []),
   ];
 
-  const handleAddToCart = () => {
-    if (!inStock) return;
+  const handleAddToCart = async () => {
+    if (!inStock || isCartLoading || isCartUpdating) return;
 
-    addItem({
-      id: String(product.id),
-      productSlug: product.slug,
-      name: product.title,
-      category: "Shop",
-      price: discountedPrice,
-      quantity,
-      image: getImageUrl(product.featured_image),
-      inStock,
-    });
+    try {
+      await addItem({
+        id: String(product.id),
+        productId: product.id,
+        productSlug: product.slug,
+        name: product.title,
+        category: "Shop",
+        price: discountedPrice,
+        quantity,
+        image: getImageUrl(product.featured_image),
+        inStock,
+      });
 
-    setAddedToast(true);
-    toast.success(`Added ${quantity} × ${product.title} to cart`);
-    setTimeout(() => setAddedToast(false), 1800);
+      setAddedToast(true);
+      toast.success(`Added ${quantity} × ${product.title} to cart`);
+      setTimeout(() => setAddedToast(false), 1800);
+    } catch (cartError) {
+      toast.error(
+        cartError instanceof Error ? cartError.message : "Failed to add this product to your cart."
+      );
+    }
   };
 
   return (
@@ -303,8 +328,8 @@ export default function ProductDetailPage() {
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-100">
                 <button
-                  onClick={handleAddToCart}
-                  disabled={!inStock}
+                  onClick={() => void handleAddToCart()}
+                  disabled={!inStock || isCartLoading || isCartUpdating}
                   className={`flex-1 py-3.5 rounded-xl font-bold text-sm transition-all duration-200 shadow-md cursor-pointer flex items-center justify-center gap-2 ${
                     addedToast
                       ? "bg-emerald-600 text-white"

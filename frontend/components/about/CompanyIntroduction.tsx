@@ -9,12 +9,9 @@ interface CompanyIntroductionProps {
 }
 
 export default function CompanyIntroduction({ aboutDescription, aboutImage }: CompanyIntroductionProps) {
-  // Admin writes one free-text description; split on blank lines into paragraphs.
+  // The admin writes this with a rich text editor, so it's stored as HTML.
   // Falls back to the static two-paragraph copy if the admin hasn't set one yet.
-  const paragraphs =
-    aboutDescription && aboutDescription.trim()
-      ? aboutDescription.split(/\n{2,}/).filter(Boolean)
-      : [ABOUT_PAGE_COPY.companyDescParagraph1, ABOUT_PAGE_COPY.companyDescParagraph2];
+  const hasDescription = Boolean(aboutDescription && aboutDescription.trim());
 
   const imageSrc = isValidImageSrc(aboutImage) ? aboutImage : '/images/about/company-intro.png';
 
@@ -33,16 +30,22 @@ export default function CompanyIntroduction({ aboutDescription, aboutImage }: Co
               </h2>
             </div>
 
-            <div className="space-y-4 text-gray-700 text-base sm:text-lg leading-relaxed text-justify">
-              {paragraphs.map((para, idx) => (
-                <p key={idx}>{para}</p>
-              ))}
-            </div>
+            {hasDescription ? (
+              <div
+                className="prose prose-p:text-gray-700 prose-p:text-base sm:prose-p:text-lg prose-p:leading-relaxed prose-headings:text-[#3c3c3c] prose-a:text-[#01a7e5] prose-strong:text-[#3c3c3c] max-w-none text-justify"
+                dangerouslySetInnerHTML={{ __html: aboutDescription as string }}
+              />
+            ) : (
+              <div className="space-y-4 text-gray-700 text-base sm:text-lg leading-relaxed text-justify">
+                <p>{ABOUT_PAGE_COPY.companyDescParagraph1}</p>
+                <p>{ABOUT_PAGE_COPY.companyDescParagraph2}</p>
+              </div>
+            )}
           </div>
 
           {/* Right Column: About Section Image */}
           <div className="lg:col-span-5 w-full">
-            <div className="relative w-full h-[320px] sm:h-[400px] lg:h-[460px] rounded-2xl overflow-hidden">
+            <div className="relative w-full h-[320px] sm:h-[400px] lg:h-[460px] rounded-2xl overflow-hidden shadow-xl border border-cyan-100">
               <Image
                 src={imageSrc}
                 alt="Raise Tech Pvt. Ltd. - About Us"

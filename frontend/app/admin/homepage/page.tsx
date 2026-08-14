@@ -6,6 +6,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import ProtectedRoute from "@/components/guards/ProtectedRoute";
 import { fetchApi } from "@/lib/api";
 import { useToast } from "@/context/ToastContext";
+import RichTextEditor from "@/components/admin/RichTextEditor";
 
 export interface BannerData {
   id?: number;
@@ -485,13 +486,14 @@ export default function AdminHomePage() {
 
                   <div>
                     <label className="block text-slate-300 font-semibold mb-1">Description</label>
-                    <textarea
-                      rows={4}
+                    <RichTextEditor
                       value={banner.description || ""}
-                      onChange={(e) => setBanner({ ...banner, description: e.target.value })}
+                      onChange={(html) =>
+                        setBanner({ ...banner, description: html })
+                      }
                       placeholder="Banner description..."
-                      className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-cyan-500 leading-relaxed"
-                    />
+                      minHeight="80px"                
+                      />
                   </div>
                 </div>
               </form>

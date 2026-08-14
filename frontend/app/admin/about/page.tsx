@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import ProtectedRoute from "@/components/guards/ProtectedRoute";
 import { fetchApi } from "@/lib/api";
 import { useToast } from "@/context/ToastContext";
+import RichTextEditor from "@/components/admin/RichTextEditor";
 
 export interface AboutSettingsData {
   id?: number;
@@ -467,14 +468,12 @@ export default function AdminAboutPage() {
                     <label className="block text-slate-300 font-semibold mb-1">
                       Company Overview &amp; Description
                     </label>
-                    <textarea
-                      rows={4}
-                      value={aboutSettings.about_description || ""}
-                      onChange={(e) =>
-                        setAboutSettings({ ...aboutSettings, about_description: e.target.value })
+                    <RichTextEditor
+                      value={aboutSettings.about_description}
+                      onChange={(html) =>
+                        setAboutSettings({ ...aboutSettings, about_description: html })
                       }
                       placeholder="Detailed introduction of Raise Tech Pvt. Ltd..."
-                      className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-cyan-500 leading-relaxed"
                     />
                   </div>
 
@@ -483,14 +482,13 @@ export default function AdminAboutPage() {
                       <label className="block text-slate-300 font-semibold mb-1">
                         Company Mission and Vision Statement
                       </label>
-                      <textarea
-                        rows={3}
+                      <RichTextEditor
                         value={aboutSettings.mission || ""}
-                        onChange={(e) =>
-                          setAboutSettings({ ...aboutSettings, mission: e.target.value })
+                        onChange={(html) =>
+                          setAboutSettings({ ...aboutSettings, mission: html })
                         }
                         placeholder="Mission statement..."
-                        className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-cyan-500"
+                        minHeight="80px"
                       />
                     </div>                    
                   </div>

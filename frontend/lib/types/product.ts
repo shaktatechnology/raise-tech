@@ -41,7 +41,10 @@ export interface ShopProduct {
 }
 
 export interface CartItem {
+  /** Cart row ID for authenticated carts; product ID for guest carts. */
   id: string;
+  /** Stable product ID used when adding, merging, and checking out. */
+  productId: number;
   productSlug: string;
   name: string;
   category: string;
@@ -59,7 +62,7 @@ export interface CheckoutFormData {
   city: string;
   address: string;
   deliveryMethod: 'standard' | 'express';
-  paymentMethod: 'cod' | 'esewa' | 'bank';
+  paymentMethod: 'cod';
   notes?: string;
   acceptTerms: boolean;
 }

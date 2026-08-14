@@ -6,12 +6,14 @@ import Link from 'next/link';
 import { Product } from '@/lib/types';
 import { fetchApi } from '@/lib/api';
 import { useCart } from '@/context/CartContext';
+import { useToast } from '@/context/ToastContext';
 import MobileFilterDrawer from './MobileFilterDrawer';
 
 const ITEMS_PER_PAGE = 8;
 
 export default function ShopCatalog() {
-  const { addItem } = useCart();
+  const { addItem, isLoading: isCartLoading, isUpdating: isCartUpdating } = useCart();
+  const { toast } = useToast();
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -31,8 +33,8 @@ export default function ShopCatalog() {
       try {
         const res = await fetchApi<{ status: string; data: Product[] }>("/products");
         setProducts(res.data || []);
-      } catch (err: any) {
-        setError(err.message || "Failed to load products.");
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "Failed to load products.");
       } finally {
         setLoading(false);
       }
@@ -70,23 +72,30 @@ export default function ShopCatalog() {
     return null;
   };
 
-  const handleAddToCart = (e: React.MouseEvent, product: Product) => {
+  const handleAddToCart = async (e: React.MouseEvent, product: Product) => {
     e.preventDefault();
-    if (product.stock_quantity <= 0) return;
+    if (product.stock_quantity <= 0 || isCartLoading || isCartUpdating) return;
 
-    addItem({
-      id: String(product.id),
-      productSlug: product.slug,
-      name: product.title,
-      category: "Shop",
-      price: calculateDiscountedPrice(product),
-      quantity: 1,
-      image: getImageUrl(product.featured_image),
-      inStock: product.stock_quantity > 0,
-    });
+    try {
+      await addItem({
+        id: String(product.id),
+        productId: product.id,
+        productSlug: product.slug,
+        name: product.title,
+        category: "Shop",
+        price: calculateDiscountedPrice(product),
+        quantity: 1,
+        image: getImageUrl(product.featured_image),
+        inStock: product.stock_quantity > 0,
+      });
 
-    setAddedProductId(product.id);
-    setTimeout(() => setAddedProductId(null), 1600);
+      setAddedProductId(product.id);
+      setTimeout(() => setAddedProductId(null), 1600);
+    } catch (cartError) {
+      toast.error(
+        cartError instanceof Error ? cartError.message : "Failed to add this product to your cart."
+      );
+    }
   };
 
   // Filter and sort
@@ -352,8 +361,8 @@ export default function ShopCatalog() {
                             {/* Buttons */}
                             <div className="space-y-2">
                               <button
-                                onClick={(e) => handleAddToCart(e, product)}
-                                disabled={!inStock}
+                                onClick={(e) => void handleAddToCart(e, product)}
+                                disabled={!inStock || isCartLoading || isCartUpdating}
                                 className={`w-full py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 ${
                                   isAdded
                                     ? 'bg-emerald-600 text-white'
