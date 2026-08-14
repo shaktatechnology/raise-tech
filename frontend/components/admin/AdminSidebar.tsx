@@ -175,15 +175,15 @@ export default function AdminSidebar() {
                     {link.icon}
                   </span>
                   <span>{link.label}</span>
-                </Link>
+                </Link>                
               );
             })}
-          </nav>
+          </nav>                 
         </div>
 
         {/* Bottom User Info & Actions */}
         <div className="p-4 border-t border-slate-800/80 space-y-3">
-          <Link
+          {/* <Link
             href="/"
             className="flex items-center justify-center gap-2 w-full py-2 bg-slate-950 hover:bg-slate-800 text-slate-300 border border-slate-800 rounded-xl text-xs font-medium transition"
           >
@@ -191,9 +191,9 @@ export default function AdminSidebar() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
             View Public Site
-          </Link>
+          </Link> */}
 
-          <div className="flex items-center justify-between pt-2">
+          {/* <div className="flex items-center justify-between pt-2">
             <div className="truncate pr-2">
               <div className="text-xs font-bold text-white truncate">{user?.name || "Admin"}</div>
               <div className="text-[10px] text-slate-500 truncate">{user?.email || "admin@raisetech.com"}</div>
@@ -207,7 +207,7 @@ export default function AdminSidebar() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
             </button>
-          </div>
+          </div> */}
         </div>
       </aside>
     </>
