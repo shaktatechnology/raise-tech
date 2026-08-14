@@ -24,7 +24,7 @@ class AboutController extends Controller
                 'about' => $about,
                 'what_we_do_items' => $whatWeDoItems,
                 'why_choose_us_items' => $whyChooseUsItems,
-            ]
+            ],
         ]);
     }
 
@@ -48,7 +48,7 @@ class AboutController extends Controller
 
         return response()->json([
             'message' => 'About settings updated successfully',
-            'data' => $about
+            'data' => $about,
         ]);
     }
 
@@ -57,17 +57,39 @@ class AboutController extends Controller
      */
     public function storeWhatWeDo(Request $request)
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
-        ]);
+        $validated = $this->validateWhatWeDo($request);
 
         $item = WhatWeDo::create($validated);
 
         return response()->json([
             'message' => 'What We Do item created successfully',
-            'data' => $item
+            'data' => $item,
         ], 201);
+    }
+
+    /**
+     * Update a What We Do card.
+     */
+    public function updateWhatWeDo(Request $request, WhatWeDo $whatWeDo)
+    {
+        $whatWeDo->update($this->validateWhatWeDo($request));
+
+        return response()->json([
+            'message' => 'What We Do item updated successfully',
+            'data' => $whatWeDo->fresh(),
+        ]);
+    }
+
+    /**
+     * Delete a What We Do card.
+     */
+    public function destroyWhatWeDo(WhatWeDo $whatWeDo)
+    {
+        $whatWeDo->delete();
+
+        return response()->json([
+            'message' => 'What We Do item deleted successfully',
+        ]);
     }
 
     /**
@@ -75,16 +97,72 @@ class AboutController extends Controller
      */
     public function storeWhyChooseUs(Request $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'required|string',
-        ]);
+        $validated = $this->validateWhyChooseUs($request);
 
         $item = WhyChooseUs::create($validated);
 
         return response()->json([
             'message' => 'Why Choose Us item created successfully',
-            'data' => $item
+            'data' => $item,
         ], 201);
+    }
+
+    /**
+     * Update a Why Choose Us card.
+     */
+    public function updateWhyChooseUs(Request $request, WhyChooseUs $whyChooseUs)
+    {
+        $whyChooseUs->update($this->validateWhyChooseUs($request));
+
+        return response()->json([
+            'message' => 'Why Choose Us item updated successfully',
+            'data' => $whyChooseUs->fresh(),
+        ]);
+    }
+
+    /**
+     * Delete a Why Choose Us card.
+     */
+    public function destroyWhyChooseUs(WhyChooseUs $whyChooseUs)
+    {
+        $whyChooseUs->delete();
+
+        return response()->json([
+            'message' => 'Why Choose Us item deleted successfully',
+        ]);
+    }
+
+    /**
+     * Validate the editable content of a What We Do card.
+     *
+     * @return array{title: string, description: string}
+     */
+    private function validateWhatWeDo(Request $request): array
+    {
+        return $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
+        ]);
+    }
+
+    /**
+     * Validate and normalize the editable content of a Why Choose Us card.
+     * The existing admin UI calls the heading "name", while the database
+     * stores it as "title".
+     *
+     * @return array{title: string, description: string}
+     */
+    private function validateWhyChooseUs(Request $request): array
+    {
+        $validated = $request->validate([
+            'name' => 'nullable|string|max:255|required_without:title',
+            'title' => 'nullable|string|max:255|required_without:name',
+            'description' => 'required|string',
+        ]);
+
+        return [
+            'title' => $validated['title'] ?? $validated['name'],
+            'description' => $validated['description'],
+        ];
     }
 }
