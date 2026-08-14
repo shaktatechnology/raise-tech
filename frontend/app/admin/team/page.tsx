@@ -51,22 +51,14 @@ export default function AdminTeamPage() {
         formData.append("image", imageFile);
       }
 
-      const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
-      const url = editingMember.id
-        ? `http://localhost:8000/api/team/${editingMember.id}`
-        : `http://localhost:8000/api/team`;
+      const endpoint = editingMember.id
+        ? `/team/${editingMember.id}`
+        : `/team`;
 
-      const response = await fetch(url, {
+      const resData = await fetchApi(endpoint, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/json",
-        },
         body: formData,
       });
-
-      const resData = await response.json();
-      if (!response.ok) throw new Error(resData.message || "Failed to save team member.");
 
       if (editingMember.id) {
         setTeam((prev) =>
@@ -98,8 +90,9 @@ export default function AdminTeamPage() {
 
   const getImageUrl = (path: string | null) => {
     if (!path) return null;
-    if (path.startsWith("http") || path.startsWith("/")) return path;
-    return `http://localhost:8000/storage/${path}`;
+    if (path.startsWith("http://") || path.startsWith("https://")) return path;
+    const baseUrl = process.env.NEXT_PUBLIC_STORAGE_URL || "http://localhost:8000";
+    return `${baseUrl}${path.startsWith("/") ? "" : "/"}${path}`;
   };
 
   return (

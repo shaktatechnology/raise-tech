@@ -79,17 +79,12 @@ export default function AdminProductsPage() {
       const formData = new FormData();
       formData.append("is_active", (!product.is_active) ? "1" : "0");
 
-      const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
-      const res = await fetch(`http://localhost:8000/api/products/${product.id}`, {
-        method: "POST", // Laravel accepts POST for update
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/json",
-        },
+      const res = await fetchApi(`/products/${product.id}`, {
+        method: "POST",
         body: formData,
       });
 
-      if (res.ok) {
+      if (res) {
         setProducts((prev) =>
           prev.map((p) => (p.id === product.id ? { ...p, is_active: !product.is_active } : p))
         );
@@ -178,25 +173,14 @@ export default function AdminProductsPage() {
         });
       }
 
-      const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
-      const url = editingProduct.id
-        ? `http://localhost:8000/api/products/${editingProduct.id}`
-        : `http://localhost:8000/api/products`;
+      const endpoint = editingProduct.id
+        ? `/products/${editingProduct.id}`
+        : `/products`;
 
-      const response = await fetch(url, {
+      const resData = await fetchApi(endpoint, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/json",
-        },
         body: formData,
       });
-
-      const resData = await response.json();
-
-      if (!response.ok) {
-        throw new Error(resData.message || "Failed to save product.");
-      }
 
       if (editingProduct.id) {
         setProducts((prev) =>
@@ -219,8 +203,9 @@ export default function AdminProductsPage() {
 
   const getImageUrl = (path: string) => {
     if (!path) return "/placeholder.jpg";
-    if (path.startsWith("http") || path.startsWith("/")) return path;
-    return `http://localhost:8000/storage/${path}`;
+    if (path.startsWith("http://") || path.startsWith("https://")) return path;
+    const baseUrl = process.env.NEXT_PUBLIC_STORAGE_URL || "http://localhost:8000";
+    return `${baseUrl}${path.startsWith("/") ? "" : "/"}${path}`;
   };
 
   return (

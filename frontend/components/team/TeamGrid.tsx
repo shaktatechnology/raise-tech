@@ -35,8 +35,9 @@ export default function TeamGrid() {
 
   const getImageUrl = (path: string | null) => {
     if (!path) return null;
-    if (path.startsWith("http") || path.startsWith("/")) return path;
-    return `http://localhost:8000/storage/${path}`;
+    if (path.startsWith("http://") || path.startsWith("https://")) return path;
+    const baseUrl = process.env.NEXT_PUBLIC_STORAGE_URL || "http://localhost:8000";
+    return `${baseUrl}${path.startsWith("/") ? "" : "/"}${path}`;
   };
 
   if (loading) {

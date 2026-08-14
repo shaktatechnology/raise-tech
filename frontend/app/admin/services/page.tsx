@@ -75,10 +75,8 @@ export default function AdminServicesPage() {
   const getImageUrl = (path: string | null) => {
     if (!path) return null;
     if (path.startsWith("http://") || path.startsWith("https://")) return path;
-    if (path.startsWith("/storage/")) return `http://localhost:8000${path}`;
-    if (path.startsWith("storage/")) return `http://localhost:8000/${path}`;
-    if (path.startsWith("/")) return `http://localhost:8000${path}`;
-    return `http://localhost:8000/storage/${path}`;
+    const baseUrl = process.env.NEXT_PUBLIC_STORAGE_URL || "http://localhost:8000";
+    return `${baseUrl}${path.startsWith("/") ? "" : "/"}${path}`;
   };
 
   // POST /api/services/header (multipart/form-data)
@@ -90,20 +88,10 @@ export default function AdminServicesPage() {
       if (headerTitleInput) formData.append("title", headerTitleInput);
       if (headerHeroFile) formData.append("hero_image", headerHeroFile);
 
-      const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
-      const res = await fetch("http://localhost:8000/api/services/header", {
+      const resData = await fetchApi("/services/header", {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/json",
-        },
         body: formData,
       });
-
-      const resData = await res.json();
-      if (!res.ok) {
-        throw new Error(resData.message || "Failed to update service header.");
-      }
 
       setHeaderData(resData.header);
       setHeaderHeroFile(null);
@@ -139,24 +127,14 @@ export default function AdminServicesPage() {
         formData.append("image", serviceImageFile);
       }
 
-      const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
-      const url = editingService.id
-        ? `http://localhost:8000/api/services/${editingService.id}`
-        : `http://localhost:8000/api/services`;
+      const endpoint = editingService.id
+        ? `/services/${editingService.id}`
+        : `/services`;
 
-      const response = await fetch(url, {
+      const resData = await fetchApi(endpoint, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/json",
-        },
         body: formData,
       });
-
-      const resData = await response.json();
-      if (!response.ok) {
-        throw new Error(resData.message || "Failed to save service.");
-      }
 
       const savedService: ServiceData = resData.service;
       const successMessage = resData.message || (editingService.id ? "Service updated successfully." : "Service created successfully.");

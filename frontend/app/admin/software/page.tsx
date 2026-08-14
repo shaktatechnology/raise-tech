@@ -64,18 +64,10 @@ export default function AdminSoftwarePage() {
       const formData = new FormData();
       formData.append("hero_image", heroImageFile);
 
-      const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
-      const res = await fetch("http://localhost:8000/api/software/section", {
+      const resData = await fetchApi("/software/section", {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/json",
-        },
         body: formData,
       });
-
-      const resData = await res.json();
-      if (!res.ok) throw new Error(resData.message || "Failed to update hero image.");
 
       setSection(resData.data);
       setHeroImageFile(null);
@@ -106,22 +98,14 @@ export default function AdminSoftwarePage() {
         formData.append("image", softwareImageFile);
       }
 
-      const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
-      const url = editingItem.id
-        ? `http://localhost:8000/api/software/${editingItem.id}`
-        : `http://localhost:8000/api/software`;
+      const endpoint = editingItem.id
+        ? `/software/${editingItem.id}`
+        : `/software`;
 
-      const response = await fetch(url, {
+      const resData = await fetchApi(endpoint, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/json",
-        },
         body: formData,
       });
-
-      const resData = await response.json();
-      if (!response.ok) throw new Error(resData.message || "Failed to save software product.");
 
       if (editingItem.id) {
         setSoftwareList((prev) =>
@@ -153,8 +137,9 @@ export default function AdminSoftwarePage() {
 
   const getImageUrl = (path: string | null) => {
     if (!path) return null;
-    if (path.startsWith("http") || path.startsWith("/")) return path;
-    return `http://localhost:8000/storage/${path}`;
+    if (path.startsWith("http://") || path.startsWith("https://")) return path;
+    const baseUrl = process.env.NEXT_PUBLIC_STORAGE_URL || "http://localhost:8000";
+    return `${baseUrl}${path.startsWith("/") ? "" : "/"}${path}`;
   };
 
   return (
