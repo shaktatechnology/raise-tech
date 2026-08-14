@@ -24,6 +24,13 @@ export default function ProductDetailPage() {
   const [selectedImageIndex, setSelectedImageIndex] = useState<number>(0);
   const [addedToast, setAddedToast] = useState<boolean>(false);
 
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [reviewName, setReviewName] = useState<string>("");
+  const [reviewComment, setReviewComment] = useState<string>("");
+  const [reviewRating, setReviewRating] = useState<number>(0);
+  const [hoverRating, setHoverRating] = useState<number>(0);
+  const [reviewError, setReviewError] = useState<string | null>(null);
+
   useEffect(() => {
     async function loadProduct() {
       if (!slug) return;
@@ -33,6 +40,13 @@ export default function ProductDetailPage() {
         const res = await fetchApi<{ status: string; data: Product }>(`/products/${slug}`);
         if (res && res.data) {
           setProduct(res.data);
+          const rawReviews = (res.data as any).reviews;
+          const seeded = Array.isArray(rawReviews)
+            ? rawReviews
+            : Array.isArray(rawReviews?.data)
+            ? rawReviews.data
+            : [];
+          setReviews(seeded);
         } else {
           setError("Product not found");
         }
@@ -106,6 +120,37 @@ export default function ProductDetailPage() {
   const discountedPrice = calculateDiscountedPrice();
   const discountPercent = getDiscountPercent();
   const inStock = product.stock_quantity > 0;
+
+  const averageRating =
+    reviews.length > 0
+      ? reviews.reduce((sum, r) => sum + Number(r.rating || 0), 0) / reviews.length
+      : 0;
+
+  const handleSubmitReview = () => {
+    if (reviewRating === 0) {
+      setReviewError("Please select a star rating.");
+      return;
+    }
+    if (!reviewComment.trim()) {
+      setReviewError("Please write a comment.");
+      return;
+    }
+
+    const newReview = {
+      id: `local-${Date.now()}`,
+      customer_name: reviewName.trim() || "Anonymous",
+      rating: reviewRating,
+      comment: reviewComment.trim(),
+      created_at: new Date().toISOString(),
+    };
+
+    setReviews((prev) => [newReview, ...prev]);
+    setReviewName("");
+    setReviewComment("");
+    setReviewRating(0);
+    setReviewError(null);
+    toast.success("Thanks for your review!");
+  };
 
   // Build image gallery
   const galleryList = [
@@ -195,9 +240,9 @@ export default function ProductDetailPage() {
                   <span className="text-xs font-bold uppercase tracking-wider text-[#01A7E5] bg-cyan-50 px-3 py-1 rounded-md">
                     Shop Product
                   </span>
-                  {product.sku && (
+                  {/* {product.sku && (
                     <span className="text-xs text-gray-500 font-mono">SKU: {product.sku}</span>
-                  )}
+                  )} */}
                 </div>
 
                 <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 leading-tight mb-3">
@@ -221,16 +266,6 @@ export default function ProductDetailPage() {
                   <p className="text-sm text-gray-600 leading-relaxed mb-6 font-medium">
                     {product.short_description}
                   </p>
-                )}
-
-                {/* Full Detailed Description */}
-                {product.description && (
-                  <div className="prose prose-sm text-gray-600 mb-6 border-t border-gray-100 pt-4">
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">
-                      Description &amp; Specifications
-                    </h3>
-                    <p className="whitespace-pre-line text-sm leading-relaxed">{product.description}</p>
-                  </div>
                 )}
 
                 {/* Quantity Adjustment & Stock Status */}
@@ -299,15 +334,180 @@ export default function ProductDetailPage() {
                   )}
                 </button>
 
-                <Link
+                {/* <Link
                   href="/cart"
                   className="px-6 py-3.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-900 font-bold text-sm text-center transition-colors"
                 >
                   View Cart
-                </Link>
+                </Link> */}
               </div>
             </div>
           </div>
+
+          {/* Full Detailed Description */}
+          {product.description && (
+            <div className="prose prose-sm text-gray-600 mt-10 pt-8 border-t border-gray-100 max-w-none">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">
+                Description &amp; Specifications
+              </h3>
+              <p className="whitespace-pre-line text-sm leading-relaxed">{product.description}</p>
+            </div>
+          )}
+
+          {/* Reviews Section
+          <div className="mt-10 pt-8 border-t border-gray-100">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                Customer Reviews
+              </h3>
+              {reviews.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <svg
+                        key={star}
+                        className={`w-4 h-4 ${
+                          star <= Math.round(averageRating) ? "text-amber-400" : "text-gray-200"
+                        }`}
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.958a1 1 0 00.95.69h4.162c.969 0 1.371 1.24.588 1.81l-3.368 2.447a1 1 0 00-.363 1.118l1.287 3.957c.3.922-.755 1.688-1.539 1.118l-3.367-2.447a1 1 0 00-1.176 0l-3.367 2.447c-.784.57-1.838-.196-1.539-1.118l1.287-3.957a1 1 0 00-.364-1.118L2.63 9.385c-.783-.57-.38-1.81.588-1.81h4.163a1 1 0 00.95-.69l1.286-3.958z" />
+                      </svg>
+                    ))}
+                  </div>
+                  <span className="text-sm font-bold text-gray-900">{averageRating.toFixed(1)}</span>
+                  <span className="text-xs text-gray-500">
+                    ({reviews.length} {reviews.length === 1 ? "review" : "reviews"})
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Write a Review Form 
+            <div className="bg-slate-50 border border-gray-100 rounded-2xl p-5 sm:p-6 mb-6">
+              <h4 className="text-sm font-bold text-gray-900 mb-4">Write a Review</h4>
+
+              <div className="mb-4">
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                  Your Rating
+                </label>
+                <div className="flex items-center gap-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setReviewRating(star)}
+                      onMouseEnter={() => setHoverRating(star)}
+                      onMouseLeave={() => setHoverRating(0)}
+                      className="cursor-pointer p-0.5"
+                      aria-label={`Rate ${star} star${star > 1 ? "s" : ""}`}
+                    >
+                      <svg
+                        className={`w-7 h-7 transition-colors ${
+                          star <= (hoverRating || reviewRating) ? "text-amber-400" : "text-gray-200"
+                        }`}
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.958a1 1 0 00.95.69h4.162c.969 0 1.371 1.24.588 1.81l-3.368 2.447a1 1 0 00-.363 1.118l1.287 3.957c.3.922-.755 1.688-1.539 1.118l-3.367-2.447a1 1 0 00-1.176 0l-3.367 2.447c-.784.57-1.838-.196-1.539-1.118l1.287-3.957a1 1 0 00-.364-1.118L2.63 9.385c-.783-.57-.38-1.81.588-1.81h4.163a1 1 0 00.95-.69l1.286-3.958z" />
+                      </svg>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                  Name (optional)
+                </label>
+                <input
+                  type="text"
+                  value={reviewName}
+                  onChange={(e) => setReviewName(e.target.value)}
+                  placeholder="Your name"
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#01A7E5]/30 focus:border-[#01A7E5]"
+                />
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                  Your Comment
+                </label>
+                <textarea
+                  value={reviewComment}
+                  onChange={(e) => setReviewComment(e.target.value)}
+                  placeholder="Share your experience with this product..."
+                  rows={3}
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-[#01A7E5]/30 focus:border-[#01A7E5]"
+                />
+              </div>
+
+              {reviewError && (
+                <p className="text-xs font-bold text-rose-600 mb-3">{reviewError}</p>
+              )}
+
+              <button
+                onClick={handleSubmitReview}
+                className="px-6 py-2.5 rounded-xl bg-[#01A7E5] hover:bg-[#018bc0] text-white font-bold text-sm transition-colors cursor-pointer"
+              >
+                Submit Review
+              </button>
+            </div>
+
+            {reviews.length === 0 ? (
+              <div className="bg-slate-50 border border-gray-100 rounded-2xl py-10 px-6 text-center">
+                <p className="text-sm text-gray-500 font-medium">
+                  No reviews yet. Be the first to share your thoughts on this product.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-5">
+                {reviews.map((review, idx) => (
+                  <div
+                    key={review.id ?? idx}
+                    className="border border-gray-100 rounded-2xl p-5 bg-slate-50/50"
+                  >
+                    <div className="flex items-start justify-between gap-3 mb-2">
+                      <div>
+                        <p className="text-sm font-bold text-gray-900">
+                          {review.customer_name || review.user_name || review.name || "Anonymous"}
+                        </p>
+                        {review.created_at && (
+                          <p className="text-xs text-gray-400 mt-0.5">
+                            {new Date(review.created_at).toLocaleDateString(undefined, {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                            })}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex items-center shrink-0">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <svg
+                            key={star}
+                            className={`w-3.5 h-3.5 ${
+                              star <= Number(review.rating || 0) ? "text-amber-400" : "text-gray-200"
+                            }`}
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.958a1 1 0 00.95.69h4.162c.969 0 1.371 1.24.588 1.81l-3.368 2.447a1 1 0 00-.363 1.118l1.287 3.957c.3.922-.755 1.688-1.539 1.118l-3.367-2.447a1 1 0 00-1.176 0l-3.367 2.447c-.784.57-1.838-.196-1.539-1.118l1.287-3.957a1 1 0 00-.364-1.118L2.63 9.385c-.783-.57-.38-1.81.588-1.81h4.163a1 1 0 00.95-.69l1.286-3.958z" />
+                          </svg>
+                        ))}
+                      </div>
+                    </div>
+                    {(review.comment || review.review || review.body) && (
+                      <p className="text-sm text-gray-600 leading-relaxed">
+                        {review.comment || review.review || review.body}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div> */}
         </div>
       </div>
     </article>
