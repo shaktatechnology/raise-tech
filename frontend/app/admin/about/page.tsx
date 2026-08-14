@@ -418,7 +418,7 @@ export default function AdminAboutPage() {
                       />
                     </div>
 
-                    <div>
+                    {/* <div>
                       <label className="block text-slate-400 mb-1">Why Choose Us Image Path</label>
                       <input
                         type="text"
@@ -429,7 +429,7 @@ export default function AdminAboutPage() {
                         placeholder="/images/about/why-choose-us.png"
                         className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-cyan-500"
                       />
-                    </div>
+                    </div> */}
                   </div>
                 </div>
               </form>
