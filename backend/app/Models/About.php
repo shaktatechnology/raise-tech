@@ -17,7 +17,6 @@ class About extends Model
         'about_description',
         'about_image',
         'what_we_do_image',
-        'why_choose_us_image',
         'mission',
     ];
 }

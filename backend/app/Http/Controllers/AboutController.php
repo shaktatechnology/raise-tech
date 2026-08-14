@@ -6,6 +6,8 @@ use App\Models\About;
 use App\Models\WhatWeDo;
 use App\Models\WhyChooseUs;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 class AboutController extends Controller
 {
@@ -29,27 +31,59 @@ class AboutController extends Controller
     }
 
     /**
-     * Update main About settings
+     * Update main About settings.
+     *
+     * hero_image, about_image, and what_we_do_image are uploaded as files
+     * (multipart/form-data) and stored on the public disk. Sending no file
+     * for a given field leaves the existing stored image untouched.
      */
     public function updateAbout(Request $request)
     {
         $validated = $request->validate([
-            'hero_image' => 'nullable|string',
             'about_description' => 'nullable|string',
-            'about_image' => 'nullable|string',
-            'what_we_do_image' => 'nullable|string',
-            'why_choose_us_image' => 'nullable|string',
             'mission' => 'nullable|string',
-            'vision' => 'nullable|string',
+            'hero_image' => 'nullable|image|max:5120',
+            'about_image' => 'nullable|image|max:5120',
+            'what_we_do_image' => 'nullable|image|max:5120',
         ]);
 
         $about = About::firstOrCreate(['id' => 1]);
-        $about->update($validated);
+
+        $updates = [
+            'about_description' => $validated['about_description'] ?? $about->about_description,
+            'mission' => $validated['mission'] ?? $about->mission,
+        ];
+
+        foreach (['hero_image', 'about_image', 'what_we_do_image'] as $field) {
+            if ($request->hasFile($field)) {
+                $updates[$field] = $this->storeAboutImage($request->file($field), $about->{$field});
+            }
+        }
+
+        $about->update($updates);
 
         return response()->json([
             'message' => 'About settings updated successfully',
-            'data' => $about,
+            'data' => $about->fresh(),
         ]);
+    }
+
+    /**
+     * Store a newly uploaded About-page image on the public disk, deleting
+     * the previously stored image (if any) so orphaned files don't pile up.
+     */
+    private function storeAboutImage(UploadedFile $file, ?string $existingPath): string
+    {
+        if ($existingPath) {
+            $relativePath = ltrim(str_replace('/storage/', '', $existingPath), '/');
+            if (Storage::disk('public')->exists($relativePath)) {
+                Storage::disk('public')->delete($relativePath);
+            }
+        }
+
+        $storedPath = $file->store('about', 'public');
+
+        return '/storage/' . $storedPath;
     }
 
     /**

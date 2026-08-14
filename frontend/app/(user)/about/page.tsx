@@ -23,7 +23,7 @@ export default async function AboutPage() {
       <AboutHero heroImage={about?.hero_image} />
 
       {/* 2. Company Introduction & Expertise */}
-      <CompanyIntroduction aboutDescription={about?.about_description} />
+      <CompanyIntroduction aboutDescription={about?.about_description} aboutImage={about?.about_image} />
 
       {/* 3. What We Do */}
       <WhatWeDoSection items={whatWeDoItems} teamImage={about?.what_we_do_image} />

@@ -11,7 +11,6 @@ export interface AboutSettingsData {
   about_description: string | null;
   about_image: string | null;
   what_we_do_image: string | null;
-  why_choose_us_image: string | null;
   mission: string | null;
   vision: string | null;
   created_at?: string | null;
@@ -34,6 +33,124 @@ export interface WhyChooseUsItemData {
   updated_at?: string | null;
 }
 
+// Resolve a stored image path (e.g. "/storage/about/xyz.png") into a full URL.
+function getImageUrl(path: string | null): string | null {
+  if (!path) return null;
+  if (path.startsWith("http://") || path.startsWith("https://")) return path;
+  if (path.startsWith("/storage/")) return `http://localhost:8000${path}`;
+  if (path.startsWith("storage/")) return `http://localhost:8000/${path}`;
+  if (path.startsWith("/")) return `http://localhost:8000${path}`;
+  return `http://localhost:8000/storage/${path}`;
+}
+
+interface ImageDropzoneProps {
+  label: string;
+  file: File | null;
+  existingUrl: string | null;
+  onFileSelect: (file: File | null) => void;
+}
+
+function ImageDropzone({ label, file, existingUrl, onFileSelect }: ImageDropzoneProps) {
+  const [isDragActive, setIsDragActive] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!file) {
+      setPreviewUrl(null);
+      return;
+    }
+    const objectUrl = URL.createObjectURL(file);
+    setPreviewUrl(objectUrl);
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [file]);
+
+  const displayUrl = previewUrl || existingUrl;
+
+  const handleFiles = (fileList: FileList | null) => {
+    if (!fileList || fileList.length === 0) return;
+    const picked = fileList[0];
+    if (!picked.type.startsWith("image/")) return;
+    onFileSelect(picked);
+  };
+
+  return (
+    <div>
+      <label className="block text-slate-400 mb-1">{label}</label>
+      <div
+        onClick={() => inputRef.current?.click()}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setIsDragActive(true);
+        }}
+        onDragLeave={() => setIsDragActive(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setIsDragActive(false);
+          handleFiles(e.dataTransfer.files);
+        }}
+        className={`relative w-full rounded-xl border-2 border-dashed cursor-pointer transition-colors overflow-hidden ${
+          isDragActive
+            ? "border-cyan-500 bg-cyan-500/10"
+            : "border-slate-800 bg-slate-950 hover:border-slate-700"
+        }`}
+      >
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => handleFiles(e.target.files)}
+        />
+
+        {displayUrl ? (
+          <div className="relative h-36 w-full">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={displayUrl} alt={label} className="w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-slate-950/0 hover:bg-slate-950/50 transition-colors flex items-center justify-center opacity-0 hover:opacity-100">
+              <span className="text-[11px] font-semibold text-white">Click or drop to replace</span>
+            </div>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onFileSelect(null);
+                if (inputRef.current) inputRef.current.value = "";
+              }}
+              className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center rounded-full bg-slate-950/80 text-slate-300 hover:text-white hover:bg-rose-600 text-xs font-bold"
+              aria-label={`Clear ${label}`}
+            >
+              ✕
+            </button>
+          </div>
+        ) : (
+          <div className="h-36 flex flex-col items-center justify-center gap-1.5 text-center px-3">
+            <svg
+              className="w-6 h-6 text-slate-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M4 8h16M4 8a2 2 0 012-2h12a2 2 0 012 2M4 8a2 2 0 002 2v6a2 2 0 002 2h8a2 2 0 002-2v-6a2 2 0 002-2"
+              />
+            </svg>
+            <p className="text-slate-500 text-[11px] leading-snug">
+              Drag &amp; drop an image, or click to choose a file
+            </p>
+          </div>
+        )}
+      </div>
+      {file && (
+        <p className="mt-1 text-[11px] text-slate-500 truncate">{file.name}</p>
+      )}
+    </div>
+  );
+}
+
 export default function AdminAboutPage() {
   const { toast } = useToast();
 
@@ -42,10 +159,13 @@ export default function AdminAboutPage() {
     about_description: "",
     about_image: "",
     what_we_do_image: "",
-    why_choose_us_image: "",
     mission: "",
     vision: "",
   });
+
+  const [heroImageFile, setHeroImageFile] = useState<File | null>(null);
+  const [aboutImageFile, setAboutImageFile] = useState<File | null>(null);
+  const [whatWeDoImageFile, setWhatWeDoImageFile] = useState<File | null>(null);
 
   const [whatWeDoItems, setWhatWeDoItems] = useState<WhatWeDoItemData[]>([]);
   const [whyChooseUsItems, setWhyChooseUsItems] = useState<WhyChooseUsItemData[]>([]);
@@ -84,7 +204,6 @@ export default function AdminAboutPage() {
             about_description: res.data.about.about_description || "",
             about_image: res.data.about.about_image || "",
             what_we_do_image: res.data.about.what_we_do_image || "",
-            why_choose_us_image: res.data.about.why_choose_us_image || "",
             mission: res.data.about.mission || "",
             vision: res.data.about.vision || "",
           });
@@ -104,29 +223,36 @@ export default function AdminAboutPage() {
     loadAboutData();
   }, [loadAboutData]);
 
-  // POST /api/about/update
+  // POST /api/about/update (multipart/form-data — text fields + optional image files)
   const handleSaveAboutSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSavingSettings(true);
     try {
-      const payload = {
-        hero_image: aboutSettings.hero_image?.trim() || null,
-        about_description: aboutSettings.about_description?.trim() || null,
-        about_image: aboutSettings.about_image?.trim() || null,
-        what_we_do_image: aboutSettings.what_we_do_image?.trim() || null,
-        why_choose_us_image: aboutSettings.why_choose_us_image?.trim() || null,
-        mission: aboutSettings.mission?.trim() || null,
-        vision: aboutSettings.vision?.trim() || null,
-      };
+      const formData = new FormData();
+      formData.append("about_description", aboutSettings.about_description?.trim() || "");
+      formData.append("mission", aboutSettings.mission?.trim() || "");
 
+      // Only attach a field if the admin actually picked a new file —
+      // leaving it out keeps the existing stored image on the backend.
+      if (heroImageFile) formData.append("hero_image", heroImageFile);
+      if (aboutImageFile) formData.append("about_image", aboutImageFile);
+      if (whatWeDoImageFile) formData.append("what_we_do_image", whatWeDoImageFile);
+
+      // NOTE: don't set a Content-Type header here — the browser needs to
+      // set its own multipart boundary. If fetchApi() forces
+      // 'Content-Type: application/json' by default, this call will need
+      // an update inside lib/api.ts to skip that header when body is FormData.
       const res = await fetchApi<{ message: string; data: AboutSettingsData }>("/about/update", {
         method: "POST",
-        body: JSON.stringify(payload),
+        body: formData,
       });
 
       if (res && res.data) {
         setAboutSettings(res.data);
       }
+      setHeroImageFile(null);
+      setAboutImageFile(null);
+      setWhatWeDoImageFile(null);
       toast.success(res.message || "About settings updated successfully");
     } catch (err: any) {
       console.error("Failed to update about settings:", err);
@@ -372,64 +498,33 @@ export default function AdminAboutPage() {
                   </div>
                 </div>
 
-                {/* Banner & Image URLs */}
+                {/* Banner & Image Uploads */}
                 <div className="border-t border-slate-800 pt-6 space-y-4">
                   <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                    Image Banner URLs / Asset Paths
+                    Banner Images
                   </h3>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                    <div>
-                      <label className="block text-slate-400 mb-1">Hero Image Path / URL</label>
-                      <input
-                        type="text"
-                        value={aboutSettings.hero_image || ""}
-                        onChange={(e) =>
-                          setAboutSettings({ ...aboutSettings, hero_image: e.target.value })
-                        }
-                        placeholder="/images/about/about-hero.png"
-                        className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-cyan-500"
-                      />
-                    </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
+                    <ImageDropzone
+                      label="Hero Image"
+                      file={heroImageFile}
+                      existingUrl={getImageUrl(aboutSettings.hero_image)}
+                      onFileSelect={setHeroImageFile}
+                    />
 
-                    <div>
-                      <label className="block text-slate-400 mb-1">About Section Image Path</label>
-                      <input
-                        type="text"
-                        value={aboutSettings.about_image || ""}
-                        onChange={(e) =>
-                          setAboutSettings({ ...aboutSettings, about_image: e.target.value })
-                        }
-                        placeholder="/images/about/company-intro.png"
-                        className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-cyan-500"
-                      />
-                    </div>
+                    <ImageDropzone
+                      label="About Section Image"
+                      file={aboutImageFile}
+                      existingUrl={getImageUrl(aboutSettings.about_image)}
+                      onFileSelect={setAboutImageFile}
+                    />
 
-                    <div>
-                      <label className="block text-slate-400 mb-1">What We Do Section Image Path</label>
-                      <input
-                        type="text"
-                        value={aboutSettings.what_we_do_image || ""}
-                        onChange={(e) =>
-                          setAboutSettings({ ...aboutSettings, what_we_do_image: e.target.value })
-                        }
-                        placeholder="/images/about/what-we-do.png"
-                        className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-cyan-500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-slate-400 mb-1">Why Choose Us Image Path</label>
-                      <input
-                        type="text"
-                        value={aboutSettings.why_choose_us_image || ""}
-                        onChange={(e) =>
-                          setAboutSettings({ ...aboutSettings, why_choose_us_image: e.target.value })
-                        }
-                        placeholder="/images/about/why-choose-us.png"
-                        className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-cyan-500"
-                      />
-                    </div>
+                    <ImageDropzone
+                      label="What We Do Section Image"
+                      file={whatWeDoImageFile}
+                      existingUrl={getImageUrl(aboutSettings.what_we_do_image)}
+                      onFileSelect={setWhatWeDoImageFile}
+                    />
                   </div>
                 </div>
               </form>

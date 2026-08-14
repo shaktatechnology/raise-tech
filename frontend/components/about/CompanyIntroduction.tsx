@@ -1,18 +1,22 @@
 import React from 'react';
+import Image from 'next/image';
 import { ABOUT_PAGE_COPY } from '@/lib/data/aboutData';
-import ExpertiseDiagram from './ExpertiseDiagram';
+import { isValidImageSrc } from '@/lib/data/getAboutPageData';
 
 interface CompanyIntroductionProps {
   aboutDescription?: string | null;
+  aboutImage?: string | null;
 }
 
-export default function CompanyIntroduction({ aboutDescription }: CompanyIntroductionProps) {
+export default function CompanyIntroduction({ aboutDescription, aboutImage }: CompanyIntroductionProps) {
   // Admin writes one free-text description; split on blank lines into paragraphs.
   // Falls back to the static two-paragraph copy if the admin hasn't set one yet.
   const paragraphs =
     aboutDescription && aboutDescription.trim()
       ? aboutDescription.split(/\n{2,}/).filter(Boolean)
       : [ABOUT_PAGE_COPY.companyDescParagraph1, ABOUT_PAGE_COPY.companyDescParagraph2];
+
+  const imageSrc = isValidImageSrc(aboutImage) ? aboutImage : '/images/about/company-intro.png';
 
   return (
     <section className="py-12 sm:py-16 lg:py-20 bg-white">
@@ -36,9 +40,16 @@ export default function CompanyIntroduction({ aboutDescription }: CompanyIntrodu
             </div>
           </div>
 
-          {/* Right Column: Expertise Section */}
+          {/* Right Column: About Section Image */}
           <div className="lg:col-span-5 w-full">
-            <ExpertiseDiagram />
+            <div className="relative w-full h-[320px] sm:h-[400px] lg:h-[460px] rounded-2xl overflow-hidden">
+              <Image
+                src={imageSrc}
+                alt="Raise Tech Pvt. Ltd. - About Us"
+                fill
+                className="object-cover object-center"
+              />
+            </div>
           </div>
         </div>
       </div>
