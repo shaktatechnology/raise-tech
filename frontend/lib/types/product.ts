@@ -62,7 +62,7 @@ export interface CheckoutFormData {
   city: string;
   address: string;
   deliveryMethod: 'standard' | 'express';
-  paymentMethod: 'cod' | 'esewa' | 'bank';
+  paymentMethod: 'cod';
   notes?: string;
   acceptTerms: boolean;
 }
