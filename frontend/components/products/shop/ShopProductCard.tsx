@@ -5,33 +5,42 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ShopProduct } from '@/lib/types/product';
 import { useCart } from '@/context/CartContext';
+import { useToast } from '@/context/ToastContext';
 
 interface ShopProductCardProps {
   product: ShopProduct;
 }
 
 export default function ShopProductCard({ product }: ShopProductCardProps) {
-  const { addItem } = useCart();
+  const { addItem, isLoading: isCartLoading, isUpdating: isCartUpdating } = useCart();
+  const { toast } = useToast();
   const [addedToast, setAddedToast] = useState(false);
 
-  const handleAddToCart = (e: React.MouseEvent) => {
+  const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
-    if (!product.inStock) return;
+    if (!product.inStock || isCartLoading || isCartUpdating) return;
 
-    addItem({
-      id: product.id,
-      productSlug: product.slug,
-      name: product.name,
-      category: product.category,
-      price: product.price,
-      quantity: 1,
-      size: product.packSizes[0],
-      image: product.image,
-      inStock: product.inStock,
-    });
+    try {
+      await addItem({
+        id: product.id,
+        productId: Number(product.id),
+        productSlug: product.slug,
+        name: product.name,
+        category: product.category,
+        price: product.price,
+        quantity: 1,
+        size: product.packSizes[0],
+        image: product.image,
+        inStock: product.inStock,
+      });
 
-    setAddedToast(true);
-    setTimeout(() => setAddedToast(false), 1600);
+      setAddedToast(true);
+      setTimeout(() => setAddedToast(false), 1600);
+    } catch (cartError) {
+      toast.error(
+        cartError instanceof Error ? cartError.message : "Failed to add this product to your cart."
+      );
+    }
   };
 
   const discountPercent = product.originalPrice
@@ -120,8 +129,8 @@ export default function ShopProductCard({ product }: ShopProductCardProps) {
         {/* Buttons */}
         <div className="space-y-2">
           <button
-            onClick={handleAddToCart}
-            disabled={!product.inStock}
+            onClick={(event) => void handleAddToCart(event)}
+            disabled={!product.inStock || isCartLoading || isCartUpdating}
             className={`w-full py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer flex items-center justify-center gap-1.5 ${
               addedToast
                 ? 'bg-emerald-600 text-white'

@@ -17,6 +17,7 @@ class CartApiTest extends TestCase
 
     public function test_unauthenticated_request_is_rejected_with_401(): void
     {
+        $this->get('/api/cart')->assertUnauthorized();
         $this->getJson('/api/cart')->assertUnauthorized();
         $this->postJson('/api/cart/items', ['product_id' => 1, 'quantity' => 1])->assertUnauthorized();
         $this->patchJson('/api/cart/items/1', ['quantity' => 2])->assertUnauthorized();

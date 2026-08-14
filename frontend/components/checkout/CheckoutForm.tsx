@@ -10,8 +10,20 @@ import { Order } from '@/lib/types';
 
 type Errors = Partial<Record<keyof CheckoutFormData, string>>;
 
+interface CheckoutOrderAddress {
+  name: string;
+  address: string;
+  city: string;
+  province: string;
+  phone_number: string;
+}
+
+type CheckoutOrder = Omit<Order, 'shipping_address' | 'city'> & {
+  shipping_address: CheckoutOrderAddress;
+};
+
 export default function CheckoutForm() {
-  const { items, subtotal, totalItems, clearCart } = useCart();
+  const { items, subtotal, totalItems, clearCart, isLoading: isCartLoading } = useCart();
   const { toast } = useToast();
 
   const [formData, setFormData] = useState<CheckoutFormData>({
@@ -28,7 +40,7 @@ export default function CheckoutForm() {
 
   const [errors, setErrors] = useState<Errors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [placedOrder, setPlacedOrder] = useState<Order | null>(null);
+  const [placedOrder, setPlacedOrder] = useState<CheckoutOrder | null>(null);
 
   const deliveryFee = formData.deliveryMethod === 'express' ? 250 : 100;
   const grandTotal = subtotal + deliveryFee;
@@ -76,16 +88,24 @@ export default function CheckoutForm() {
         customer_name: formData.fullName,
         customer_email: formData.email,
         customer_phone: formData.phone,
-        shipping_address: formData.address,
-        city: formData.city,
+        delivery_type: 'standard',
+        payment_method: 'cash_on_delivery',
         notes: formData.notes?.trim() || null,
         items: items.map((item) => ({
-          product_id: parseInt(item.id, 10) || 1,
+          product_id: item.productId,
           quantity: item.quantity,
         })),
+        shipping_address: {
+          name: formData.fullName,
+          address: formData.address,
+          city: formData.city,
+          province: formData.city,
+          phone_number: formData.phone,
+        },
+        billing_same_as_shipping: true,
       };
 
-      const res = await fetchApi<{ message: string; data: Order }>('/orders', {
+      const res = await fetchApi<{ message: string; data: CheckoutOrder }>('/orders', {
         method: 'POST',
         body: JSON.stringify(payload),
       });
@@ -95,10 +115,17 @@ export default function CheckoutForm() {
 
       setPlacedOrder(orderData);
       toast.success(successMsg);
-      clearCart();
-    } catch (err: any) {
+      try {
+        await clearCart();
+      } catch (clearError) {
+        console.error('Order placed, but the cart could not be cleared:', clearError);
+        toast.error('Your order was placed, but the cart could not be refreshed.');
+      }
+    } catch (err: unknown) {
       console.error('Failed to place order:', err);
-      toast.error(err.message || 'Failed to place order. Please try again.');
+      toast.error(
+        err instanceof Error ? err.message : 'Failed to place order. Please try again.'
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -127,7 +154,9 @@ export default function CheckoutForm() {
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-gray-500">Delivery Address</span>
-            <span className="font-semibold text-gray-800">{placedOrder.shipping_address}, {placedOrder.city}</span>
+            <span className="font-semibold text-gray-800">
+              {placedOrder.shipping_address.address}, {placedOrder.shipping_address.city}
+            </span>
           </div>
           <div className="flex justify-between text-sm pt-2 border-t border-gray-200 font-bold">
             <span className="text-gray-900">Total Amount</span>
@@ -153,6 +182,15 @@ export default function CheckoutForm() {
             Continue Shopping
           </Link>
         </div>
+      </div>
+    );
+  }
+
+  if (isCartLoading) {
+    return (
+      <div className="bg-white rounded-3xl p-12 text-center shadow-xs border border-gray-100 max-w-xl mx-auto my-12">
+        <div className="w-8 h-8 border-2 border-[#01A7E5] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+        <p className="text-sm text-gray-600">Loading your cart for checkout...</p>
       </div>
     );
   }
