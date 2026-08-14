@@ -201,21 +201,22 @@ export default function AdminInquiriesPage() {
             </div>
           ) : (
             <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs text-slate-300">
+              <div>
+                <table className="w-full table-fixed text-left text-xs text-slate-300">
                   <thead className="bg-slate-950/80 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
                     <tr>
-                      <th className="py-3.5 px-4">Status</th>
-                      <th className="py-3.5 px-4">Name</th>
-                      <th className="py-3.5 px-4">Email</th>
-                      <th className="py-3.5 px-4">Contact No</th>
-                      <th className="py-3.5 px-4">Message Snippet</th>
-                      <th className="py-3.5 px-4">Received At</th>
-                      <th className="py-3.5 px-4 text-right">Actions</th>
+                      <th className="py-3.5 px-4 w-[5%]">S.No</th>
+                      <th className="py-3.5 px-4 w-[9%]">Status</th>
+                      <th className="py-3.5 px-4 w-[15%]">Name</th>
+                      <th className="py-3.5 px-4 w-[18%]">Email</th>
+                      <th className="py-3.5 px-4 w-[12%]">Contact No</th>
+                      <th className="py-3.5 px-4 w-[21%]">Message Snippet</th>
+                      <th className="py-3.5 px-4 w-[12%]">Received At</th>
+                      <th className="py-3.5 px-4 w-[8%] text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800/60">
-                    {filteredContacts.map((contact) => {
+                    {filteredContacts.map((contact, index) => {
                       const isUnread = contact.is_read === 0;
                       return (
                         <tr
@@ -224,7 +225,10 @@ export default function AdminInquiriesPage() {
                             isUnread ? "bg-cyan-950/20 font-medium" : ""
                           }`}
                         >
-                          <td className="py-3.5 px-4 whitespace-nowrap">
+                          <td className="py-3.5 px-4 text-slate-500">
+                            {index + 1}
+                          </td>
+                          <td className="py-3.5 px-4">
                             {isUnread ? (
                               <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
                                 <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
@@ -236,21 +240,21 @@ export default function AdminInquiriesPage() {
                               </span>
                             )}
                           </td>
-                          <td className="py-3.5 px-4 text-white font-semibold whitespace-nowrap">
+                          <td className="py-3.5 px-4 text-white font-semibold truncate">
                             {contact.first_name} {contact.last_name || ""}
                           </td>
-                          <td className="py-3.5 px-4 text-slate-300 whitespace-nowrap">
+                          <td className="py-3.5 px-4 text-slate-300 truncate">
                             <a href={`mailto:${contact.email}`} className="hover:text-cyan-400">
                               {contact.email}
                             </a>
                           </td>
-                          <td className="py-3.5 px-4 text-slate-400 whitespace-nowrap">
+                          <td className="py-3.5 px-4 text-slate-400 truncate">
                             {contact.contact_no}
                           </td>
-                          <td className="py-3.5 px-4 text-slate-400 max-w-xs truncate">
+                          <td className="py-3.5 px-4 text-slate-400 truncate">
                             {contact.message || <span className="italic text-slate-600">No message</span>}
                           </td>
-                          <td className="py-3.5 px-4 text-slate-500 whitespace-nowrap">
+                          <td className="py-3.5 px-4 text-slate-500 truncate">
                             {contact.created_at
                               ? new Date(contact.created_at).toLocaleDateString("en-US", {
                                   month: "short",
