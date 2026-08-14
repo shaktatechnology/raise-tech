@@ -11,7 +11,7 @@ use App\Http\Controllers\TeamController;
 use App\Http\Controllers\SoftwareController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\OrderController;
-use App\Http\Controllers\HomeController;
+use App\Http\Controllers\CartController;
 
 //public endpoints
 Route::post('/register', [AuthController::class, 'register']);
@@ -41,6 +41,14 @@ Route::middleware('auth:sanctum')->group(function() {
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
     
+    // Cart (authenticated customer)
+    Route::get('/cart', [CartController::class, 'index']);
+    Route::post('/cart/items', [CartController::class, 'addItem']);
+    Route::patch('/cart/items/{cartItem}', [CartController::class, 'updateItem']);
+    Route::delete('/cart/items/{cartItem}', [CartController::class, 'removeItem']);
+    Route::delete('/cart', [CartController::class, 'clearCart']);
+    Route::post('/cart/merge', [CartController::class, 'mergeCart']);
+
     //settings
     Route::post('/settings', [SettingController::class, 'update']);
 
