@@ -55,14 +55,23 @@ export interface OrderItem {
   subtotal: number;
 }
 
+export interface OrderAddress {
+  id: number;
+  name: string;
+  address: string;
+  city: string;
+  province: string;
+  phone_number: string;
+}
+
 export interface Order {
   id: number;
   user_id: number | null;
   customer_name: string;
   customer_email: string;
   customer_phone: string;
-  shipping_address: string;
-  city: string;
+  shipping_address: OrderAddress | null;
+  billing_address: OrderAddress | null;
   payment_method: string;
   status: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
   subtotal: number;

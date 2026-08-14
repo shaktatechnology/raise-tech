@@ -61,7 +61,10 @@ function getErrorMessage(error: unknown, fallback: string): string {
 function getProductImageUrl(path: string | null): string {
   if (!path) return "/placeholder.jpg";
   if (path.startsWith("http://") || path.startsWith("https://")) return path;
-  return `${API_ORIGIN}/${path.replace(/^\//, "")}`;
+  if (path.startsWith("/storage/")) return `${API_ORIGIN}${path}`;
+  if (path.startsWith("storage/")) return `${API_ORIGIN}/${path}`;
+  if (path.startsWith("/")) return `${API_ORIGIN}${path}`;
+  return `${API_ORIGIN}/storage/${path}`;
 }
 
 function normalizeApiCart(cart: ApiCart): CartItem[] {
