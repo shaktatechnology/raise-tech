@@ -382,34 +382,21 @@ export default function CheckoutForm() {
           <h2 className="text-lg font-bold text-gray-900 border-b border-gray-100 pb-3">
             3. Payment Method
           </h2>
-          <div className="space-y-3">
-            {[
-              { id: 'cod', title: 'Cash on Delivery (COD)', desc: 'Pay cash upon physical delivery of your order' },
-              { id: 'esewa', title: 'eSewa Digital Wallet', desc: 'Pay securely via eSewa online portal upon confirmation' },
-              { id: 'bank', title: 'Direct Bank Transfer', desc: 'Transfer directly to Raise Tech Pvt. Ltd. Nabil Bank account' },
-            ].map((method) => (
-              <label
-                key={method.id}
-                className={`p-4 rounded-2xl border cursor-pointer flex items-start gap-3 transition-colors block ${
-                  formData.paymentMethod === method.id
-                    ? 'border-[#01A7E5] bg-cyan-50/60'
-                    : 'border-gray-200 bg-white hover:bg-gray-50'
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="paymentMethod"
-                  value={method.id}
-                  checked={formData.paymentMethod === method.id}
-                  onChange={handleChange}
-                  className="mt-1 text-[#01A7E5] focus:ring-[#01A7E5]"
-                />
-                <div>
-                  <span className="block font-bold text-sm text-gray-900">{method.title}</span>
-                  <span className="block text-xs text-gray-500 mt-0.5">{method.desc}</span>
-                </div>
-              </label>
-            ))}
+          <div className="p-4 rounded-2xl border border-[#01A7E5] bg-cyan-50/60 flex items-start gap-3">
+            <input
+              type="radio"
+              name="paymentMethod"
+              value="cod"
+              checked
+              readOnly
+              className="mt-1 text-[#01A7E5] focus:ring-[#01A7E5] pointer-events-none"
+            />
+            <div>
+              <span className="block font-bold text-sm text-gray-900">Cash on Delivery (COD)</span>
+              <span className="block text-xs text-gray-500 mt-0.5">
+                Pay cash upon physical delivery of your order
+              </span>
+            </div>
           </div>
         </div>
       </div>
