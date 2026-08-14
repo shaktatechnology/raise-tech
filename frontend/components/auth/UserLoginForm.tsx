@@ -185,7 +185,7 @@ export default function UserLoginForm({
           )}
         </div>
 
-        <p className="text-center text-xs text-slate-400 mt-8">
+        {/* <p className="text-center text-xs text-slate-400 mt-8">
           Don&apos;t have an account?{" "}
           {isModal && onSwitchToSignup ? (
             <button
@@ -204,7 +204,7 @@ export default function UserLoginForm({
               Sign Up
             </Link>
           )}
-        </p>
+        </p> */}
       </div>
     </>
   );

@@ -12,6 +12,7 @@ use App\Http\Controllers\SoftwareController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\CartController;
+use App\Http\Controllers\HomeController;
 
 //public endpoints
 Route::post('/register', [AuthController::class, 'register']);

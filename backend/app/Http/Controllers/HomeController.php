@@ -8,6 +8,7 @@ use App\Models\Portfolio;
 use App\Models\Testimonial;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Contracts\Filesystem\Filesystem;
 
 class HomeController extends Controller
 {
