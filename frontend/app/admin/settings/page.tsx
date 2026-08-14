@@ -2,12 +2,42 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import ProtectedRoute from "@/components/guards/ProtectedRoute";
-import { fetchApi } from "@/lib/api";
+import { fetchApi, getImageUrl } from "@/lib/api";
 import { SiteSettings } from "@/lib/types";
+
+// Converts common Google Maps URL formats (place links, search/query links,
+// share links) into an embeddable iframe URL. Returns null if the URL can't
+// be reliably embedded (e.g. shortened goo.gl links, which need server-side
+// resolution before they can be embedded). Import this same helper into the
+// contact page so both admin preview and public rendering stay in sync.
+export function toEmbeddableMapUrl(url?: string | null): string | null {
+  if (!url) return null;
+
+  // Already a proper embed URL - use as-is.
+  if (url.includes("/maps/embed")) return url;
+
+  // Shortened links can't be converted client-side.
+  if (url.includes("goo.gl")) return null;
+
+  // Standard Google Maps URLs can usually be embedded by adding output=embed.
+  if (url.includes("google.com/maps") || url.includes("maps.google.com")) {
+    try {
+      const u = new URL(url);
+      u.searchParams.set("output", "embed");
+      return u.toString();
+    } catch {
+      return null;
+    }
+  }
+
+  return null;
+}
 
 export default function AdminSettingsPage() {
   const [settings, setSettings] = useState<SiteSettings>({
     short_description: "",
+    logo: null,
+    favicon: null,
     phone1: "",
     phone2: "",
     email1: "",
@@ -28,6 +58,33 @@ export default function AdminSettingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [savedNotice, setSavedNotice] = useState<string | null>(null);
 
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [faviconFile, setFaviconFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [faviconPreview, setFaviconPreview] = useState<string | null>(null);
+
+  // Revoke object URLs on unmount / when replaced, to avoid leaking memory.
+  useEffect(() => {
+    return () => {
+      if (logoPreview) URL.revokeObjectURL(logoPreview);
+      if (faviconPreview) URL.revokeObjectURL(faviconPreview);
+    };
+  }, [logoPreview, faviconPreview]);
+
+  const handleLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLogoFile(file);
+    setLogoPreview(URL.createObjectURL(file));
+  };
+
+  const handleFaviconSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setFaviconFile(file);
+    setFaviconPreview(URL.createObjectURL(file));
+  };
+
   const loadSettings = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -36,6 +93,8 @@ export default function AdminSettingsPage() {
       if (res.setting) {
         setSettings({
           short_description: res.setting.short_description || "",
+          logo: res.setting.logo || null,
+          favicon: res.setting.favicon || null,
           phone1: res.setting.phone1 || "",
           phone2: res.setting.phone2 || "",
           email1: res.setting.email1 || "",
@@ -69,15 +128,57 @@ export default function AdminSettingsPage() {
     setSavedNotice(null);
 
     try {
-      const res = await fetchApi<{ message: string; setting: SiteSettings }>("/settings", {
-        method: "POST",
-        body: JSON.stringify(settings),
-      });
+      const hasNewFile = !!logoFile || !!faviconFile;
+      let res: { message: string; setting: SiteSettings };
+
+      if (hasNewFile) {
+        const formData = new FormData();
+        formData.append("short_description", settings.short_description || "");
+        formData.append("phone1", settings.phone1 || "");
+        formData.append("phone2", settings.phone2 || "");
+        formData.append("email1", settings.email1 || "");
+        formData.append("email2", settings.email2 || "");
+        formData.append("location", settings.location || "");
+        formData.append("map_url", settings.map_url || "");
+        formData.append("facebook_url", settings.facebook_url || "");
+        formData.append("twitter_url", settings.twitter_url || "");
+        formData.append("instagram_url", settings.instagram_url || "");
+        formData.append("linkedin_url", settings.linkedin_url || "");
+        formData.append("tiktok_url", settings.tiktok_url || "");
+        formData.append("whatsapp_url", settings.whatsapp_url || "");
+        formData.append("is_cod_enabled", settings.is_cod_enabled ? "1" : "0");
+
+        if (logoFile) {
+          formData.append("logo", logoFile);
+        } else if (settings.logo) {
+          formData.append("logo", settings.logo);
+        }
+
+        if (faviconFile) {
+          formData.append("favicon", faviconFile);
+        } else if (settings.favicon) {
+          formData.append("favicon", settings.favicon);
+        }
+
+        res = await fetchApi<{ message: string; setting: SiteSettings }>("/settings", {
+          method: "POST",
+          body: formData,
+        });
+      } else {
+        res = await fetchApi<{ message: string; setting: SiteSettings }>("/settings", {
+          method: "POST",
+          body: JSON.stringify(settings),
+        });
+      }
 
       setSavedNotice(res.message || "Settings updated successfully.");
       if (res.setting) {
-        setSettings(res.setting);
+        setSettings((prev) => ({ ...prev, ...res.setting }));
       }
+      setLogoFile(null);
+      setFaviconFile(null);
+      setLogoPreview(null);
+      setFaviconPreview(null);
       setTimeout(() => setSavedNotice(null), 4000);
     } catch (err: any) {
       setError(err.message || "Failed to update site settings.");
@@ -129,10 +230,75 @@ export default function AdminSettingsPage() {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-8">
+              {/* Branding */}
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+                <h3 className="text-sm font-bold text-emerald-400 uppercase tracking-wider">
+                  Branding
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-xs">
+                  {/* Logo */}
+                  <div>
+                    <label className="block text-slate-400 mb-2">Site Logo</label>
+                    <div className="flex items-center gap-4">
+                      <div className="w-16 h-16 shrink-0 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-center overflow-hidden">
+                        {logoPreview || settings.logo ? (
+                          <img
+                            src={logoPreview || getImageUrl(settings.logo)}
+                            alt="Logo preview"
+                            className="w-full h-full object-contain"
+                          />
+                        ) : (
+                          <span className="text-slate-600 text-[10px]">No logo</span>
+                        )}
+                      </div>
+                      <label className="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs font-semibold text-slate-200 cursor-pointer transition">
+                        Choose File
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleLogoSelect}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Favicon */}
+                  <div>
+                    <label className="block text-slate-400 mb-2">Favicon</label>
+                    <div className="flex items-center gap-4">
+                      <div className="w-16 h-16 shrink-0 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-center overflow-hidden">
+                        {faviconPreview || settings.favicon ? (
+                          <img
+                            src={faviconPreview || getImageUrl(settings.favicon)}
+                            alt="Favicon preview"
+                            className="w-8 h-8 object-contain"
+                          />
+                        ) : (
+                          <span className="text-slate-600 text-[10px]">No favicon</span>
+                        )}
+                      </div>
+                      <label className="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs font-semibold text-slate-200 cursor-pointer transition">
+                        Choose File
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleFaviconSelect}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+                    <p className="text-slate-600 text-[10px] mt-2">
+                      Square image recommended (e.g. 32×32 or 64×64px).
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               {/* General Site Information */}
               <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
                 <h3 className="text-sm font-bold text-emerald-400 uppercase tracking-wider">
-                  1. General Company Profile
+                  General Company Profile
                 </h3>
                 <div className="space-y-3 text-xs">
                   <div>
@@ -151,7 +317,7 @@ export default function AdminSettingsPage() {
               {/* Contact Information */}
               <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
                 <h3 className="text-sm font-bold text-emerald-400 uppercase tracking-wider">
-                  2. Contact & Address Details
+                  Contact & Address Details
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                   <div>
@@ -216,8 +382,36 @@ export default function AdminSettingsPage() {
                       value={settings.map_url || ""}
                       onChange={(e) => setSettings({ ...settings, map_url: e.target.value })}
                       className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
-                      placeholder="https://maps.google.com/?q=Kathmandu"
+                      placeholder="https://www.google.com/maps/embed?pb=..."
                     />
+                    {/* <p className="text-[11px] text-slate-500 mt-1.5 leading-relaxed">
+                      For the best result, use an <span className="text-slate-300">embed</span> URL: open Google
+                      Maps, find the location, click <span className="text-slate-300">Share → Embed a map</span>,
+                      then copy the URL inside the <code className="text-slate-300">src=&quot;...&quot;</code> from
+                      the provided code. A regular Maps link (e.g. from the address bar) also works, but shortened
+                      links (goo.gl) can&apos;t be embedded and will show as a link instead of a live map.
+                    </p> */}
+
+                    {/* {settings.map_url && (
+                      <div className="mt-3 rounded-xl overflow-hidden border border-slate-800 bg-slate-950">
+                        {toEmbeddableMapUrl(settings.map_url) ? (
+                          <iframe
+                            key={settings.map_url}
+                            src={toEmbeddableMapUrl(settings.map_url) as string}
+                            className="w-full h-48 border-0"
+                            loading="lazy"
+                            referrerPolicy="no-referrer-when-downgrade"
+                            title="Map Preview"
+                          />
+                        ) : (
+                          <p className="text-[11px] text-amber-400 p-3">
+                            This URL can&apos;t be embedded as a live map — visitors will see a &quot;View on
+                            Google Maps&quot; link instead. Use an embed URL from Share → Embed a map for a live
+                            preview on the contact page.
+                          </p>
+                        )}
+                      </div>
+                    )} */}
                   </div>
                 </div>
               </div>
@@ -225,7 +419,7 @@ export default function AdminSettingsPage() {
               {/* Social Media */}
               <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
                 <h3 className="text-sm font-bold text-emerald-400 uppercase tracking-wider">
-                  3. Social Links & Messaging
+                  Social Links & Messaging
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                   <div>
@@ -294,7 +488,7 @@ export default function AdminSettingsPage() {
               {/* E-Commerce Options */}
               <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
                 <h3 className="text-sm font-bold text-emerald-400 uppercase tracking-wider">
-                  4. E-Commerce Checkout Parameters
+                  E-Commerce Checkout Parameters
                 </h3>
                 <label className="flex items-center gap-3 cursor-pointer text-xs text-slate-300">
                   <input

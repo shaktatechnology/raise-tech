@@ -38,8 +38,15 @@ export interface WhyChooseUsItemData {
 function getImageUrl(path: string | null): string | null {
   if (!path) return null;
   if (path.startsWith("http://") || path.startsWith("https://")) return path;
+<<<<<<< Updated upstream
   const baseUrl = process.env.NEXT_PUBLIC_STORAGE_URL || "http://localhost:8000";
   return `${baseUrl}${path.startsWith("/") ? "" : "/"}${path}`;
+=======
+  if (path.startsWith("/storage/")) return `NEXT_PUBLIC_API_URL${path}`;
+  if (path.startsWith("storage/")) return `NEXT_PUBLIC_API_URL/${path}`;
+  if (path.startsWith("/")) return `NEXT_PUBLIC_API_URL${path}`;
+  return `NEXT_PUBLIC_API_URL/storage/${path}`;
+>>>>>>> Stashed changes
 }
 
 interface ImageDropzoneProps {

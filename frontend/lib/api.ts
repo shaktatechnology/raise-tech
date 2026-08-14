@@ -41,3 +41,21 @@ export async function fetchApi<T = any>(
 
   return response.json();
 }
+
+/**
+ * Resolves an image path returned by the Laravel API (e.g. "/storage/settings/xyz.png")
+ * into a fully-qualified URL pointing at the backend origin.
+ *
+ * NEXT_PUBLIC_API_URL includes the trailing "/api" segment (e.g. "http://localhost:8000/api"),
+ * so that suffix is stripped before the path is appended.
+ *
+ * - Already-absolute URLs (http/https) are returned as-is.
+ * - Falsy input returns an empty string so callers can safely do `src={getImageUrl(x)}`.
+ */
+export function getImageUrl(path?: string | null): string {
+  if (!path) return "";
+  if (/^https?:\/\//i.test(path)) return path;
+
+  const origin = API_BASE_URL.replace(/\/api\/?$/, "");
+  return `${origin}${path.startsWith("/") ? path : `/${path}`}`;
+}

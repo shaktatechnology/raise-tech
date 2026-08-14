@@ -138,6 +138,8 @@ export interface SoftwareItem {
 
 export interface SiteSettings {
   short_description?: string;
+  logo?: string | null;
+  favicon?: string | null;
   facebook_url?: string;
   twitter_url?: string;
   instagram_url?: string;
@@ -152,5 +154,3 @@ export interface SiteSettings {
   map_url?: string;
   is_cod_enabled?: boolean;
 }
-
-

@@ -8,12 +8,15 @@ import { NAV_LINKS } from '@/lib/data/homeData';
 import { useCart } from '@/context/CartContext';
 import MobileNav from './MobileNav';
 import { useAuth } from '@/context/AuthContext';
+import { useSiteSettings } from '@/context/SiteSettingsContext';
 import LoginModal from '@/components/auth/LoginModal';
+import { getImageUrl } from '@/lib/api';
 
 export default function Header() {
   const pathname = usePathname();
   const { totalItems } = useCart();
   const { user, logout } = useAuth();
+  const { settings } = useSiteSettings();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
@@ -44,26 +47,35 @@ export default function Header() {
     <>
       <header role="banner" className="sticky top-0 z-40 bg-white shadow-xs border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
+          <div className="flex items-center justify-between h-20 px-20">
             {/* Brand Logo */}
             <Link href="/" className="flex items-center gap-3 group focus-visible:outline-2 focus-visible:outline-[#01A7E5]">
               <div className="relative w-12 h-12 shrink-0">
-                <Image
-                  src="/images/home/logo.png"
-                  alt="Raise Tech Logo"
-                  fill
-                  className="object-contain"
-                  priority
-                />
+                {settings?.logo ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={getImageUrl(settings.logo)}
+                    alt="Raise Tech Logo"
+                    className="w-full h-full object-contain"
+                  />
+                ) : (
+                  <Image
+                    src="/images/home/logo.png"
+                    alt="Raise Tech Logo"
+                    fill
+                    className="object-contain"
+                    priority
+                  />
+                )}
               </div>
-              <div className="flex flex-col">
+              {/* <div className="flex flex-col">
                 <span className="text-xl font-extrabold tracking-tight text-[#01A7E5] group-hover:text-[#018bc0] transition-colors">
                   Raise Tech
                 </span>
                 <span className="text-[11px] font-medium text-gray-500 tracking-wider uppercase">
                   Pvt. Ltd.
                 </span>
-              </div>
+              </div> */}
             </Link>
 
           {/* Desktop Navigation Links & Cart Icon */}

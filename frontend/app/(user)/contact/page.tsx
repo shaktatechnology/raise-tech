@@ -1,10 +1,88 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { fetchApi } from "@/lib/api";
 import { CONTACT_INFO, CONTACT_FAQS } from "@/lib/data/contactData";
+import { useSiteSettings } from "@/context/SiteSettingsContext";
+
+const MAP_EMBED_CACHE_PREFIX = "map_embed_cache:";
+
+// Converts common Google Maps URL formats (place links, search/query links,
+// share links copied from the address bar) into an embeddable iframe URL.
+// Returns null for URLs that can't be embedded client-side (e.g. shortened
+// goo.gl links), so those still fall back to a plain "open in Maps" link.
+function toEmbeddableMapUrl(url?: string | null): string | null {
+  if (!url) return null;
+
+  // Already a proper embed URL - use as-is.
+  if (url.includes("/maps/embed")) return url;
+
+  // Shortened links (maps.app.goo.gl, goo.gl) redirect server-side, so they
+  // can't be resolved into an embed URL here - handled separately via the
+  // /api/resolve-map-embed route (see resolveShortenedMapUrl below).
+  if (url.includes("goo.gl")) return null;
+
+  // Standard Google Maps URLs can usually be embedded by adding output=embed.
+  if (url.includes("google.com/maps") || url.includes("maps.google.com")) {
+    try {
+      const u = new URL(url);
+      u.searchParams.set("output", "embed");
+      return u.toString();
+    } catch {
+      return null;
+    }
+  }
+
+  return null;
+}
 
 export default function ContactPage() {
+  const { settings } = useSiteSettings();
+  const directEmbedUrl = toEmbeddableMapUrl(settings?.map_url);
+
+  // For shortened share links (maps.app.goo.gl / goo.gl), ask the server to
+  // follow the redirect and hand back a real embeddable URL. Cached in
+  // localStorage per source URL so we only resolve it once, not on every visit.
+  const [resolvedEmbedUrl, setResolvedEmbedUrl] = useState<string | null>(null);
+  const [resolvingMap, setResolvingMap] = useState(false);
+
+  useEffect(() => {
+    const mapUrl = settings?.map_url;
+    if (!mapUrl || directEmbedUrl) return; // already embeddable, or nothing to resolve
+
+    const cacheKey = `${MAP_EMBED_CACHE_PREFIX}${mapUrl}`;
+    const cached = typeof window !== "undefined" ? localStorage.getItem(cacheKey) : null;
+    if (cached) {
+      setResolvedEmbedUrl(cached);
+      return;
+    }
+
+    let cancelled = false;
+    setResolvingMap(true);
+
+    fetch(`/api/resolve-map-embed?url=${encodeURIComponent(mapUrl)}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (cancelled) return;
+        if (data?.embedUrl) {
+          setResolvedEmbedUrl(data.embedUrl);
+          localStorage.setItem(cacheKey, data.embedUrl);
+        }
+      })
+      .catch(() => {
+        // Silently fall back to the plain "open in Maps" link below.
+      })
+      .finally(() => {
+        if (!cancelled) setResolvingMap(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [settings?.map_url, directEmbedUrl]);
+
+  const embedUrl = directEmbedUrl || resolvedEmbedUrl;
+
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
@@ -264,6 +342,56 @@ export default function ContactPage() {
                 </button>
               </form>
             </div>
+          </div>
+        </div>
+
+        {/* Map Section */}
+        <div className="mt-8 bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
+          <div className="p-6 sm:p-8 pb-4">
+            <h3 className="text-lg font-bold text-gray-900">Find Us on the Map</h3>
+            <p className="text-gray-500 text-sm mt-1">{CONTACT_INFO.address}</p>
+          </div>
+
+          <div className="w-full h-72 sm:h-96 bg-gray-100">
+            {embedUrl ? (
+              <iframe
+                src={embedUrl}
+                className="w-full h-full border-0"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                title="Office Location Map"
+              />
+            ) : resolvingMap ? (
+              <div className="w-full h-full flex flex-col items-center justify-center gap-3 text-gray-400">
+                <div className="w-8 h-8 border-2 border-gray-300 border-t-[#01A7E5] rounded-full animate-spin" />
+                <p className="text-sm">Loading map...</p>
+              </div>
+            ) : settings?.map_url ? (
+              <a
+                href={settings.map_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full h-full flex flex-col items-center justify-center gap-3 text-gray-500 hover:text-[#01A7E5] hover:bg-cyan-50/40 transition-colors"
+              >
+                <div className="w-14 h-14 bg-cyan-50 border border-cyan-100 rounded-full flex items-center justify-center text-[#01A7E5]">
+                  <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </div>
+                <span className="text-sm font-semibold">View Our Location on Google Maps</span>
+              </a>
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center gap-3 text-gray-400">
+                <div className="w-14 h-14 bg-gray-200/60 rounded-full flex items-center justify-center">
+                  <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </div>
+                <p className="text-sm">Map location has not been configured yet.</p>
+              </div>
+            )}
           </div>
         </div>
 
