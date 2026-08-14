@@ -6,6 +6,10 @@ import { Order } from "@/lib/types";
 import { fetchApi } from "@/lib/api";
 import { useToast } from "@/context/ToastContext";
 
+function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message ? error.message : fallback;
+}
+
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [filter, setFilter] = useState<string>("all");
@@ -34,16 +38,17 @@ export default function AdminOrdersPage() {
       } else {
         setOrders([]);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to fetch orders:", err);
-      toast.error(err.message || "Failed to load orders");
+      toast.error(getErrorMessage(err, "Failed to load orders"));
     } finally {
       setIsLoading(false);
     }
   }, [toast]);
 
   useEffect(() => {
-    loadOrders(filter);
+    const timeoutId = window.setTimeout(() => void loadOrders(filter), 0);
+    return () => window.clearTimeout(timeoutId);
   }, [filter, loadOrders]);
 
   // Fetch single order detail
@@ -59,8 +64,8 @@ export default function AdminOrdersPage() {
         const found = orders.find((o) => o.id === orderId);
         if (found) setSelectedOrder(found);
       }
-    } catch (err: any) {
-      toast.error(err.message || "Failed to load order details");
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, "Failed to load order details"));
       const found = orders.find((o) => o.id === orderId);
       if (found) setSelectedOrder(found);
     } finally {
@@ -94,8 +99,8 @@ export default function AdminOrdersPage() {
       }
 
       toast.success(successMsg);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to update order status");
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, "Failed to update order status"));
     } finally {
       setIsUpdatingStatus(false);
     }
@@ -119,8 +124,8 @@ export default function AdminOrdersPage() {
       }
 
       toast.success(successMsg);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to delete order");
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err, "Failed to delete order"));
     } finally {
       setIsDeleting(false);
     }
@@ -134,7 +139,8 @@ export default function AdminOrdersPage() {
       o.customer_name.toLowerCase().includes(query) ||
       o.customer_email.toLowerCase().includes(query) ||
       o.customer_phone.toLowerCase().includes(query) ||
-      o.city.toLowerCase().includes(query)
+      o.shipping_address?.city.toLowerCase().includes(query) ||
+      o.shipping_address?.province.toLowerCase().includes(query)
     );
   });
 
@@ -299,7 +305,9 @@ export default function AdminOrdersPage() {
                           <div className="text-[11px] text-slate-400">{order.customer_phone}</div>
                           <div className="text-[10px] text-slate-500">{order.customer_email}</div>
                         </td>
-                        <td className="py-3.5 px-4 text-slate-300">{order.city}</td>
+                        <td className="py-3.5 px-4 text-slate-300">
+                          {order.shipping_address?.city || "N/A"}
+                        </td>
                         <td className="py-3.5 px-4 text-white font-bold">
                           NPR {Number(order.total || 0).toLocaleString()}
                         </td>
@@ -407,7 +415,15 @@ export default function AdminOrdersPage() {
                       <div>
                         <span className="text-slate-500 block">Shipping Address</span>
                         <span className="text-slate-200">
-                          {selectedOrder.shipping_address}, {selectedOrder.city}
+                          {selectedOrder.shipping_address
+                            ? [
+                                selectedOrder.shipping_address.address,
+                                selectedOrder.shipping_address.city,
+                                selectedOrder.shipping_address.province,
+                              ]
+                                .filter(Boolean)
+                                .join(", ")
+                            : "Not available"}
                         </span>
                       </div>
                       {selectedOrder.notes && (

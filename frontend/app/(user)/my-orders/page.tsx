@@ -1,11 +1,15 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Order } from "@/lib/types";
 import { fetchApi } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message ? error.message : fallback;
+}
 
 export default function MyOrdersPage() {
   const { user, isLoading: authLoading } = useAuth();
@@ -13,9 +17,8 @@ export default function MyOrdersPage() {
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
-  const fetchMyOrders = async () => {
+  const fetchMyOrders = useCallback(async () => {
     setIsLoading(true);
     try {
       const res = await fetchApi<{ status: string; data: Order[] }>("/my-orders");
@@ -26,19 +29,20 @@ export default function MyOrdersPage() {
       } else {
         setOrders([]);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to load user orders:", err);
-      toast.error(err.message || "Failed to load your orders");
+      toast.error(getErrorMessage(err, "Failed to load your orders"));
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
-    if (user) {
-      fetchMyOrders();
-    }
-  }, [user]);
+    if (!user) return;
+
+    const timeoutId = window.setTimeout(() => void fetchMyOrders(), 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [fetchMyOrders, user]);
 
   const getStatusBadge = (status: Order["status"]) => {
     switch (status) {
@@ -57,6 +61,14 @@ export default function MyOrdersPage() {
       default:
         return "bg-gray-100 text-gray-800 border-gray-200";
     }
+  };
+
+  const formatAddress = (address: Order["shipping_address"]) => {
+    if (!address) return "Not available";
+
+    return [address.address, address.city, address.province]
+      .filter(Boolean)
+      .join(", ");
   };
 
   if (authLoading) {
@@ -177,7 +189,7 @@ export default function MyOrdersPage() {
                       Shipping Address
                     </span>
                     <span className="font-semibold text-gray-800 block mt-0.5">
-                      {order.shipping_address}, {order.city}
+                      {formatAddress(order.shipping_address)}
                     </span>
                   </div>
                   <div>

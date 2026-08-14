@@ -18,7 +18,7 @@ interface CheckoutOrderAddress {
   phone_number: string;
 }
 
-type CheckoutOrder = Omit<Order, 'shipping_address' | 'city'> & {
+type CheckoutOrder = Omit<Order, 'shipping_address'> & {
   shipping_address: CheckoutOrderAddress;
 };
 
