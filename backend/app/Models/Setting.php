@@ -10,6 +10,8 @@ class Setting extends Model
     use HasFactory;
 
     protected $fillable = [
+        'logo',
+        'favicon',
         'short_description',
         'facebook_url',
         'twitter_url',
