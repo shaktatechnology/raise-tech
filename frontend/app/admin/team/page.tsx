@@ -1,8 +1,15 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import AdminImageField from "@/components/admin/AdminImageField";
 import ProtectedRoute from "@/components/guards/ProtectedRoute";
-import { fetchApi } from "@/lib/api";
+import {
+  fetchApi,
+  getApiErrorMessage,
+  getImageFilename,
+  getImageUrl,
+  getValidationError,
+} from "@/lib/api";
 import { TeamMember } from "@/lib/types";
 
 export default function AdminTeamPage() {
@@ -14,6 +21,9 @@ export default function AdminTeamPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [editingMember, setEditingMember] = useState<Partial<TeamMember> | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [removeImage, setRemoveImage] = useState(false);
+  const [imageError, setImageError] = useState<string>();
+  const [isOptimizingImage, setIsOptimizingImage] = useState(false);
 
   const loadTeam = useCallback(async () => {
     setLoading(true);
@@ -21,15 +31,16 @@ export default function AdminTeamPage() {
     try {
       const res = await fetchApi<{ status: string; data: TeamMember[] }>("/team");
       setTeam(res.data || []);
-    } catch (err: any) {
-      setError(err.message || "Failed to load team members.");
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, "Failed to load team members."));
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    loadTeam();
+    const timeoutId = window.setTimeout(() => void loadTeam(), 0);
+    return () => window.clearTimeout(timeoutId);
   }, [loadTeam]);
 
   const handleSaveMember = async (e: React.FormEvent) => {
@@ -38,8 +49,10 @@ export default function AdminTeamPage() {
       alert("Name and Position are required.");
       return;
     }
+    if (actionLoading || isOptimizingImage) return;
 
     setActionLoading(true);
+    setImageError(undefined);
     try {
       const formData = new FormData();
       formData.append("name", editingMember.name || "");
@@ -50,12 +63,13 @@ export default function AdminTeamPage() {
       if (imageFile) {
         formData.append("image", imageFile);
       }
+      formData.append("remove_image", removeImage ? "1" : "0");
 
       const endpoint = editingMember.id
         ? `/team/${editingMember.id}`
         : `/team`;
 
-      const resData = await fetchApi(endpoint, {
+      const resData = await fetchApi<{ message: string; data: TeamMember }>(endpoint, {
         method: "POST",
         body: formData,
       });
@@ -71,8 +85,10 @@ export default function AdminTeamPage() {
       setIsModalOpen(false);
       setEditingMember(null);
       setImageFile(null);
-    } catch (err: any) {
-      alert(err.message || "Error saving team member.");
+      setRemoveImage(false);
+    } catch (err: unknown) {
+      setImageError(getValidationError(err, "image"));
+      alert(getApiErrorMessage(err, "Error saving team member."));
     } finally {
       setActionLoading(false);
     }
@@ -83,16 +99,9 @@ export default function AdminTeamPage() {
     try {
       await fetchApi(`/team/${id}`, { method: "DELETE" });
       setTeam((prev) => prev.filter((t) => t.id !== id));
-    } catch (err: any) {
-      alert(err.message || "Failed to delete team member.");
+    } catch (err: unknown) {
+      alert(getApiErrorMessage(err, "Failed to delete team member."));
     }
-  };
-
-  const getImageUrl = (path: string | null) => {
-    if (!path) return null;
-    if (path.startsWith("http://") || path.startsWith("https://")) return path;
-    const baseUrl = process.env.NEXT_PUBLIC_STORAGE_URL || "http://localhost:8000";
-    return `${baseUrl}${path.startsWith("/") ? "" : "/"}${path}`;
   };
 
   return (
@@ -126,6 +135,8 @@ export default function AdminTeamPage() {
                     is_active: true,
                   });
                   setImageFile(null);
+                  setRemoveImage(false);
+                  setImageError(undefined);
                   setIsModalOpen(true);
                 }}
                 className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-pink-600 hover:bg-pink-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-pink-950/40 transition cursor-pointer"
@@ -164,6 +175,7 @@ export default function AdminTeamPage() {
                     <div>
                       <div className="flex items-center gap-4 mb-4">
                         {imageSrc ? (
+                          // eslint-disable-next-line @next/next/no-img-element
                           <img
                             src={imageSrc}
                             alt={member.name}
@@ -197,6 +209,8 @@ export default function AdminTeamPage() {
                           onClick={() => {
                             setEditingMember(member);
                             setImageFile(null);
+                            setRemoveImage(false);
+                            setImageError(undefined);
                             setIsModalOpen(true);
                           }}
                           className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs cursor-pointer"
@@ -222,13 +236,13 @@ export default function AdminTeamPage() {
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xs">
               <form
                 onSubmit={handleSaveMember}
-                className="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4 text-xs"
+                className="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-3xl w-full shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto text-xs"
               >
                 <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                   <h3 className="text-lg font-bold text-white">
                     {editingMember?.id ? `Edit Team Member #${editingMember.id}` : "Add Team Member"}
                   </h3>
-                  <button type="button" onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-white text-base">
+                  <button type="button" onClick={() => setIsModalOpen(false)} disabled={actionLoading || isOptimizingImage} className="text-slate-400 hover:text-white text-base disabled:opacity-50">
                     ✕
                   </button>
                 </div>
@@ -258,21 +272,23 @@ export default function AdminTeamPage() {
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-slate-400 mb-1">Profile Photo</label>
-                    {editingMember?.image && (
-                      <div className="mb-2 flex items-center gap-3 bg-slate-950 p-2 rounded-xl border border-slate-800">
-                        <img src={getImageUrl(editingMember.image)!} alt="Current" className="w-10 h-10 object-cover rounded-lg" />
-                        <span className="text-[11px] text-slate-400 truncate">{editingMember.image}</span>
-                      </div>
-                    )}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => setImageFile(e.target.files?.[0] || null)}
-                      className="w-full p-2 bg-slate-950 border border-slate-800 rounded-xl text-slate-400 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:bg-pink-950 file:text-pink-300"
-                    />
-                  </div>
+                  <AdminImageField
+                    label="Profile photo"
+                    existingImageUrl={getImageUrl(editingMember?.image)}
+                    existingImageFilename={getImageFilename(editingMember?.image)}
+                    existingImageAlt={editingMember?.name || "Current team member photo"}
+                    selectedFile={imageFile}
+                    onSelectFile={setImageFile}
+                    onClearSelection={() => setImageFile(null)}
+                    onProcessingChange={setIsOptimizingImage}
+                    onRemoveExisting={() => setRemoveImage(true)}
+                    onUndoRemoval={() => setRemoveImage(false)}
+                    isExistingMarkedForRemoval={removeImage}
+                    disabled={actionLoading}
+                    error={imageError}
+                    aspectRatioGuidance="JPEG, PNG, or WebP up to 10 MB. A portrait image works best."
+                    accent="pink"
+                  />
 
                   <div>
                     <label className="block text-slate-400 mb-1">Bio / Profile Description *</label>
@@ -300,16 +316,21 @@ export default function AdminTeamPage() {
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(false)}
+                    disabled={actionLoading || isOptimizingImage}
                     className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-semibold cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    disabled={actionLoading}
+                    disabled={actionLoading || isOptimizingImage}
                     className="px-4 py-2 bg-pink-600 hover:bg-pink-500 text-white rounded-xl text-xs font-semibold shadow-lg disabled:opacity-50 cursor-pointer"
                   >
-                    {actionLoading ? "Saving Profile..." : "Save Profile"}
+                    {isOptimizingImage
+                      ? "Optimizing Photo..."
+                      : actionLoading
+                        ? "Saving Profile..."
+                        : "Save Profile"}
                   </button>
                 </div>
               </form>

@@ -2,17 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreProductRequest;
+use App\Http\Requests\UpdateProductRequest;
 use App\Models\Product;
 use App\Models\ProductGallery;
+use App\Services\ManagedImageStorage;
+use Dedoc\Scramble\Attributes\Response as ApiResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Throwable;
 
 class ProductController extends Controller
 {
-    /**
-     * Public: List all active products
-     */
+    /** Public: list active products. */
     public function index(Request $request)
     {
         $products = Product::where('is_active', true)
@@ -22,13 +25,11 @@ class ProductController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'data'   => $products,
+            'data' => $products,
         ]);
     }
 
-    /**
-     * Public: Get a single product by slug
-     */
+    /** Public: get one active product by slug. */
     public function show(string $slug)
     {
         $product = Product::where('slug', $slug)
@@ -38,170 +39,199 @@ class ProductController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'data'   => $product,
+            'data' => $product,
         ]);
     }
 
-    /**
-     * Admin: List ALL products (including inactive)
-     */
+    #[ApiResponse(403, 'Administrator authorization is required.')]
     public function adminIndex()
     {
-        $products = Product::with('galleries')->latest()->get();
-
         return response()->json([
             'status' => 'success',
-            'data'   => $products,
+            'data' => Product::with('galleries')->latest()->get(),
         ]);
     }
 
-    /**
-     * Admin: Create a new product
-     */
-    public function store(Request $request)
+    #[ApiResponse(403, 'Administrator authorization is required.')]
+    public function store(StoreProductRequest $request, ManagedImageStorage $images)
     {
-        $validated = $request->validate([
-            'title'             => 'required|string|max:255',
-            'slug'              => 'nullable|string|max:255|unique:products,slug',
-            'sku'               => 'nullable|string|max:100|unique:products,sku',
-            'short_description' => 'nullable|string',
-            'description'       => 'nullable|string',
-            'original_price'    => 'required|numeric|min:0',
-            'discount_type'     => 'nullable|in:percentage,fixed',
-            'discount_value'    => 'nullable|numeric|min:0',
-            'stock_quantity'    => 'nullable|integer|min:0',
-            'featured_image'    => 'required|image|mimes:jpeg,png,jpg,gif,svg,webp|max:9048',
-            'is_active'         => 'nullable|boolean',
-            'meta_title'        => 'nullable|string|max:255',
-            'meta_description'  => 'nullable|string',
-            'gallery.*'         => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:9048',
-        ]);
+        $attributes = $request->safe()->except(['featured_image', 'gallery']);
+        $attributes['slug'] = $this->availableSlug(
+            $attributes['slug'] ?? null,
+            $attributes['title'],
+        );
 
-        // Auto-generate slug from title if not provided
-        if (empty($validated['slug'])) {
-            $validated['slug'] = Str::slug($validated['title']);
-        }
+        $product = new Product;
+        $storedFiles = [];
 
-        // Upload featured image
-        if ($request->hasFile('featured_image')) {
-            $validated['featured_image'] = $request->file('featured_image')->store('products', 'public');
-        }
+        try {
+            $featuredPath = $images->storeUpload($request->file('featured_image'), 'products');
+            $storedFiles[] = ['path' => $featuredPath, 'directory' => 'products', 'attribute' => 'featured_image'];
 
-        $product = Product::create($validated);
-
-        // Upload gallery images
-        if ($request->hasFile('gallery')) {
-            foreach ($request->file('gallery') as $image) {
-                $path = $image->store('products/gallery', 'public');
-                ProductGallery::create([
-                    'product_id' => $product->id,
-                    'image'      => $path,
-                    'thumbnail'  => $path, // same path; you can generate thumbs separately
-                ]);
+            $galleryPaths = [];
+            foreach ($request->file('gallery', []) as $galleryImage) {
+                $path = $images->storeUpload($galleryImage, 'products/gallery');
+                $galleryPaths[] = $path;
+                $storedFiles[] = ['path' => $path, 'directory' => 'products/gallery', 'attribute' => 'image'];
             }
+
+            DB::transaction(function () use (&$product, $attributes, $featuredPath, $galleryPaths): void {
+                $product = Product::create([
+                    ...$attributes,
+                    'featured_image' => $featuredPath,
+                ]);
+
+                foreach ($galleryPaths as $path) {
+                    $product->galleries()->create([
+                        'image' => $path,
+                        'thumbnail' => $path,
+                    ]);
+                }
+            });
+        } catch (Throwable $exception) {
+            $this->cleanNewFiles($storedFiles, $product, $images);
+            throw $exception;
         }
 
         return response()->json([
-            'message' => 'Product created successfully',
-            'data'    => $product->load('galleries'),
+            'message' => 'Product created successfully.',
+            'data' => $product->load('galleries'),
         ], 201);
     }
 
-    /**
-     * Admin: Update an existing product
-     */
-    public function update(Request $request, Product $product)
-    {
-        $validated = $request->validate([
-            'title'             => 'sometimes|required|string|max:255',
-            'slug'              => 'sometimes|required|string|max:255|unique:products,slug,' . $product->id,
-            'sku'               => 'sometimes|nullable|string|max:100|unique:products,sku,' . $product->id,
-            'short_description' => 'nullable|string',
-            'description'       => 'nullable|string',
-            'original_price'    => 'sometimes|required|numeric|min:0',
-            'discount_type'     => 'nullable|in:percentage,fixed',
-            'discount_value'    => 'nullable|numeric|min:0',
-            'stock_quantity'    => 'nullable|integer|min:0',
-            'featured_image'    => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
-            'is_active'         => 'sometimes|boolean',
-            'meta_title'        => 'nullable|string|max:255',
-            'meta_description'  => 'nullable|string',
-            'gallery.*'         => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
-        ]);
+    #[ApiResponse(403, 'Administrator authorization is required.')]
+    public function update(
+        UpdateProductRequest $request,
+        Product $product,
+        ManagedImageStorage $images,
+    ) {
+        $attributes = $request->safe()->except(['featured_image', 'gallery']);
+        $oldFeaturedImage = $product->featured_image;
+        $newFeaturedPath = null;
+        $newGalleryPaths = [];
+        $storedFiles = [];
 
-        // Upload new featured image & delete old one
-        if ($request->hasFile('featured_image')) {
-            if ($product->featured_image && Storage::disk('public')->exists($product->featured_image)) {
-                Storage::disk('public')->delete($product->featured_image);
+        try {
+            if ($request->hasFile('featured_image')) {
+                $newFeaturedPath = $images->storeUpload($request->file('featured_image'), 'products');
+                $storedFiles[] = [
+                    'path' => $newFeaturedPath,
+                    'directory' => 'products',
+                    'attribute' => 'featured_image',
+                ];
             }
-            $validated['featured_image'] = $request->file('featured_image')->store('products', 'public');
+
+            foreach ($request->file('gallery', []) as $galleryImage) {
+                $path = $images->storeUpload($galleryImage, 'products/gallery');
+                $newGalleryPaths[] = $path;
+                $storedFiles[] = [
+                    'path' => $path,
+                    'directory' => 'products/gallery',
+                    'attribute' => 'image',
+                ];
+            }
+
+            DB::transaction(function () use (
+                $product,
+                $attributes,
+                $newFeaturedPath,
+                $newGalleryPaths,
+            ): void {
+                $product->fill($attributes);
+                if ($newFeaturedPath) {
+                    $product->featured_image = $newFeaturedPath;
+                }
+                $product->save();
+
+                foreach ($newGalleryPaths as $path) {
+                    $product->galleries()->create([
+                        'image' => $path,
+                        'thumbnail' => $path,
+                    ]);
+                }
+            });
+        } catch (Throwable $exception) {
+            $this->cleanNewFiles($storedFiles, $product, $images);
+            throw $exception;
         }
 
-        $product->update($validated);
-
-        // Append new gallery images (does NOT delete existing ones)
-        if ($request->hasFile('gallery')) {
-            foreach ($request->file('gallery') as $image) {
-                $path = $image->store('products/gallery', 'public');
-                ProductGallery::create([
-                    'product_id' => $product->id,
-                    'image'      => $path,
-                    'thumbnail'  => $path,
-                ]);
-            }
+        if ($newFeaturedPath && $oldFeaturedImage !== $newFeaturedPath) {
+            $images->deleteManaged($oldFeaturedImage, 'products', $product, 'featured_image');
         }
 
         return response()->json([
-            'message' => 'Product updated successfully',
-            'data'    => $product->load('galleries'),
+            'message' => 'Product updated successfully.',
+            'data' => $product->refresh()->load('galleries'),
         ]);
     }
 
-    /**
-     * Admin: Delete a product and its images
-     */
-    public function destroy(Product $product)
+    #[ApiResponse(403, 'Administrator authorization is required.')]
+    public function destroy(Product $product, ManagedImageStorage $images)
     {
-        // Delete featured image
-        if ($product->featured_image && Storage::disk('public')->exists($product->featured_image)) {
-            Storage::disk('public')->delete($product->featured_image);
+        $featuredImage = $product->featured_image;
+        $galleryFiles = $product->galleries
+            ->flatMap(fn (ProductGallery $gallery) => array_filter([
+                $gallery->image,
+                $gallery->thumbnail !== $gallery->image ? $gallery->thumbnail : null,
+            ]))
+            ->values();
+
+        DB::transaction(fn () => $product->delete());
+
+        $images->deleteManaged($featuredImage, 'products', $product, 'featured_image');
+        foreach ($galleryFiles as $path) {
+            $images->deleteManaged((string) $path, 'products/gallery', $product, 'galleries');
         }
 
-        // Delete all gallery images
-        foreach ($product->galleries as $gallery) {
-            if ($gallery->image && Storage::disk('public')->exists($gallery->image)) {
-                Storage::disk('public')->delete($gallery->image);
-            }
-            if ($gallery->thumbnail && $gallery->thumbnail !== $gallery->image
-                && Storage::disk('public')->exists($gallery->thumbnail)) {
-                Storage::disk('public')->delete($gallery->thumbnail);
-            }
-        }
-
-        $product->delete(); // cascades to galleries via DB constraint
-
-        return response()->json([
-            'message' => 'Product deleted successfully',
-        ]);
+        return response()->json(['message' => 'Product deleted successfully.']);
     }
 
-    /**
-     * Admin: Delete a single gallery image
-     */
-    public function destroyGalleryImage(ProductGallery $gallery)
-    {
-        if ($gallery->image && Storage::disk('public')->exists($gallery->image)) {
-            Storage::disk('public')->delete($gallery->image);
-        }
-        if ($gallery->thumbnail && $gallery->thumbnail !== $gallery->image
-            && Storage::disk('public')->exists($gallery->thumbnail)) {
-            Storage::disk('public')->delete($gallery->thumbnail);
-        }
-
+    #[ApiResponse(403, 'Administrator authorization is required.')]
+    public function destroyGalleryImage(
+        ProductGallery $gallery,
+        ManagedImageStorage $images,
+    ) {
+        $image = $gallery->image;
+        $thumbnail = $gallery->thumbnail;
         $gallery->delete();
 
-        return response()->json([
-            'message' => 'Gallery image deleted successfully',
-        ]);
+        $images->deleteManaged($image, 'products/gallery', $gallery, 'image');
+        if ($thumbnail && $thumbnail !== $image) {
+            $images->deleteManaged($thumbnail, 'products/gallery', $gallery, 'thumbnail');
+        }
+
+        return response()->json(['message' => 'Gallery image deleted successfully.']);
+    }
+
+    private function availableSlug(?string $requestedSlug, string $title): string
+    {
+        $base = Str::slug($requestedSlug ?: $title) ?: 'product';
+        $slug = $base;
+        $suffix = 2;
+
+        while (Product::where('slug', $slug)->exists()) {
+            $slug = $base.'-'.$suffix;
+            $suffix++;
+        }
+
+        return $slug;
+    }
+
+    /**
+     * @param  array<int, array{path: string, directory: string, attribute: string}>  $storedFiles
+     */
+    private function cleanNewFiles(
+        array $storedFiles,
+        Product $product,
+        ManagedImageStorage $images,
+    ): void {
+        foreach ($storedFiles as $storedFile) {
+            $images->deleteManaged(
+                $storedFile['path'],
+                $storedFile['directory'],
+                $product,
+                $storedFile['attribute'],
+            );
+        }
     }
 }

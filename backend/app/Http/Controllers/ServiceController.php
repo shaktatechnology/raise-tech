@@ -2,16 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ServiceHeader;
-use Illuminate\Http\Request;
+use App\Http\Requests\UpdateServiceHeaderRequest;
+use App\Http\Requests\UpsertServiceRequest;
 use App\Models\Service;
-use Illuminate\Support\Facades\Storage;
-
+use App\Models\ServiceHeader;
+use App\Services\ManagedImageStorage;
+use Dedoc\Scramble\Attributes\Response as ApiResponse;
 
 class ServiceController extends Controller
 {
-
-    //public:fetch hero header and all active services
+    // public:fetch hero header and all active services
     public function index()
     {
         $header = ServiceHeader::first();
@@ -23,26 +23,20 @@ class ServiceController extends Controller
         ]);
     }
 
-    //admin:update hero and header
-    public function updateHeader(Request $request)
+    // admin:update hero and header
+    #[ApiResponse(403, 'Administrator authorization is required.')]
+    public function updateHeader(UpdateServiceHeaderRequest $request, ManagedImageStorage $images)
     {
-        $validated = $request->validate([
-            'title' => 'nullable|string|max:255',
-            'hero_image' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:9048',
-        ]);
-
-        $header = ServiceHeader::first()?? new ServiceHeader();
-
-        if ($request->hasfile('hero_image')) {
-            //Delete old heroimage if exists
-            if ($header->hero_image) {
-                Storage::disk('public')->delete($header->hero_image);
-            }
-
-            $validated['hero_image'] = $request->file('hero_image')->store('services/hero','public');
-        }
-        $header->fill($validated);
-        $header->save();
+        $header = ServiceHeader::first() ?? new ServiceHeader;
+        $header->fill($request->safe()->except(['hero_image', 'remove_hero_image']));
+        $images->save(
+            $header,
+            'hero_image',
+            $request->file('hero_image'),
+            $request->boolean('remove_hero_image'),
+            'services/hero',
+        );
+        $header->refresh();
 
         return response()->json([
             'message' => 'Service header updated successfully.',
@@ -50,23 +44,20 @@ class ServiceController extends Controller
         ]);
     }
 
-    //admin:add new service
-    public function store(Request $request)
+    // admin:add new service
+    #[ApiResponse(403, 'Administrator authorization is required.')]
+    public function store(UpsertServiceRequest $request, ManagedImageStorage $images)
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'slogan' => 'nullable|string|max:255',
-            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:9048',
-            'description' => 'required|string',
-            'order' => 'nullable|integer',
-            'is_active' => 'nullable|boolean',
-        ]);
-
-        if ($request->hasFile('image')) {
-            $validated['image'] = $request->file('image')->store('services/items', 'public');
-        }
-
-        $service = Service::create($validated);
+        $service = new Service;
+        $service->fill($request->safe()->except(['image', 'remove_image']));
+        $images->save(
+            $service,
+            'image',
+            $request->file('image'),
+            false,
+            'services/items',
+        );
+        $service->refresh();
 
         return response()->json([
             'message' => 'Service created successfully.',
@@ -74,30 +65,23 @@ class ServiceController extends Controller
         ], 201);
     }
 
-    //Admin: upadate service
+    // Admin: upadate service
 
-    public function update(Request $request, Service $service)
-    {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'slogan' => 'nullable|string|max:255',
-            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:9048',
-            'description' => 'required|string',
-            'order' => 'nullable|integer',
-            'is_active' => 'nullable|boolean',
-        ]);
-
-        if ($request->hasFile('image')) {
-            //Delete old image if exists
-            if ($service->image) {
-                Storage::disk('public')->delete($service->image);
-            }
-
-            $validated['image'] = $request->file('image')->store('services/items', 'public');
-        }
-
-
-        $service->update($validated);
+    #[ApiResponse(403, 'Administrator authorization is required.')]
+    public function update(
+        UpsertServiceRequest $request,
+        Service $service,
+        ManagedImageStorage $images,
+    ) {
+        $service->fill($request->safe()->except(['image', 'remove_image']));
+        $images->save(
+            $service,
+            'image',
+            $request->file('image'),
+            $request->boolean('remove_image'),
+            'services/items',
+        );
+        $service->refresh();
 
         return response()->json([
             'message' => 'Service updated successfully.',
@@ -105,18 +89,16 @@ class ServiceController extends Controller
         ]);
 
     }
-    //Admin:Delete Service
+    // Admin:Delete Service
 
-    public function destroy(Service $service)
+    public function destroy(Service $service, ManagedImageStorage $images)
     {
-        if ($service->image) {
-            Storage::disk('public')->delete($service->image);
-        }
+        $oldImage = $service->image;
         $service->delete();
+        $images->deleteManaged($oldImage, 'services/items', $service, 'image');
 
         return response()->json([
             'message' => 'Service deleted successfully.',
         ]);
     }
-
 }

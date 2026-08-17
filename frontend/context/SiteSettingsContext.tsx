@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { fetchApi } from "@/lib/api";
+import { fetchApi, getImageUrl } from "@/lib/api";
 import { SiteSettings } from "@/lib/types";
 
 interface SiteSettingsContextType {
@@ -28,7 +28,8 @@ export function SiteSettingsProvider({ children }: { children: React.ReactNode }
   }, []);
 
   useEffect(() => {
-    load();
+    const timeoutId = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(timeoutId);
   }, [load]);
 
   // Keep the browser tab favicon in sync once settings load.
@@ -37,14 +38,17 @@ export function SiteSettingsProvider({ children }: { children: React.ReactNode }
   // display. A fully dynamic favicon on first paint needs a server-side
   // app/icon.tsx route instead.
   useEffect(() => {
-    if (!settings?.favicon) return;
     let link = document.querySelector<HTMLLinkElement>("link[rel~='icon']");
+    if (!settings?.favicon) {
+      link?.remove();
+      return;
+    }
     if (!link) {
       link = document.createElement("link");
       link.rel = "icon";
       document.head.appendChild(link);
     }
-    link.href = settings.favicon;
+    link.href = getImageUrl(settings.favicon);
   }, [settings?.favicon]);
 
   return (

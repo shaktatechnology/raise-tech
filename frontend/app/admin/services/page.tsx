@@ -2,7 +2,14 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import ProtectedRoute from "@/components/guards/ProtectedRoute";
-import { fetchApi } from "@/lib/api";
+import AdminImageField from "@/components/admin/AdminImageField";
+import {
+  fetchApi,
+  getApiErrorMessage,
+  getImageFilename,
+  getImageUrl,
+  getValidationError,
+} from "@/lib/api";
 import { useToast } from "@/context/ToastContext";
 
 export interface ServiceHeaderData {
@@ -36,13 +43,19 @@ export default function AdminServicesPage() {
   // Header update state
   const [headerTitleInput, setHeaderTitleInput] = useState<string>("");
   const [headerHeroFile, setHeaderHeroFile] = useState<File | null>(null);
+  const [removeHeaderHero, setRemoveHeaderHero] = useState(false);
+  const [headerHeroError, setHeaderHeroError] = useState<string>();
   const [isSavingHeader, setIsSavingHeader] = useState<boolean>(false);
+  const [isOptimizingHeaderImage, setIsOptimizingHeaderImage] = useState(false);
 
   // Modal / Form state for Service create/edit
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [editingService, setEditingService] = useState<Partial<ServiceData> | null>(null);
   const [serviceImageFile, setServiceImageFile] = useState<File | null>(null);
+  const [removeServiceImage, setRemoveServiceImage] = useState(false);
+  const [serviceImageError, setServiceImageError] = useState<string>();
   const [isSavingService, setIsSavingService] = useState<boolean>(false);
+  const [isOptimizingServiceImage, setIsOptimizingServiceImage] = useState(false);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
   const loadServices = useCallback(async () => {
@@ -57,47 +70,54 @@ export default function AdminServicesPage() {
       if (res) {
         setHeaderData(res.header || null);
         setHeaderTitleInput(res.header?.title || "");
+        setHeaderHeroFile(null);
+        setRemoveHeaderHero(false);
+        setHeaderHeroError(undefined);
         setServices(res.services || []);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to fetch services:", err);
-      setError(err.message || "Failed to load services data.");
-      toast.error(err.message || "Failed to load services");
+      const message = getApiErrorMessage(err, "Failed to load services data.");
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
   }, [toast]);
 
   useEffect(() => {
-    loadServices();
+    const timeoutId = window.setTimeout(() => void loadServices(), 0);
+    return () => window.clearTimeout(timeoutId);
   }, [loadServices]);
-
-  const getImageUrl = (path: string | null) => {
-    if (!path) return null;
-    if (path.startsWith("http://") || path.startsWith("https://")) return path;
-    const baseUrl = process.env.NEXT_PUBLIC_STORAGE_URL || "http://localhost:8000";
-    return `${baseUrl}${path.startsWith("/") ? "" : "/"}${path}`;
-  };
 
   // POST /api/services/header (multipart/form-data)
   const handleSaveHeader = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSavingHeader || isOptimizingHeaderImage) return;
     setIsSavingHeader(true);
+    setHeaderHeroError(undefined);
     try {
       const formData = new FormData();
-      if (headerTitleInput) formData.append("title", headerTitleInput);
+      formData.append("title", headerTitleInput.trim());
       if (headerHeroFile) formData.append("hero_image", headerHeroFile);
+      formData.append("remove_hero_image", removeHeaderHero ? "1" : "0");
 
-      const resData = await fetchApi("/services/header", {
+      const resData = await fetchApi<{
+        message: string;
+        header: ServiceHeaderData;
+      }>("/services/header", {
         method: "POST",
         body: formData,
       });
 
       setHeaderData(resData.header);
+      setHeaderTitleInput(resData.header.title || "");
       setHeaderHeroFile(null);
+      setRemoveHeaderHero(false);
       toast.success(resData.message || "Service header updated successfully.");
-    } catch (err: any) {
-      toast.error(err.message || "Error updating service header.");
+    } catch (err: unknown) {
+      setHeaderHeroError(getValidationError(err, "hero_image"));
+      toast.error(getApiErrorMessage(err, "Error updating service header."));
     } finally {
       setIsSavingHeader(false);
     }
@@ -112,8 +132,10 @@ export default function AdminServicesPage() {
       toast.error("Service Title and Description are required.");
       return;
     }
+    if (isSavingService || isOptimizingServiceImage) return;
 
     setIsSavingService(true);
+    setServiceImageError(undefined);
     try {
       const formData = new FormData();
       formData.append("title", editingService.title.trim());
@@ -126,12 +148,13 @@ export default function AdminServicesPage() {
       if (serviceImageFile) {
         formData.append("image", serviceImageFile);
       }
+      formData.append("remove_image", removeServiceImage ? "1" : "0");
 
       const endpoint = editingService.id
         ? `/services/${editingService.id}`
         : `/services`;
 
-      const resData = await fetchApi(endpoint, {
+      const resData = await fetchApi<{ message: string; service: ServiceData }>(endpoint, {
         method: "POST",
         body: formData,
       });
@@ -151,8 +174,10 @@ export default function AdminServicesPage() {
       setIsModalOpen(false);
       setEditingService(null);
       setServiceImageFile(null);
-    } catch (err: any) {
-      toast.error(err.message || "Error saving service.");
+      setRemoveServiceImage(false);
+    } catch (err: unknown) {
+      setServiceImageError(getValidationError(err, "image"));
+      toast.error(getApiErrorMessage(err, "Error saving service."));
     } finally {
       setIsSavingService(false);
     }
@@ -169,8 +194,8 @@ export default function AdminServicesPage() {
 
       setServices((prev) => prev.filter((s) => s.id !== id));
       toast.success(res.message || "Service deleted successfully.");
-    } catch (err: any) {
-      toast.error(err.message || "Failed to delete service.");
+    } catch (err: unknown) {
+      toast.error(getApiErrorMessage(err, "Failed to delete service."));
     } finally {
       setIsDeleting(false);
     }
@@ -210,6 +235,8 @@ export default function AdminServicesPage() {
                     is_active: true,
                   });
                   setServiceImageFile(null);
+                  setRemoveServiceImage(false);
+                  setServiceImageError(undefined);
                   setIsModalOpen(true);
                 }}
                 className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-amber-950/40 transition cursor-pointer"
@@ -235,8 +262,8 @@ export default function AdminServicesPage() {
               )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-              <div className="md:col-span-2">
+            <div>
+              <div>
                 <label className="block text-xs text-slate-400 mb-1">
                   Services Hero Title
                 </label>
@@ -248,39 +275,39 @@ export default function AdminServicesPage() {
                   className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500"
                 />
               </div>
-
-              <div>
-                <label className="block text-xs text-slate-400 mb-1">
-                  Hero Image File
-                </label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setHeaderHeroFile(e.target.files?.[0] || null)}
-                  className="w-full text-xs text-slate-400 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-slate-800 file:text-amber-400 hover:file:bg-slate-700 cursor-pointer"
-                />
-              </div>
             </div>
 
-            {headerData?.hero_image && (
-              <div className="mt-2 text-xs text-slate-400 flex items-center gap-3">
-                <span>Existing Banner Preview:</span>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={getImageUrl(headerData.hero_image) || ""}
-                  alt="Service Header"
-                  className="h-12 w-28 object-cover rounded-lg border border-slate-800"
-                />
-              </div>
-            )}
+            <AdminImageField
+              label="Services hero image"
+              existingImageUrl={getImageUrl(headerData?.hero_image)}
+              existingImageFilename={getImageFilename(headerData?.hero_image)}
+              existingImageAlt="Current saved Services page hero"
+              selectedFile={headerHeroFile}
+              onSelectFile={(file) => {
+                setHeaderHeroFile(file);
+                setRemoveHeaderHero(false);
+                setHeaderHeroError(undefined);
+              }}
+              onClearSelection={() => setHeaderHeroFile(null)}
+              onProcessingChange={setIsOptimizingHeaderImage}
+              onRemoveExisting={() => setRemoveHeaderHero(true)}
+              onUndoRemoval={() => setRemoveHeaderHero(false)}
+              isExistingMarkedForRemoval={removeHeaderHero}
+              disabled={isSavingHeader}
+              error={headerHeroError}
+              aspectRatioGuidance="Recommended: a wide JPEG, PNG, or WebP source image."
+              accent="amber"
+            />
 
             <div className="flex justify-end pt-2">
               <button
                 type="submit"
-                disabled={isSavingHeader}
+                disabled={isSavingHeader || isOptimizingHeaderImage}
                 className="px-5 py-2.5 bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold rounded-xl shadow-md transition disabled:opacity-50 flex items-center gap-2"
               >
-                {isSavingHeader ? (
+                {isOptimizingHeaderImage ? (
+                  "Optimizing image…"
+                ) : isSavingHeader ? (
                   <>
                     <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                     Saving Header...
@@ -365,6 +392,8 @@ export default function AdminServicesPage() {
                             is_active: Boolean(item.is_active),
                           });
                           setServiceImageFile(null);
+                          setRemoveServiceImage(false);
+                          setServiceImageError(undefined);
                           setIsModalOpen(true);
                         }}
                         className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium transition"
@@ -398,7 +427,13 @@ export default function AdminServicesPage() {
                   </h3>
                   <button
                     type="button"
-                    onClick={() => setIsModalOpen(false)}
+                    disabled={isSavingService || isOptimizingServiceImage}
+                    onClick={() => {
+                      setIsModalOpen(false);
+                      setServiceImageFile(null);
+                      setRemoveServiceImage(false);
+                      setServiceImageError(undefined);
+                    }}
                     className="text-slate-400 hover:text-white"
                   >
                     ✕
@@ -441,26 +476,29 @@ export default function AdminServicesPage() {
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-slate-400 mb-1">Service Image</label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => setServiceImageFile(e.target.files?.[0] || null)}
-                      className="w-full text-xs text-slate-400 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-slate-800 file:text-amber-400 hover:file:bg-slate-700 cursor-pointer"
-                    />
-                    {editingService?.image && !serviceImageFile && (
-                      <div className="mt-2 flex items-center gap-2">
-                        <span className="text-[10px] text-slate-500">Current Image:</span>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={getImageUrl(editingService.image) || ""}
-                          alt="Current"
-                          className="w-10 h-10 object-cover rounded-lg border border-slate-800"
-                        />
-                      </div>
-                    )}
-                  </div>
+                  <AdminImageField
+                    label="Service image"
+                    existingImageUrl={getImageUrl(editingService?.image)}
+                    existingImageFilename={getImageFilename(editingService?.image)}
+                    existingImageAlt={`Current saved image for ${
+                      editingService?.title || "this service"
+                    }`}
+                    selectedFile={serviceImageFile}
+                    onSelectFile={(file) => {
+                      setServiceImageFile(file);
+                      setRemoveServiceImage(false);
+                      setServiceImageError(undefined);
+                    }}
+                    onClearSelection={() => setServiceImageFile(null)}
+                    onProcessingChange={setIsOptimizingServiceImage}
+                    onRemoveExisting={() => setRemoveServiceImage(true)}
+                    onUndoRemoval={() => setRemoveServiceImage(false)}
+                    isExistingMarkedForRemoval={removeServiceImage}
+                    disabled={isSavingService || isOptimizingServiceImage}
+                    error={serviceImageError}
+                    aspectRatioGuidance="JPEG, PNG, or WebP source image."
+                    accent="amber"
+                  />
 
                   <div className="flex items-center gap-6 pt-2">
                     <div>
@@ -488,17 +526,25 @@ export default function AdminServicesPage() {
                 <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
                   <button
                     type="button"
-                    onClick={() => setIsModalOpen(false)}
+                    disabled={isSavingService || isOptimizingServiceImage}
+                    onClick={() => {
+                      setIsModalOpen(false);
+                      setServiceImageFile(null);
+                      setRemoveServiceImage(false);
+                      setServiceImageError(undefined);
+                    }}
                     className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-semibold hover:bg-slate-700"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    disabled={isSavingService}
+                    disabled={isSavingService || isOptimizingServiceImage}
                     className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-semibold shadow-lg disabled:opacity-50 flex items-center gap-2"
                   >
-                    {isSavingService ? (
+                    {isOptimizingServiceImage ? (
+                      "Optimizing image…"
+                    ) : isSavingService ? (
                       <>
                         <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                         Saving...

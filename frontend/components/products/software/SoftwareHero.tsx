@@ -1,16 +1,38 @@
+"use client";
+
 import React from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { fetchApi, getImageUrl } from '@/lib/api';
 
 export default function SoftwareHero() {
+  const [heroImage, setHeroImage] = useState('/images/products/software/software-hero.png');
+
+  useEffect(() => {
+    async function loadHeroImage() {
+      try {
+        const response = await fetchApi<{
+          data?: { section?: { hero_image?: string | null } | null };
+        }>("/software");
+        const savedImage = getImageUrl(response.data?.section?.hero_image);
+        if (savedImage) setHeroImage(savedImage);
+      } catch {
+        // Keep the bundled fallback if the public API is unavailable.
+      }
+    }
+
+    void loadHeroImage();
+  }, []);
+
   return (
     <section className="relative w-full h-[320px] sm:h-[400px] md:h-[480px] overflow-hidden bg-[#022c43]">
       {/* Background Image */}
       <Image
-        src="/images/products/software/software-hero.png"
+        src={heroImage}
         alt="Raise Tech Enterprise Software Solutions Banner"
         fill
         priority
+        unoptimized={heroImage.startsWith("http")}
         className="object-cover object-center"
       />
 

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { fetchApi } from "@/lib/api";
+import { fetchApi, getApiErrorMessage, getImageUrl } from "@/lib/api";
 
 export interface ServiceHeaderAPI {
   id: number;
@@ -45,22 +45,16 @@ export default function ServicesPageContent() {
           setHeaderData(res.header || null);
           setServices((res.services || []).filter((s) => Boolean(s.is_active)));
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Failed to fetch public services:", err);
-        setError(err.message || "Failed to load services.");
+        setError(getApiErrorMessage(err, "Failed to load services."));
       } finally {
         setLoading(false);
       }
     }
-    loadServices();
+    const timeoutId = window.setTimeout(() => void loadServices(), 0);
+    return () => window.clearTimeout(timeoutId);
   }, []);
-
-  const getImageUrl = (path: string | null | undefined) => {
-    if (!path) return null;
-    if (path.startsWith("http://") || path.startsWith("https://")) return path;
-    const baseUrl = process.env.NEXT_PUBLIC_STORAGE_URL || "http://localhost:8000";
-    return `${baseUrl}${path.startsWith("/") ? "" : "/"}${path}`;
-  };
 
   const heroImageUrl = getImageUrl(headerData?.hero_image) || "/images/services/services-hero.png";
   const heroTitle = headerData?.title || "Comprehensive IT & Software Solutions Designed to Scale Your Enterprise";

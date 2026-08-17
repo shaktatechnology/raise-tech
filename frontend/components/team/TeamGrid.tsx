@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
-import { fetchApi } from "@/lib/api";
+import { fetchApi, getImageUrl } from "@/lib/api";
 
 interface TeamMemberAPI {
   id: number;
@@ -32,13 +32,6 @@ export default function TeamGrid() {
     }
     loadTeam();
   }, []);
-
-  const getImageUrl = (path: string | null) => {
-    if (!path) return null;
-    if (path.startsWith("http://") || path.startsWith("https://")) return path;
-    const baseUrl = process.env.NEXT_PUBLIC_STORAGE_URL || "http://localhost:8000";
-    return `${baseUrl}${path.startsWith("/") ? "" : "/"}${path}`;
-  };
 
   if (loading) {
     return (
