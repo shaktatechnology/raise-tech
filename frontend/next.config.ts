@@ -22,6 +22,22 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "127.0.0.1",
       },
+      {
+        protocol: "http",
+        hostname: "194.233.90.79",
+      },
+      {
+        protocol: "https",
+        hostname: "194.233.90.79",
+      },
+      {
+        protocol: "http",
+        hostname: "**",
+      },
+      {
+        protocol: "https",
+        hostname: "**",
+      },
     ],
   },
 };

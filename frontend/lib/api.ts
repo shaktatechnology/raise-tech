@@ -56,6 +56,7 @@ export function getImageUrl(path?: string | null): string {
   if (!path) return "";
   if (/^https?:\/\//i.test(path)) return path;
 
-  const origin = API_BASE_URL.replace(/\/api\/?$/, "");
+  const storageUrl = process.env.NEXT_PUBLIC_STORAGE_URL;
+  const origin = storageUrl || API_BASE_URL.replace(/\/api\/?$/, "");
   return `${origin}${path.startsWith("/") ? path : `/${path}`}`;
 }
