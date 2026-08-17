@@ -64,12 +64,9 @@ export default function AdminSoftwarePage() {
       const formData = new FormData();
       formData.append("hero_image", heroImageFile);
 
-<<<<<<< Updated upstream
+
       const resData = await fetchApi("/software/section", {
-=======
-      const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/software/section`, {
->>>>>>> Stashed changes
+
         method: "POST",
         body: formData,
       });
@@ -103,16 +100,11 @@ export default function AdminSoftwarePage() {
         formData.append("image", softwareImageFile);
       }
 
-<<<<<<< Updated upstream
+
       const endpoint = editingItem.id
         ? `/software/${editingItem.id}`
         : `/software`;
-=======
-      const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
-      const url = editingItem.id
-        ? `NEXT_PUBLIC_API_URL/api/software/${editingItem.id}`
-        : `NEXT_PUBLIC_API_URL/api/software`;
->>>>>>> Stashed changes
+
 
       const resData = await fetchApi(endpoint, {
         method: "POST",
@@ -149,14 +141,11 @@ export default function AdminSoftwarePage() {
 
   const getImageUrl = (path: string | null) => {
     if (!path) return null;
-<<<<<<< Updated upstream
+
     if (path.startsWith("http://") || path.startsWith("https://")) return path;
     const baseUrl = process.env.NEXT_PUBLIC_STORAGE_URL || "http://localhost:8000";
     return `${baseUrl}${path.startsWith("/") ? "" : "/"}${path}`;
-=======
-    if (path.startsWith("http") || path.startsWith("/")) return path;
-    return `NEXT_PUBLIC_API_URL/storage/${path}`;
->>>>>>> Stashed changes
+
   };
 
   return (
