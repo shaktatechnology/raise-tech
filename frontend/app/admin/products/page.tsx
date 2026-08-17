@@ -1,8 +1,16 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import AdminGalleryImageField from "@/components/admin/AdminGalleryImageField";
+import AdminImageField from "@/components/admin/AdminImageField";
 import ProtectedRoute from "@/components/guards/ProtectedRoute";
-import { fetchApi } from "@/lib/api";
+import {
+  fetchApi,
+  getApiErrorMessage,
+  getImageFilename,
+  getImageUrl,
+  getValidationError,
+} from "@/lib/api";
 
 interface ProductGallery {
   id: number;
@@ -45,7 +53,12 @@ export default function AdminProductsPage() {
 
   // Form states for file uploads
   const [featuredImageFile, setFeaturedImageFile] = useState<File | null>(null);
-  const [galleryFiles, setGalleryFiles] = useState<FileList | null>(null);
+  const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
+  const [featuredImageError, setFeaturedImageError] = useState<string>();
+  const [galleryImageError, setGalleryImageError] = useState<string>();
+  const [isOptimizingFeaturedImage, setIsOptimizingFeaturedImage] = useState(false);
+  const [isOptimizingGalleryImages, setIsOptimizingGalleryImages] = useState(false);
+  const isOptimizingImages = isOptimizingFeaturedImage || isOptimizingGalleryImages;
 
   const loadProducts = useCallback(async () => {
     setLoading(true);
@@ -53,15 +66,16 @@ export default function AdminProductsPage() {
     try {
       const res = await fetchApi<{ status: string; data: Product[] }>("/admin/products");
       setProducts(res.data || []);
-    } catch (err: any) {
-      setError(err.message || "Failed to load product catalog.");
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, "Failed to load product catalog."));
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    loadProducts();
+    const timeoutId = window.setTimeout(() => void loadProducts(), 0);
+    return () => window.clearTimeout(timeoutId);
   }, [loadProducts]);
 
   const filteredProducts = products.filter((p) => {
@@ -89,7 +103,7 @@ export default function AdminProductsPage() {
           prev.map((p) => (p.id === product.id ? { ...p, is_active: !product.is_active } : p))
         );
       }
-    } catch (err: any) {
+    } catch {
       alert("Failed to update status.");
     }
   };
@@ -99,8 +113,8 @@ export default function AdminProductsPage() {
     try {
       await fetchApi(`/products/${id}`, { method: "DELETE" });
       setProducts((prev) => prev.filter((p) => p.id !== id));
-    } catch (err: any) {
-      alert(err.message || "Failed to delete product.");
+    } catch (err: unknown) {
+      alert(getApiErrorMessage(err, "Failed to delete product."));
     }
   };
 
@@ -122,8 +136,8 @@ export default function AdminProductsPage() {
           galleries: prev?.galleries?.filter((g) => g.id !== galleryId),
         }));
       }
-    } catch (err: any) {
-      alert(err.message || "Failed to delete gallery image.");
+    } catch (err: unknown) {
+      alert(getApiErrorMessage(err, "Failed to delete gallery image."));
     }
   };
 
@@ -138,8 +152,11 @@ export default function AdminProductsPage() {
       alert("Featured Image is required for new products.");
       return;
     }
+    if (actionLoading || isOptimizingImages) return;
 
     setActionLoading(true);
+    setFeaturedImageError(undefined);
+    setGalleryImageError(undefined);
     try {
       const formData = new FormData();
       formData.append("title", editingProduct.title || "");
@@ -167,8 +184,8 @@ export default function AdminProductsPage() {
         formData.append("featured_image", featuredImageFile);
       }
 
-      if (galleryFiles) {
-        Array.from(galleryFiles).forEach((file) => {
+      if (galleryFiles.length > 0) {
+        galleryFiles.forEach((file) => {
           formData.append("gallery[]", file);
         });
       }
@@ -193,19 +210,16 @@ export default function AdminProductsPage() {
       setIsModalOpen(false);
       setEditingProduct(null);
       setFeaturedImageFile(null);
-      setGalleryFiles(null);
-    } catch (err: any) {
-      alert(err.message || "Error saving product.");
+      setGalleryFiles([]);
+    } catch (err: unknown) {
+      setFeaturedImageError(getValidationError(err, "featured_image"));
+      setGalleryImageError(
+        getValidationError(err, "gallery") || getValidationError(err, "gallery.0")
+      );
+      alert(getApiErrorMessage(err, "Error saving product."));
     } finally {
       setActionLoading(false);
     }
-  };
-
-  const getImageUrl = (path: string) => {
-    if (!path) return "/placeholder.jpg";
-    if (path.startsWith("http://") || path.startsWith("https://")) return path;
-    const baseUrl = process.env.NEXT_PUBLIC_STORAGE_URL || "http://localhost:8000";
-    return `${baseUrl}${path.startsWith("/") ? "" : "/"}${path}`;
   };
 
   return (
@@ -240,7 +254,9 @@ export default function AdminProductsPage() {
                     is_active: true,
                   });
                   setFeaturedImageFile(null);
-                  setGalleryFiles(null);
+                  setGalleryFiles([]);
+                  setFeaturedImageError(undefined);
+                  setGalleryImageError(undefined);
                   setIsModalOpen(true);
                 }}
                 className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-cyan-950/40 transition cursor-pointer"
@@ -314,6 +330,7 @@ export default function AdminProductsPage() {
                             <div className="flex items-center gap-3">
                               <div className="w-12 h-12 bg-slate-950 rounded-lg border border-slate-800 overflow-hidden shrink-0 flex items-center justify-center">
                                 {product.featured_image ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
                                   <img
                                     src={getImageUrl(product.featured_image)}
                                     alt={product.title}
@@ -370,7 +387,9 @@ export default function AdminProductsPage() {
                               onClick={() => {
                                 setEditingProduct(product);
                                 setFeaturedImageFile(null);
-                                setGalleryFiles(null);
+                                setGalleryFiles([]);
+                                setFeaturedImageError(undefined);
+                                setGalleryImageError(undefined);
                                 setIsModalOpen(true);
                               }}
                               className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs transition cursor-pointer"
@@ -398,7 +417,7 @@ export default function AdminProductsPage() {
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xs">
               <form
                 onSubmit={handleSaveProduct}
-                className="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-2xl w-full shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto text-xs"
+                className="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-4xl w-full shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto text-xs"
               >
                 <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                   <h3 className="text-lg font-bold text-white">
@@ -482,12 +501,14 @@ export default function AdminProductsPage() {
                       <label className="block text-slate-400 mb-1">Discount Type</label>
                       <select
                         value={editingProduct?.discount_type || ""}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          const value = e.target.value;
                           setEditingProduct({
                             ...editingProduct,
-                            discount_type: (e.target.value as any) || null,
-                          })
-                        }
+                            discount_type:
+                              value === "percentage" || value === "fixed" ? value : null,
+                          });
+                        }}
                         className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-cyan-500"
                       >
                         <option value="">None</option>
@@ -512,36 +533,29 @@ export default function AdminProductsPage() {
                     </div>
                   </div>
 
-                  {/* Featured Image File */}
-                  <div>
-                    <label className="block text-slate-400 mb-1">
-                      Featured Image {!editingProduct?.id && <span className="text-red-400">*</span>}
-                    </label>
-                    {editingProduct?.featured_image && (
-                      <div className="mb-2 flex items-center gap-3 bg-slate-950 p-2 rounded-xl border border-slate-800">
-                        <img
-                          src={getImageUrl(editingProduct.featured_image)}
-                          alt="Current Featured"
-                          className="w-10 h-10 object-cover rounded-lg"
-                        />
-                        <span className="text-[11px] text-slate-400 truncate">{editingProduct.featured_image}</span>
-                      </div>
-                    )}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => setFeaturedImageFile(e.target.files?.[0] || null)}
-                      className="w-full p-2 bg-slate-950 border border-slate-800 rounded-xl text-slate-400 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:bg-cyan-950 file:text-cyan-400"
-                    />
-                  </div>
+                  <AdminImageField
+                    label={`Featured image${editingProduct?.id ? "" : " *"}`}
+                    existingImageUrl={getImageUrl(editingProduct?.featured_image)}
+                    existingImageFilename={getImageFilename(editingProduct?.featured_image)}
+                    existingImageAlt={editingProduct?.title || "Current featured product image"}
+                    selectedFile={featuredImageFile}
+                    onSelectFile={setFeaturedImageFile}
+                    onClearSelection={() => setFeaturedImageFile(null)}
+                    onProcessingChange={setIsOptimizingFeaturedImage}
+                    disabled={actionLoading}
+                    error={featuredImageError}
+                    aspectRatioGuidance="JPEG, PNG, or WebP up to 10 MB. Large images are optimized before upload."
+                    accent="cyan"
+                  />
 
                   {/* Gallery Photos */}
-                  <div>
-                    <label className="block text-slate-400 mb-1">Gallery Images (Multiple)</label>
+                  <div className="space-y-3">
+                    <p className="text-xs font-semibold text-slate-300">Current saved gallery</p>
                     {editingProduct?.galleries && editingProduct.galleries.length > 0 && (
-                      <div className="grid grid-cols-4 gap-2 mb-2">
+                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                         {editingProduct.galleries.map((gallery) => (
                           <div key={gallery.id} className="relative group bg-slate-950 rounded-lg overflow-hidden border border-slate-800">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={getImageUrl(gallery.image)}
                               alt="Gallery"
@@ -558,14 +572,21 @@ export default function AdminProductsPage() {
                         ))}
                       </div>
                     )}
-                    <input
-                      type="file"
-                      multiple
-                      accept="image/*"
-                      onChange={(e) => setGalleryFiles(e.target.files)}
-                      className="w-full p-2 bg-slate-950 border border-slate-800 rounded-xl text-slate-400 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:bg-slate-800 file:text-slate-200"
-                    />
+                    {(!editingProduct?.galleries || editingProduct.galleries.length === 0) && (
+                      <div className="rounded-xl border border-dashed border-slate-800 bg-slate-950/50 px-4 py-6 text-center text-[11px] text-slate-600">
+                        No current saved gallery images
+                      </div>
+                    )}
                   </div>
+
+                  <AdminGalleryImageField
+                    selectedFiles={galleryFiles}
+                    onChange={setGalleryFiles}
+                    onProcessingChange={setIsOptimizingGalleryImages}
+                    disabled={actionLoading}
+                    error={galleryImageError}
+                    optimizationOptions={{ targetBytes: 500 * 1024 }}
+                  />
 
                   <div>
                     <label className="block text-slate-400 mb-1">Short Description</label>
@@ -606,16 +627,21 @@ export default function AdminProductsPage() {
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(false)}
+                    disabled={actionLoading || isOptimizingImages}
                     className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-semibold cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    disabled={actionLoading}
+                    disabled={actionLoading || isOptimizingImages}
                     className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-cyan-950/40 disabled:opacity-50 cursor-pointer"
                   >
-                    {actionLoading ? "Saving Product..." : "Save Product"}
+                    {isOptimizingImages
+                      ? "Optimizing Images..."
+                      : actionLoading
+                        ? "Saving Product..."
+                        : "Save Product"}
                   </button>
                 </div>
               </form>

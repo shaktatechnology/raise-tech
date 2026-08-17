@@ -2,13 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\UpdateBannerRequest;
+use App\Http\Requests\UpsertPortfolioRequest;
 use App\Models\Banner;
 use App\Models\HomeService;
 use App\Models\Portfolio;
 use App\Models\Testimonial;
+use App\Services\ManagedImageStorage;
+use Dedoc\Scramble\Attributes\Response as ApiResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Contracts\Filesystem\Filesystem;
 
 class HomeController extends Controller
 {
@@ -36,30 +38,19 @@ class HomeController extends Controller
     /**
      * Admin: update the Banner (title, image, description).
      */
-    public function updateBanner(Request $request)
+    #[ApiResponse(403, 'Administrator authorization is required.')]
+    public function updateBanner(UpdateBannerRequest $request, ManagedImageStorage $images)
     {
-        $validated = $request->validate([
-            'title' => 'nullable|string|max:255',
-            'image' => ['nullable', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
-            'description' => 'nullable|string',
-        ]);
-
-        $banner = Banner::firstOrCreate(['id' => 1]);
-
-        if ($request->hasFile('image')) {
-            // Remove old image file if it was one of ours
-            if ($banner->image) {
-                $oldPath = str_replace(Storage::disk('public')->url(''), '', $banner->image);
-                Storage::disk('public')->delete($oldPath);
-            }
-            $validated['image'] = Storage::disk('public')->url(
-                $request->file('image')->store('banner', 'public')
-            );
-        } else {
-            unset($validated['image']); // keep existing image
-        }
-
-        $banner->update($validated);
+        $banner = Banner::first() ?? new Banner;
+        $banner->fill($request->safe()->except(['image', 'remove_image']));
+        $images->save(
+            $banner,
+            'image',
+            $request->file('image'),
+            $request->boolean('remove_image'),
+            'banner',
+        );
+        $banner->refresh();
 
         return response()->json([
             'message' => 'Banner updated successfully',
@@ -118,23 +109,19 @@ class HomeController extends Controller
     /**
      * Admin: add a new Portfolio item.
      */
-    public function storePortfolio(Request $request)
+    #[ApiResponse(403, 'Administrator authorization is required.')]
+    public function storePortfolio(UpsertPortfolioRequest $request, ManagedImageStorage $images)
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'image' => ['nullable', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
-            'description' => 'required|string',
-        ]);
-
-        if ($request->hasFile('image')) {
-            $validated['image'] = Storage::disk('public')->url(
-                $request->file('image')->store('portfolio', 'public')
-            );
-        } else {
-            unset($validated['image']);
-        }
-
-        $portfolio = Portfolio::create($validated);
+        $portfolio = new Portfolio;
+        $portfolio->fill($request->safe()->except(['image', 'remove_image']));
+        $images->save(
+            $portfolio,
+            'image',
+            $request->file('image'),
+            false,
+            'portfolio',
+        );
+        $portfolio->refresh();
 
         return response()->json([
             'message' => 'Portfolio item created successfully',
@@ -145,28 +132,21 @@ class HomeController extends Controller
     /**
      * Admin: update a Portfolio item.
      */
-    public function updatePortfolio(Request $request, Portfolio $portfolio)
-    {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'image' => ['nullable', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
-            'description' => 'required|string',
-        ]);
-
-        if ($request->hasFile('image')) {
-            // Remove old image file if it was one of ours
-            if ($portfolio->image) {
-                $oldPath = str_replace(Storage::disk('public')->url(''), '', $portfolio->image);
-                Storage::disk('public')->delete($oldPath);
-            }
-            $validated['image'] = Storage::disk('public')->url(
-                $request->file('image')->store('portfolio', 'public')
-            );
-        } else {
-            unset($validated['image']); // keep existing image
-        }
-
-        $portfolio->update($validated);
+    #[ApiResponse(403, 'Administrator authorization is required.')]
+    public function updatePortfolio(
+        UpsertPortfolioRequest $request,
+        Portfolio $portfolio,
+        ManagedImageStorage $images,
+    ) {
+        $portfolio->fill($request->safe()->except(['image', 'remove_image']));
+        $images->save(
+            $portfolio,
+            'image',
+            $request->file('image'),
+            $request->boolean('remove_image'),
+            'portfolio',
+        );
+        $portfolio->refresh();
 
         return response()->json([
             'message' => 'Portfolio item updated successfully',
@@ -177,9 +157,11 @@ class HomeController extends Controller
     /**
      * Admin: delete a Portfolio item.
      */
-    public function destroyPortfolio(Portfolio $portfolio)
+    public function destroyPortfolio(Portfolio $portfolio, ManagedImageStorage $images)
     {
+        $oldImage = $portfolio->image;
         $portfolio->delete();
+        $images->deleteManaged($oldImage, 'portfolio', $portfolio, 'image');
 
         return response()->json([
             'message' => 'Portfolio item deleted successfully',

@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\UpsertTeamMemberRequest;
 use App\Models\Team;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
+use App\Services\ManagedImageStorage;
+use Dedoc\Scramble\Attributes\Response as ApiResponse;
 
 class TeamController extends Controller
 {
@@ -15,79 +16,64 @@ class TeamController extends Controller
     {
         return response()->json([
             'status' => 'success',
-            'data' => Team::where('is_active', true)->get()
+            'data' => Team::where('is_active', true)->get(),
         ]);
     }
 
     /**
      * Add a new team member
      */
-    public function store(Request $request)
+    #[ApiResponse(403, 'Administrator authorization is required.')]
+    public function store(UpsertTeamMemberRequest $request, ManagedImageStorage $images)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'position' => 'required|string|max:255',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
-            'description' => 'required|string',
-            'is_active' => 'nullable|boolean',
-        ]);
-
-        if ($request->hasFile('image')) {
-            $path = $request->file('image')->store('teams', 'public');
-            $validated['image'] = $path;
-        }
-
-        $team = Team::create($validated);
+        $team = new Team;
+        $team->fill($request->safe()->except(['image', 'remove_image']));
+        $images->save($team, 'image', $request->file('image'), false, 'teams');
+        $team->refresh();
 
         return response()->json([
-            'message' => 'Team member added successfully',
-            'data' => $team
+            'message' => 'Team member added successfully.',
+            'data' => $team,
         ], 201);
     }
 
     /**
      * Update an existing team member
      */
-    public function update(Request $request, Team $team)
-    {
-        $validated = $request->validate([
-            'name' => 'sometimes|required|string|max:255',
-            'position' => 'sometimes|required|string|max:255',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
-            'description' => 'sometimes|required|string',
-            'is_active' => 'sometimes|boolean',
-        ]);
-
-        if ($request->hasFile('image')) {
-            // Delete old image if exists
-            if ($team->image && Storage::disk('public')->exists($team->image)) {
-                Storage::disk('public')->delete($team->image);
-            }
-            $path = $request->file('image')->store('teams', 'public');
-            $validated['image'] = $path;
-        }
-
-        $team->update($validated);
+    #[ApiResponse(403, 'Administrator authorization is required.')]
+    public function update(
+        UpsertTeamMemberRequest $request,
+        Team $team,
+        ManagedImageStorage $images,
+    ) {
+        $team->fill($request->safe()->except(['image', 'remove_image']));
+        $images->save(
+            $team,
+            'image',
+            $request->file('image'),
+            $request->boolean('remove_image'),
+            'teams',
+        );
+        $team->refresh();
 
         return response()->json([
-            'message' => 'Team member updated successfully',
-            'data' => $team
+            'message' => 'Team member updated successfully.',
+            'data' => $team,
         ]);
     }
 
     /**
      * Delete a team member
      */
-    public function destroy(Team $team)
+    #[ApiResponse(403, 'Administrator authorization is required.')]
+    public function destroy(Team $team, ManagedImageStorage $images)
     {
-        if ($team->image && Storage::disk('public')->exists($team->image)) {
-            Storage::disk('public')->delete($team->image);
-        }
-
+        $oldImage = $team->image;
         $team->delete();
+        $images->deleteManaged($oldImage, 'teams', $team, 'image');
 
         return response()->json([
-            'message' => 'Team member deleted successfully'
+            'message' => 'Team member deleted successfully.',
         ]);
     }
 }

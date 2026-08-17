@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Product } from "@/lib/types";
-import { fetchApi } from "@/lib/api";
+import { fetchApi, getImageUrl as resolveImageUrl } from "@/lib/api";
 import { useCart } from "@/context/CartContext";
 import { useToast } from "@/context/ToastContext";
 
@@ -79,10 +79,7 @@ export default function ProductDetailPage() {
   }, [slug]);
 
   const getImageUrl = (path: string | null) => {
-    if (!path) return "/placeholder.jpg";
-    if (path.startsWith("http://") || path.startsWith("https://")) return path;
-    const baseUrl = process.env.NEXT_PUBLIC_STORAGE_URL || "http://localhost:8000";
-    return `${baseUrl}${path.startsWith("/") ? "" : "/"}${path}`;
+    return resolveImageUrl(path) || "/placeholder.jpg";
   };
 
   if (loading) {

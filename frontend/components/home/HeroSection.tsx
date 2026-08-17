@@ -3,6 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Carattere } from 'next/font/google';
 import type { Banner } from '@/lib/types/home';
+import { getImageUrl } from '@/lib/api';
 
 const carattere = Carattere({
   subsets: ['latin'],
@@ -15,7 +16,7 @@ interface HeroSectionProps {
 }
 
 export default function HeroSection({ banner }: HeroSectionProps) {
-  const heroImage = banner?.image || '/images/home/hero-bg.png';
+  const heroImage = getImageUrl(banner?.image) || '/images/home/hero-bg.png';
   const title = banner?.title || 'Always deliver more than Expected.';
   const description =
     banner?.description ||

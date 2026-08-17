@@ -48,8 +48,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/cart', [CartController::class, 'clearCart']);
     Route::post('/cart/merge', [CartController::class, 'mergeCart']);
 
-    // settings
-    Route::post('/settings', [SettingController::class, 'update']);
+    // Settings administration
+    Route::middleware('admin')->group(function () {
+        Route::post('/settings', [SettingController::class, 'update']);
+    });
 
     // inquiries
     Route::get('/inquiries', [ContactController::class, 'index']);
@@ -57,11 +59,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/inquiries/{contact}/read', [ContactController::class, 'markAsRead']);
     Route::get('/inquiries/unread', [ContactController::class, 'unreadCount']);
 
-    // services
-    Route::post('/services/header', [ServiceController::class, 'updateHeader']);
-    Route::post('/services', [ServiceController::class, 'store']);
-    Route::post('/services/{service}', [ServiceController::class, 'update']);
-    Route::delete('/services/{service}', [ServiceController::class, 'destroy']);
+    // Services administration
+    Route::middleware('admin')->group(function () {
+        Route::post('/services/header', [ServiceController::class, 'updateHeader']);
+        Route::post('/services', [ServiceController::class, 'store']);
+        Route::post('/services/{service}', [ServiceController::class, 'update']);
+        Route::delete('/services/{service}', [ServiceController::class, 'destroy']);
+    });
 
     // About page administration
     Route::middleware('admin')->group(function () {
@@ -76,38 +80,46 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/about/why_choose_us/{whyChooseUs}', [AboutController::class, 'destroyWhyChooseUs']);
     });
 
-    // Team
-    Route::post('/team', [TeamController::class, 'store']);
-    Route::post('/team/{team}', [TeamController::class, 'update']);
-    Route::delete('/team/{team}', [TeamController::class, 'destroy']);
+    // Team administration
+    Route::middleware('admin')->group(function () {
+        Route::post('/team', [TeamController::class, 'store']);
+        Route::post('/team/{team}', [TeamController::class, 'update']);
+        Route::delete('/team/{team}', [TeamController::class, 'destroy']);
+    });
 
-    // Software
-    Route::post('/software/section', [SoftwareController::class, 'updateSection']);
-    Route::post('/software', [SoftwareController::class, 'store']);
-    Route::post('/software/{software}', [SoftwareController::class, 'update']);
-    Route::delete('/software/{software}', [SoftwareController::class, 'destroy']);
+    // Software administration
+    Route::middleware('admin')->group(function () {
+        Route::post('/software/section', [SoftwareController::class, 'updateSection']);
+        Route::post('/software', [SoftwareController::class, 'store']);
+        Route::post('/software/{software}', [SoftwareController::class, 'update']);
+        Route::delete('/software/{software}', [SoftwareController::class, 'destroy']);
+    });
 
-    // Home
-    Route::post('/home/banner/update', [HomeController::class, 'updateBanner']);
+    // Homepage administration
+    Route::middleware('admin')->group(function () {
+        Route::post('/home/banner/update', [HomeController::class, 'updateBanner']);
 
-    Route::post('/home/services/store', [HomeController::class, 'storeService']);
-    Route::post('/home/services/{homeService}', [HomeController::class, 'updateService']);
-    Route::delete('/home/services/{homeService}', [HomeController::class, 'destroyService']);
+        Route::post('/home/services/store', [HomeController::class, 'storeService']);
+        Route::post('/home/services/{homeService}', [HomeController::class, 'updateService']);
+        Route::delete('/home/services/{homeService}', [HomeController::class, 'destroyService']);
 
-    Route::post('/home/portfolio/store', [HomeController::class, 'storePortfolio']);
-    Route::post('/home/portfolio/{portfolio}', [HomeController::class, 'updatePortfolio']);
-    Route::delete('/home/portfolio/{portfolio}', [HomeController::class, 'destroyPortfolio']);
+        Route::post('/home/portfolio/store', [HomeController::class, 'storePortfolio']);
+        Route::post('/home/portfolio/{portfolio}', [HomeController::class, 'updatePortfolio']);
+        Route::delete('/home/portfolio/{portfolio}', [HomeController::class, 'destroyPortfolio']);
 
-    Route::post('/home/testimonials/store', [HomeController::class, 'storeTestimonial']);
-    Route::post('/home/testimonials/{testimonial}', [HomeController::class, 'updateTestimonial']);
-    Route::delete('/home/testimonials/{testimonial}', [HomeController::class, 'destroyTestimonial']);
+        Route::post('/home/testimonials/store', [HomeController::class, 'storeTestimonial']);
+        Route::post('/home/testimonials/{testimonial}', [HomeController::class, 'updateTestimonial']);
+        Route::delete('/home/testimonials/{testimonial}', [HomeController::class, 'destroyTestimonial']);
+    });
 
-    // Products (admin)
-    Route::get('/admin/products', [ProductController::class, 'adminIndex']);
-    Route::post('/products', [ProductController::class, 'store']);
-    Route::post('/products/{product}', [ProductController::class, 'update']);
-    Route::delete('/products/{product}', [ProductController::class, 'destroy']);
-    Route::delete('/products/gallery/{gallery}', [ProductController::class, 'destroyGalleryImage']);
+    // Products administration
+    Route::middleware('admin')->group(function () {
+        Route::get('/admin/products', [ProductController::class, 'adminIndex']);
+        Route::post('/products', [ProductController::class, 'store']);
+        Route::post('/products/{product}', [ProductController::class, 'update']);
+        Route::delete('/products/{product}', [ProductController::class, 'destroy']);
+        Route::delete('/products/gallery/{gallery}', [ProductController::class, 'destroyGalleryImage']);
+    });
 
     // Orders (authenticated user)
     Route::get('/my-orders', [OrderController::class, 'myOrders']);

@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import type { Portfolio } from '@/lib/types/home';
+import { getImageUrl } from '@/lib/api';
 
 interface PortfolioSectionProps {
   portfolio: Portfolio[];
@@ -37,7 +38,7 @@ export default function PortfolioSection({ portfolio }: PortfolioSectionProps) {
                 >
                   {project.image ? (
                     <Image
-                      src={project.image}
+                      src={getImageUrl(project.image)}
                       alt={project.title}
                       fill
                       className="object-cover object-center"

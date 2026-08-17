@@ -1,8 +1,16 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useCallback, useEffect, useState } from "react";
+import AdminImageField from "@/components/admin/AdminImageField";
 import ProtectedRoute from "@/components/guards/ProtectedRoute";
-import { fetchApi } from "@/lib/api";
+import { useToast } from "@/context/ToastContext";
+import {
+  fetchApi,
+  getApiErrorMessage,
+  getImageFilename,
+  getImageUrl,
+  getValidationError,
+} from "@/lib/api";
 import { SoftwareItem } from "@/lib/types";
 
 interface SoftwareSectionData {
@@ -10,167 +18,204 @@ interface SoftwareSectionData {
   hero_image: string | null;
 }
 
+interface SoftwareIndexResponse {
+  status: string;
+  data: {
+    section: SoftwareSectionData | null;
+    items: SoftwareItem[];
+  };
+}
+
 export default function AdminSoftwarePage() {
+  const { toast } = useToast();
   const [section, setSection] = useState<SoftwareSectionData | null>(null);
   const [softwareList, setSoftwareList] = useState<SoftwareItem[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [heroImageFile, setHeroImageFile] = useState<File | null>(null);
+  const [removeHeroImage, setRemoveHeroImage] = useState(false);
+  const [heroImageError, setHeroImageError] = useState<string>();
+  const [uploadingHero, setUploadingHero] = useState(false);
+  const [isOptimizingHeroImage, setIsOptimizingHeroImage] = useState(false);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [editingItem, setEditingItem] = useState<Partial<SoftwareItem> | null>(null);
-
-  // File states
   const [softwareImageFile, setSoftwareImageFile] = useState<File | null>(null);
-  const [heroImageFile, setHeroImageFile] = useState<File | null>(null);
-  const [uploadingHero, setUploadingHero] = useState(false);
+  const [removeSoftwareImage, setRemoveSoftwareImage] = useState(false);
+  const [softwareImageError, setSoftwareImageError] = useState<string>();
+  const [isOptimizingSoftwareImage, setIsOptimizingSoftwareImage] = useState(false);
+
+  const resetHeroImageDraft = () => {
+    setHeroImageFile(null);
+    setRemoveHeroImage(false);
+    setHeroImageError(undefined);
+  };
+
+  const closeSoftwareModal = () => {
+    if (actionLoading || isOptimizingSoftwareImage) return;
+    setIsModalOpen(false);
+    setEditingItem(null);
+    setSoftwareImageFile(null);
+    setRemoveSoftwareImage(false);
+    setSoftwareImageError(undefined);
+  };
 
   const loadSoftwareData = useCallback(async () => {
     setLoading(true);
     setError(null);
-    try {
-      const res = await fetchApi<{
-        status: string;
-        data: {
-          section: SoftwareSectionData | null;
-          items: SoftwareItem[];
-        };
-      }>("/software");
 
-      if (res.data) {
-        setSection(res.data.section);
-        setSoftwareList(res.data.items || []);
-      }
-    } catch (err: any) {
-      setError(err.message || "Failed to load software catalog.");
+    try {
+      const res = await fetchApi<SoftwareIndexResponse>("/software");
+      setSection(res.data?.section || null);
+      setSoftwareList(res.data?.items || []);
+      setHeroImageFile(null);
+      setRemoveHeroImage(false);
+      setHeroImageError(undefined);
+    } catch (err: unknown) {
+      const message = getApiErrorMessage(err, "Failed to load software catalog.");
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
-    loadSoftwareData();
+    const timeoutId = window.setTimeout(() => void loadSoftwareData(), 0);
+    return () => window.clearTimeout(timeoutId);
   }, [loadSoftwareData]);
 
-  const handleUpdateHeroImage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!heroImageFile) {
-      alert("Please select a new hero image file.");
+  const handleUpdateHeroImage = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (uploadingHero || isOptimizingHeroImage) return;
+    if (!heroImageFile && !removeHeroImage) {
+      toast.info("Choose a new hero image or mark the saved image for removal.");
       return;
     }
 
     setUploadingHero(true);
+    setHeroImageError(undefined);
+
     try {
       const formData = new FormData();
-      formData.append("hero_image", heroImageFile);
+      if (heroImageFile) formData.append("hero_image", heroImageFile);
+      formData.append("remove_hero_image", removeHeroImage ? "1" : "0");
 
-
-      const resData = await fetchApi("/software/section", {
-
+      const response = await fetchApi<{
+        message: string;
+        data: SoftwareSectionData;
+      }>("/software/section", {
         method: "POST",
         body: formData,
       });
 
-      setSection(resData.data);
-      setHeroImageFile(null);
-      alert("Software hero image updated successfully!");
-    } catch (err: any) {
-      alert(err.message || "Error updating hero image.");
+      setSection(response.data);
+      resetHeroImageDraft();
+      toast.success(response.message || "Software hero image updated successfully.");
+    } catch (err: unknown) {
+      setHeroImageError(getValidationError(err, "hero_image"));
+      toast.error(getApiErrorMessage(err, "Error updating the software hero image."));
     } finally {
       setUploadingHero(false);
     }
   };
 
-  const handleSaveSoftware = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingItem?.title) {
-      alert("Software Title is required!");
+  const handleSaveSoftware = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!editingItem?.title?.trim()) {
+      toast.error("Software title is required.");
       return;
     }
+    if (actionLoading || isOptimizingSoftwareImage) return;
 
     setActionLoading(true);
+    setSoftwareImageError(undefined);
+
     try {
       const formData = new FormData();
-      formData.append("title", editingItem.title || "");
-      if (editingItem.slogan) formData.append("slogan", editingItem.slogan);
-      if (editingItem.description) formData.append("description", editingItem.description);
-      formData.append("is_active", editingItem.is_active ? "1" : "0");
-
-      if (softwareImageFile) {
-        formData.append("image", softwareImageFile);
+      formData.append("title", editingItem.title.trim());
+      if (editingItem.slogan) formData.append("slogan", editingItem.slogan.trim());
+      if (editingItem.description) {
+        formData.append("description", editingItem.description.trim());
       }
+      formData.append("is_active", editingItem.is_active ? "1" : "0");
+      if (softwareImageFile) formData.append("image", softwareImageFile);
+      formData.append("remove_image", removeSoftwareImage ? "1" : "0");
 
-
-      const endpoint = editingItem.id
-        ? `/software/${editingItem.id}`
-        : `/software`;
-
-
-      const resData = await fetchApi(endpoint, {
+      const endpoint = editingItem.id ? `/software/${editingItem.id}` : "/software";
+      const response = await fetchApi<{ message: string; data: SoftwareItem }>(endpoint, {
         method: "POST",
         body: formData,
       });
 
       if (editingItem.id) {
-        setSoftwareList((prev) =>
-          prev.map((s) => (s.id === editingItem.id ? resData.data : s))
+        setSoftwareList((current) =>
+          current.map((item) => (item.id === editingItem.id ? response.data : item))
         );
       } else {
-        setSoftwareList((prev) => [resData.data, ...prev]);
+        setSoftwareList((current) => [response.data, ...current]);
       }
 
+      toast.success(response.message || "Software product saved successfully.");
       setIsModalOpen(false);
       setEditingItem(null);
       setSoftwareImageFile(null);
-    } catch (err: any) {
-      alert(err.message || "Error saving software product.");
+      setRemoveSoftwareImage(false);
+    } catch (err: unknown) {
+      setSoftwareImageError(getValidationError(err, "image"));
+      toast.error(getApiErrorMessage(err, "Error saving the software product."));
     } finally {
       setActionLoading(false);
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this software product entry?")) return;
-    try {
-      await fetchApi(`/software/${id}`, { method: "DELETE" });
-      setSoftwareList((prev) => prev.filter((s) => s.id !== id));
-    } catch (err: any) {
-      alert(err.message || "Failed to delete software product.");
+    if (!window.confirm("Are you sure you want to delete this software product entry?")) {
+      return;
     }
-  };
 
-  const getImageUrl = (path: string | null) => {
-    if (!path) return null;
-
-    if (path.startsWith("http://") || path.startsWith("https://")) return path;
-    const baseUrl = process.env.NEXT_PUBLIC_STORAGE_URL || "http://localhost:8000";
-    return `${baseUrl}${path.startsWith("/") ? "" : "/"}${path}`;
-
+    setIsDeleting(true);
+    try {
+      const response = await fetchApi<{ message: string }>(`/software/${id}`, {
+        method: "DELETE",
+      });
+      setSoftwareList((current) => current.filter((item) => item.id !== id));
+      toast.success(response.message || "Software product deleted successfully.");
+    } catch (err: unknown) {
+      toast.error(getApiErrorMessage(err, "Failed to delete the software product."));
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
     <ProtectedRoute allowedRoles={["admin"]}>
-      <div className="min-h-screen bg-slate-950 text-slate-100 pb-12">
-        <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-6">
+      <div className="min-h-screen bg-slate-950 pb-12 text-slate-100">
+        <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 lg:p-8">
+          <div className="flex flex-col justify-between gap-4 border-b border-slate-800 pb-6 sm:flex-row sm:items-center">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+              <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
                 Software Products Catalog
               </h1>
-              <p className="text-slate-400 text-sm mt-1">
-                Manage pre-built software suites, POS platforms, and software section hero banner.
+              <p className="mt-1 text-sm text-slate-400">
+                Manage pre-built software suites, POS platforms, and the software page hero banner.
               </p>
             </div>
 
             <div className="flex items-center gap-3">
               <button
-                onClick={loadSoftwareData}
-                className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-xs text-slate-300 font-semibold transition"
+                type="button"
+                onClick={() => void loadSoftwareData()}
+                disabled={loading}
+                className="rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-xs font-semibold text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
               >
                 Refresh
               </button>
               <button
+                type="button"
                 onClick={() => {
                   setEditingItem({
                     title: "",
@@ -179,216 +224,270 @@ export default function AdminSoftwarePage() {
                     is_active: true,
                   });
                   setSoftwareImageFile(null);
+                  setRemoveSoftwareImage(false);
+                  setSoftwareImageError(undefined);
                   setIsModalOpen(true);
                 }}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-purple-950/40 transition cursor-pointer"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-purple-600 px-4 py-2 text-xs font-semibold text-white shadow-lg shadow-purple-950/40 transition hover:bg-purple-500"
               >
                 + Add Software Product
               </button>
             </div>
           </div>
 
-          {/* Section Hero Banner Update Panel */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
-            <h3 className="text-sm font-bold text-purple-400 uppercase tracking-wider">
-              Software Page Hero Image Section
-            </h3>
-            {section?.hero_image && (
-              <div className="flex items-center gap-3 bg-slate-950 p-2.5 rounded-xl border border-slate-800 max-w-md">
-                <img
-                  src={getImageUrl(section.hero_image)!}
-                  alt="Hero Banner"
-                  className="w-12 h-12 object-cover rounded-lg"
-                />
-                <span className="text-xs text-slate-400 truncate">{section.hero_image}</span>
-              </div>
-            )}
-            <form onSubmit={handleUpdateHeroImage} className="flex flex-col sm:flex-row items-center gap-3">
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => setHeroImageFile(e.target.files?.[0] || null)}
-                className="w-full sm:w-auto p-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-400 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:bg-purple-950 file:text-purple-300"
-              />
+          <form
+            onSubmit={handleUpdateHeroImage}
+            className="space-y-5 rounded-2xl border border-slate-800 bg-slate-900 p-6"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-purple-400">
+                Software Page Hero Image Section
+              </h2>
+              {section?.hero_image && (
+                <span className="text-xs text-slate-400">Current hero image set</span>
+              )}
+            </div>
+
+            <AdminImageField
+              label="Software hero image"
+              existingImageUrl={getImageUrl(section?.hero_image)}
+              existingImageFilename={getImageFilename(section?.hero_image)}
+              existingImageAlt="Current software page hero"
+              selectedFile={heroImageFile}
+              onSelectFile={setHeroImageFile}
+              onClearSelection={() => setHeroImageFile(null)}
+              onProcessingChange={setIsOptimizingHeroImage}
+              onRemoveExisting={() => setRemoveHeroImage(true)}
+              onUndoRemoval={() => setRemoveHeroImage(false)}
+              isExistingMarkedForRemoval={removeHeroImage}
+              disabled={uploadingHero}
+              error={heroImageError}
+              aspectRatioGuidance="Recommended: a wide JPEG, PNG, or WebP banner. Files up to 10 MB are optimized before upload."
+              accent="purple"
+            />
+
+            <div className="flex justify-end">
               <button
                 type="submit"
-                disabled={uploadingHero || !heroImageFile}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-200 text-xs font-semibold rounded-xl whitespace-nowrap cursor-pointer"
+                disabled={
+                  uploadingHero ||
+                  isOptimizingHeroImage ||
+                  (!heroImageFile && !removeHeroImage)
+                }
+                className="rounded-xl bg-purple-600 px-5 py-2.5 text-xs font-semibold text-white shadow-lg shadow-purple-950/40 transition hover:bg-purple-500 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {uploadingHero ? "Uploading Banner..." : "Update Hero Banner"}
+                {isOptimizingHeroImage
+                  ? "Optimizing Image..."
+                  : uploadingHero
+                    ? "Saving Hero Image..."
+                    : "Save Hero Image"}
               </button>
-            </form>
-          </div>
+            </div>
+          </form>
 
-          {/* Error Message */}
           {error && (
-            <div className="p-4 bg-red-500/10 border border-red-500/30 text-red-400 text-xs rounded-xl">
+            <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-xs text-red-400">
               {error}
             </div>
           )}
 
-          {/* Software Cards Grid */}
           {loading ? (
-            <div className="py-20 text-center text-slate-500 space-y-3">
-              <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto" />
+            <div className="space-y-3 py-20 text-center text-slate-500">
+              <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-purple-500 border-t-transparent" />
               <p className="text-xs">Fetching software products...</p>
             </div>
           ) : softwareList.length === 0 ? (
-            <div className="py-16 text-center bg-slate-900/40 rounded-2xl border border-slate-800">
+            <div className="rounded-2xl border border-slate-800 bg-slate-900/40 py-16 text-center">
               <p className="text-sm font-semibold text-slate-400">No software products listed.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {softwareList.map((sw) => {
-                const imageSrc = getImageUrl(sw.image);
-                return (
-                  <div
-                    key={sw.id}
-                    className="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between hover:border-purple-500/40 transition shadow-lg"
-                  >
-                    <div>
-                      <div className="flex items-center justify-between mb-4">
-                        {imageSrc ? (
-                          <img
-                            src={imageSrc}
-                            alt={sw.title}
-                            className="w-12 h-12 object-cover rounded-xl border border-slate-800"
-                          />
-                        ) : (
-                          <span className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-400 font-black flex items-center justify-center text-sm">
-                            SW
-                          </span>
-                        )}
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {softwareList.map((software) => {
+                const imageSrc = getImageUrl(software.image);
 
-                        <span
-                          className={`px-2 py-0.5 text-[10px] font-bold rounded-full border ${
-                            sw.is_active
-                              ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
-                              : "bg-slate-800 text-slate-500 border-slate-700"
-                          }`}
-                        >
-                          {sw.is_active ? "Active" : "Hidden"}
-                        </span>
+                return (
+                  <article
+                    key={software.id}
+                    className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-lg transition hover:border-purple-500/40"
+                  >
+                    {imageSrc ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={imageSrc}
+                        alt={software.title}
+                        className="aspect-video w-full border-b border-slate-800 bg-slate-950 object-cover"
+                      />
+                    ) : (
+                      <div className="flex aspect-video w-full items-center justify-center border-b border-slate-800 bg-slate-950/70 text-sm font-black text-purple-400">
+                        SW
+                      </div>
+                    )}
+
+                    <div className="flex min-h-52 flex-col justify-between p-6">
+                      <div>
+                        <div className="mb-3 flex items-start justify-between gap-3">
+                          <h3 className="text-lg font-bold text-white">{software.title}</h3>
+                          <span
+                            className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-bold ${
+                              software.is_active
+                                ? "border-emerald-500/30 bg-emerald-500/20 text-emerald-300"
+                                : "border-slate-700 bg-slate-800 text-slate-500"
+                            }`}
+                          >
+                            {software.is_active ? "Active" : "Hidden"}
+                          </span>
+                        </div>
+                        {software.slogan && (
+                          <p className="mb-3 text-xs font-medium text-purple-300/80">
+                            {software.slogan}
+                          </p>
+                        )}
+                        <p className="text-xs leading-relaxed text-slate-400">
+                          {software.description || "No description provided."}
+                        </p>
                       </div>
 
-                      <h3 className="text-lg font-bold text-white mb-1">{sw.title}</h3>
-                      {sw.slogan && <p className="text-purple-300/80 text-xs font-medium mb-3">{sw.slogan}</p>}
-                      <p className="text-slate-400 text-xs leading-relaxed">{sw.description || "No description provided."}</p>
+                      <div className="mt-6 flex items-center justify-end gap-2 border-t border-slate-800 pt-4">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingItem(software);
+                            setSoftwareImageFile(null);
+                            setRemoveSoftwareImage(false);
+                            setSoftwareImageError(undefined);
+                            setIsModalOpen(true);
+                          }}
+                          className="rounded-lg bg-slate-800 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-700"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          disabled={isDeleting}
+                          onClick={() => void handleDelete(software.id)}
+                          className="rounded-lg border border-red-900/50 bg-red-950/60 px-3 py-1.5 text-xs text-red-400 hover:bg-red-900 disabled:opacity-50"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </div>
-
-                    <div className="flex items-center justify-end gap-2 mt-6 pt-4 border-t border-slate-800">
-                      <button
-                        onClick={() => {
-                          setEditingItem(sw);
-                          setSoftwareImageFile(null);
-                          setIsModalOpen(true);
-                        }}
-                        className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs cursor-pointer"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(sw.id)}
-                        className="px-3 py-1 bg-red-950/60 hover:bg-red-900 text-red-400 border border-red-900/50 rounded-lg text-xs cursor-pointer"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
+                  </article>
                 );
               })}
             </div>
           )}
 
-          {/* Add / Edit Modal */}
           {isModalOpen && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xs">
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-xs">
               <form
                 onSubmit={handleSaveSoftware}
-                className="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-4 text-xs"
+                className="max-h-[92vh] w-full max-w-4xl space-y-5 overflow-y-auto rounded-2xl border border-slate-800 bg-slate-900 p-6 text-xs shadow-2xl"
               >
                 <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                  <h3 className="text-lg font-bold text-white">
-                    {editingItem?.id ? `Edit Software #${editingItem.id}` : "Add Software Product"}
-                  </h3>
-                  <button type="button" onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-white text-base">
-                    ✕
+                  <h2 className="text-lg font-bold text-white">
+                    {editingItem?.id
+                      ? `Edit Software #${editingItem.id}`
+                      : "Add Software Product"}
+                  </h2>
+                  <button
+                    type="button"
+                    onClick={closeSoftwareModal}
+                    disabled={actionLoading || isOptimizingSoftwareImage}
+                    aria-label="Close software form"
+                    className="text-base text-slate-400 hover:text-white disabled:opacity-50"
+                  >
+                    ×
                   </button>
                 </div>
 
-                <div className="space-y-3">
+                <div className="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <label className="block text-slate-400 mb-1">Software Title *</label>
+                    <label className="mb-1 block text-slate-400">Software Title *</label>
                     <input
                       type="text"
                       required
                       value={editingItem?.title || ""}
-                      onChange={(e) => setEditingItem({ ...editingItem, title: e.target.value })}
-                      className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-purple-500"
+                      onChange={(event) =>
+                        setEditingItem({ ...editingItem, title: event.target.value })
+                      }
+                      className="w-full rounded-xl border border-slate-800 bg-slate-950 p-2.5 text-white focus:border-purple-500 focus:outline-none"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-slate-400 mb-1">Slogan / Tagline</label>
+                    <label className="mb-1 block text-slate-400">Slogan / Tagline</label>
                     <input
                       type="text"
                       value={editingItem?.slogan || ""}
-                      onChange={(e) => setEditingItem({ ...editingItem, slogan: e.target.value })}
-                      className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-purple-500"
+                      onChange={(event) =>
+                        setEditingItem({ ...editingItem, slogan: event.target.value })
+                      }
+                      className="w-full rounded-xl border border-slate-800 bg-slate-950 p-2.5 text-white focus:border-purple-500 focus:outline-none"
                     />
                   </div>
-
-                  <div>
-                    <label className="block text-slate-400 mb-1">Product Image / Logo</label>
-                    {editingItem?.image && (
-                      <div className="mb-2 flex items-center gap-3 bg-slate-950 p-2 rounded-xl border border-slate-800">
-                        <img src={getImageUrl(editingItem.image)!} alt="Product logo" className="w-10 h-10 object-cover rounded-lg" />
-                        <span className="text-[11px] text-slate-400 truncate">{editingItem.image}</span>
-                      </div>
-                    )}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => setSoftwareImageFile(e.target.files?.[0] || null)}
-                      className="w-full p-2 bg-slate-950 border border-slate-800 rounded-xl text-slate-400 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:bg-purple-950 file:text-purple-300"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-400 mb-1">Detailed Description</label>
-                    <textarea
-                      rows={4}
-                      value={editingItem?.description || ""}
-                      onChange={(e) => setEditingItem({ ...editingItem, description: e.target.value })}
-                      className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-purple-500"
-                    />
-                  </div>
-
-                  <label className="flex items-center gap-2 cursor-pointer text-slate-300 pt-1">
-                    <input
-                      type="checkbox"
-                      checked={editingItem?.is_active ?? true}
-                      onChange={(e) => setEditingItem({ ...editingItem, is_active: e.target.checked })}
-                      className="w-4 h-4 rounded text-purple-500 focus:ring-purple-500"
-                    />
-                    <span>Active Software Product</span>
-                  </label>
                 </div>
 
-                <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+                <AdminImageField
+                  label="Product image / logo"
+                  existingImageUrl={getImageUrl(editingItem?.image)}
+                  existingImageFilename={getImageFilename(editingItem?.image)}
+                  existingImageAlt={editingItem?.title || "Current software product image"}
+                  selectedFile={softwareImageFile}
+                  onSelectFile={setSoftwareImageFile}
+                  onClearSelection={() => setSoftwareImageFile(null)}
+                  onProcessingChange={setIsOptimizingSoftwareImage}
+                  onRemoveExisting={() => setRemoveSoftwareImage(true)}
+                  onUndoRemoval={() => setRemoveSoftwareImage(false)}
+                  isExistingMarkedForRemoval={removeSoftwareImage}
+                  disabled={actionLoading}
+                  error={softwareImageError}
+                  aspectRatioGuidance="JPEG, PNG, or WebP up to 10 MB. Large images are optimized before upload."
+                  accent="purple"
+                />
+
+                <div>
+                  <label className="mb-1 block text-slate-400">Detailed Description</label>
+                  <textarea
+                    rows={4}
+                    value={editingItem?.description || ""}
+                    onChange={(event) =>
+                      setEditingItem({ ...editingItem, description: event.target.value })
+                    }
+                    className="w-full rounded-xl border border-slate-800 bg-slate-950 p-2.5 text-white focus:border-purple-500 focus:outline-none"
+                  />
+                </div>
+
+                <label className="flex cursor-pointer items-center gap-2 pt-1 text-slate-300">
+                  <input
+                    type="checkbox"
+                    checked={editingItem?.is_active ?? true}
+                    onChange={(event) =>
+                      setEditingItem({ ...editingItem, is_active: event.target.checked })
+                    }
+                    className="h-4 w-4 rounded text-purple-500 focus:ring-purple-500"
+                  />
+                  <span>Active Software Product</span>
+                </label>
+
+                <div className="flex justify-end gap-3 border-t border-slate-800 pt-4">
                   <button
                     type="button"
-                    onClick={() => setIsModalOpen(false)}
-                    className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-semibold cursor-pointer"
+                    onClick={closeSoftwareModal}
+                    disabled={actionLoading || isOptimizingSoftwareImage}
+                    className="rounded-xl bg-slate-800 px-4 py-2 font-semibold text-slate-300 disabled:opacity-50"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    disabled={actionLoading}
-                    className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-semibold shadow-lg disabled:opacity-50 cursor-pointer"
+                    disabled={actionLoading || isOptimizingSoftwareImage}
+                    className="rounded-xl bg-purple-600 px-4 py-2 font-semibold text-white shadow-lg hover:bg-purple-500 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {actionLoading ? "Saving Product..." : "Save Product"}
+                    {isOptimizingSoftwareImage
+                      ? "Optimizing Image..."
+                      : actionLoading
+                        ? "Saving Product..."
+                        : "Save Product"}
                   </button>
                 </div>
               </form>

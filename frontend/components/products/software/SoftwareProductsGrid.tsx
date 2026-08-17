@@ -4,18 +4,10 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { SoftwareItem } from '@/lib/types';
-import { fetchApi } from '@/lib/api';
-
-interface SoftwareSection {
-  id: number;
-  hero_image: string | null;
-  created_at: string | null;
-  updated_at: string | null;
-}
+import { fetchApi, getApiErrorMessage, getImageUrl } from '@/lib/api';
 
 export default function SoftwareProductsGrid() {
   const [softwareList, setSoftwareList] = useState<SoftwareItem[]>([]);
-  const [section, setSection] = useState<SoftwareSection | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,30 +19,22 @@ export default function SoftwareProductsGrid() {
         const res = await fetchApi<{
           status: string;
           data: {
-            section: SoftwareSection | null;
+            section: unknown;
             items: SoftwareItem[];
           };
         }>("/software");
 
         if (res.data) {
-          setSection(res.data.section);
           setSoftwareList(res.data.items || []);
         }
-      } catch (err: any) {
-        setError(err.message || "Failed to load software products.");
+      } catch (err: unknown) {
+        setError(getApiErrorMessage(err, "Failed to load software products."));
       } finally {
         setLoading(false);
       }
     }
     loadSoftware();
   }, []);
-
-  const getImageUrl = (path: string | null) => {
-    if (!path) return null;
-    if (path.startsWith("http://") || path.startsWith("https://")) return path;
-    const baseUrl = process.env.NEXT_PUBLIC_STORAGE_URL || "http://localhost:8000";
-    return `${baseUrl}${path.startsWith("/") ? "" : "/"}${path}`;
-  };
 
   return (
     <section className="w-full py-14 sm:py-20 bg-[#f2fcff]">

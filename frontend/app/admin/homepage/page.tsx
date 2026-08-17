@@ -1,10 +1,15 @@
 "use client";
 
-// Target path: src/app/admin/home/page.tsx (adjust to match your admin route structure)
-
 import React, { useState, useEffect, useCallback } from "react";
 import ProtectedRoute from "@/components/guards/ProtectedRoute";
-import { fetchApi } from "@/lib/api";
+import AdminImageField from "@/components/admin/AdminImageField";
+import {
+  fetchApi,
+  getApiErrorMessage,
+  getImageFilename,
+  getImageUrl,
+  getValidationError,
+} from "@/lib/api";
 import { useToast } from "@/context/ToastContext";
 import RichTextEditor from "@/components/admin/RichTextEditor";
 
@@ -54,12 +59,15 @@ export default function AdminHomePage() {
 
   const [banner, setBanner] = useState<BannerData>({ title: "", image: "", description: "" });
   const [bannerImageFile, setBannerImageFile] = useState<File | null>(null);
+  const [removeBannerImage, setRemoveBannerImage] = useState(false);
+  const [bannerImageError, setBannerImageError] = useState<string>();
   const [services, setServices] = useState<HomeServiceData[]>([]);
   const [portfolioItems, setPortfolioItems] = useState<PortfolioData[]>([]);
   const [testimonials, setTestimonials] = useState<TestimonialData[]>([]);
 
   const [loading, setLoading] = useState<boolean>(true);
   const [isSavingBanner, setIsSavingBanner] = useState<boolean>(false);
+  const [isOptimizingBannerImage, setIsOptimizingBannerImage] = useState(false);
 
   // Service modal (add/edit)
   const [isServiceModalOpen, setIsServiceModalOpen] = useState(false);
@@ -72,7 +80,10 @@ export default function AdminHomePage() {
   const [editingPortfolioId, setEditingPortfolioId] = useState<number | null>(null);
   const [portfolioForm, setPortfolioForm] = useState(emptyPortfolio);
   const [portfolioImageFile, setPortfolioImageFile] = useState<File | null>(null);
+  const [removePortfolioImage, setRemovePortfolioImage] = useState(false);
+  const [portfolioImageError, setPortfolioImageError] = useState<string>();
   const [isSavingPortfolio, setIsSavingPortfolio] = useState(false);
+  const [isOptimizingPortfolioImage, setIsOptimizingPortfolioImage] = useState(false);
 
   // Testimonial modal (add/edit)
   const [isTestimonialModalOpen, setIsTestimonialModalOpen] = useState(false);
@@ -101,56 +112,57 @@ export default function AdminHomePage() {
             image: res.data.banner.image || "",
             description: res.data.banner.description || "",
           });
+        } else {
+          setBanner({ title: "", image: "", description: "" });
         }
+        setBannerImageFile(null);
+        setRemoveBannerImage(false);
+        setBannerImageError(undefined);
         setServices(res.data.services || []);
         setPortfolioItems(res.data.portfolio || []);
         setTestimonials(res.data.testimonials || []);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to load Home data:", err);
-      toast.error(err.message || "Failed to load Homepage data.");
+      toast.error(getApiErrorMessage(err, "Failed to load Homepage data."));
     } finally {
       setLoading(false);
     }
   }, [toast]);
 
   useEffect(() => {
-    loadHomeData();
+    const timeoutId = window.setTimeout(() => void loadHomeData(), 0);
+    return () => window.clearTimeout(timeoutId);
   }, [loadHomeData]);
 
   // POST /home/banner/update
   const handleSaveBanner = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSavingBanner || isOptimizingBannerImage) return;
     setIsSavingBanner(true);
+    setBannerImageError(undefined);
     try {
-      let body: FormData | string;
-
-      if (bannerImageFile) {
-        const formData = new FormData();
-        formData.append("title", banner.title?.trim() || "");
-        formData.append("description", banner.description?.trim() || "");
-        formData.append("image", bannerImageFile);
-        body = formData;
-      } else {
-        body = JSON.stringify({
-          title: banner.title?.trim() || null,
-          description: banner.description?.trim() || null,
-        });
-      }
+      const formData = new FormData();
+      formData.append("title", banner.title?.trim() || "");
+      formData.append("description", banner.description?.trim() || "");
+      if (bannerImageFile) formData.append("image", bannerImageFile);
+      formData.append("remove_image", removeBannerImage ? "1" : "0");
 
       const res = await fetchApi<{ message: string; data: BannerData }>("/home/banner/update", {
         method: "POST",
-        body,
+        body: formData,
       });
 
       if (res && res.data) {
         setBanner(res.data);
       }
       setBannerImageFile(null);
+      setRemoveBannerImage(false);
       toast.success(res.message || "Banner updated successfully");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to update banner:", err);
-      toast.error(err.message || "Error updating Banner.");
+      setBannerImageError(getValidationError(err, "image"));
+      toast.error(getApiErrorMessage(err, "Error updating Banner."));
     } finally {
       setIsSavingBanner(false);
     }
@@ -202,9 +214,9 @@ export default function AdminHomePage() {
       setIsServiceModalOpen(false);
       setServiceForm(emptyService);
       setEditingServiceId(null);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to save service:", err);
-      toast.error(err.message || "Failed to save Service.");
+      toast.error(getApiErrorMessage(err, "Failed to save Service."));
     } finally {
       setIsSavingService(false);
     }
@@ -218,9 +230,9 @@ export default function AdminHomePage() {
       });
       setServices((prev) => prev.filter((s) => s.id !== id));
       toast.success(res.message || "Service deleted successfully");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to delete service:", err);
-      toast.error(err.message || "Failed to delete Service.");
+      toast.error(getApiErrorMessage(err, "Failed to delete Service."));
     }
   };
 
@@ -229,6 +241,8 @@ export default function AdminHomePage() {
     setEditingPortfolioId(null);
     setPortfolioForm(emptyPortfolio);
     setPortfolioImageFile(null);
+    setRemovePortfolioImage(false);
+    setPortfolioImageError(undefined);
     setIsPortfolioModalOpen(true);
   };
 
@@ -236,6 +250,8 @@ export default function AdminHomePage() {
     setEditingPortfolioId(item.id);
     setPortfolioForm({ title: item.title, image: item.image || "", description: item.description });
     setPortfolioImageFile(null);
+    setRemovePortfolioImage(false);
+    setPortfolioImageError(undefined);
     setIsPortfolioModalOpen(true);
   };
 
@@ -245,28 +261,21 @@ export default function AdminHomePage() {
       toast.error("Title and Description are required.");
       return;
     }
+    if (isSavingPortfolio || isOptimizingPortfolioImage) return;
 
     setIsSavingPortfolio(true);
+    setPortfolioImageError(undefined);
     try {
-      let body: FormData | string;
-
-      if (portfolioImageFile) {
-        const formData = new FormData();
-        formData.append("title", portfolioForm.title.trim());
-        formData.append("description", portfolioForm.description.trim());
-        formData.append("image", portfolioImageFile);
-        body = formData;
-      } else {
-        body = JSON.stringify({
-          title: portfolioForm.title.trim(),
-          description: portfolioForm.description.trim(),
-        });
-      }
+      const formData = new FormData();
+      formData.append("title", portfolioForm.title.trim());
+      formData.append("description", portfolioForm.description.trim());
+      if (portfolioImageFile) formData.append("image", portfolioImageFile);
+      formData.append("remove_image", removePortfolioImage ? "1" : "0");
 
       if (editingPortfolioId) {
         const res = await fetchApi<{ message: string; data: PortfolioData }>(
           `/home/portfolio/${editingPortfolioId}`,
-          { method: "POST", body }
+          { method: "POST", body: formData }
         );
         setPortfolioItems((prev) =>
           prev.map((p) => (p.id === editingPortfolioId ? res.data : p))
@@ -275,7 +284,7 @@ export default function AdminHomePage() {
       } else {
         const res = await fetchApi<{ message: string; data: PortfolioData }>(
           "/home/portfolio/store",
-          { method: "POST", body }
+          { method: "POST", body: formData }
         );
         setPortfolioItems((prev) => [...prev, res.data]);
         toast.success(res.message || "Portfolio item created successfully");
@@ -284,10 +293,12 @@ export default function AdminHomePage() {
       setIsPortfolioModalOpen(false);
       setPortfolioForm(emptyPortfolio);
       setPortfolioImageFile(null);
+      setRemovePortfolioImage(false);
       setEditingPortfolioId(null);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to save portfolio item:", err);
-      toast.error(err.message || "Failed to save Portfolio item.");
+      setPortfolioImageError(getValidationError(err, "image"));
+      toast.error(getApiErrorMessage(err, "Failed to save Portfolio item."));
     } finally {
       setIsSavingPortfolio(false);
     }
@@ -301,9 +312,9 @@ export default function AdminHomePage() {
       });
       setPortfolioItems((prev) => prev.filter((p) => p.id !== id));
       toast.success(res.message || "Portfolio item deleted successfully");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to delete portfolio item:", err);
-      toast.error(err.message || "Failed to delete Portfolio item.");
+      toast.error(getApiErrorMessage(err, "Failed to delete Portfolio item."));
     }
   };
 
@@ -364,9 +375,9 @@ export default function AdminHomePage() {
       setIsTestimonialModalOpen(false);
       setTestimonialForm(emptyTestimonial);
       setEditingTestimonialId(null);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to save testimonial:", err);
-      toast.error(err.message || "Failed to save Testimonial.");
+      toast.error(getApiErrorMessage(err, "Failed to save Testimonial."));
     } finally {
       setIsSavingTestimonial(false);
     }
@@ -380,9 +391,9 @@ export default function AdminHomePage() {
       });
       setTestimonials((prev) => prev.filter((t) => t.id !== id));
       toast.success(res.message || "Testimonial deleted successfully");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to delete testimonial:", err);
-      toast.error(err.message || "Failed to delete Testimonial.");
+      toast.error(getApiErrorMessage(err, "Failed to delete Testimonial."));
     }
   };
 
@@ -432,7 +443,9 @@ export default function AdminHomePage() {
                     disabled={isSavingBanner}
                     className="px-5 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs rounded-xl shadow-lg transition cursor-pointer disabled:opacity-50 flex items-center gap-2"
                   >
-                    {isSavingBanner ? (
+                    {isOptimizingBannerImage ? (
+                      "Optimizing image…"
+                    ) : isSavingBanner ? (
                       <>
                         <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                         Saving...
@@ -455,34 +468,26 @@ export default function AdminHomePage() {
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-slate-300 font-semibold mb-1">Image</label>
-                    <div className="flex items-center gap-3">
-                      <label
-                        htmlFor="banner-image-input"
-                        className="shrink-0 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white rounded-xl text-xs font-semibold cursor-pointer transition"
-                      >
-                        Choose File
-                      </label>
-                      <input
-                        id="banner-image-input"
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => setBannerImageFile(e.target.files?.[0] || null)}
-                      />
-                      <span className="text-slate-400 truncate">
-                        {bannerImageFile ? bannerImageFile.name : banner.image || "No file chosen"}
-                      </span>
-                    </div>
-                    {(bannerImageFile || banner.image) && (
-                      <img
-                        src={bannerImageFile ? URL.createObjectURL(bannerImageFile) : banner.image || ""}
-                        alt="Banner preview"
-                        className="mt-3 h-28 rounded-xl border border-slate-800 object-cover"
-                      />
-                    )}
-                  </div>
+                  <AdminImageField
+                    label="Banner image"
+                    existingImageUrl={getImageUrl(banner.image)}
+                    existingImageFilename={getImageFilename(banner.image)}
+                    existingImageAlt="Current saved homepage banner"
+                    selectedFile={bannerImageFile}
+                    onSelectFile={(file) => {
+                      setBannerImageFile(file);
+                      setRemoveBannerImage(false);
+                      setBannerImageError(undefined);
+                    }}
+                    onClearSelection={() => setBannerImageFile(null)}
+                    onProcessingChange={setIsOptimizingBannerImage}
+                    onRemoveExisting={() => setRemoveBannerImage(true)}
+                    onUndoRemoval={() => setRemoveBannerImage(false)}
+                    isExistingMarkedForRemoval={removeBannerImage}
+                    disabled={isSavingBanner || isOptimizingBannerImage}
+                    error={bannerImageError}
+                    aspectRatioGuidance="Recommended: a wide JPEG, PNG, or WebP source image."
+                  />
 
                   <div>
                     <label className="block text-slate-300 font-semibold mb-1">Description</label>
@@ -685,7 +690,7 @@ export default function AdminHomePage() {
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xs">
               <form
                 onSubmit={handleSaveService}
-                className="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-4"
+                className="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-2xl w-full shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto"
               >
                 <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                   <h3 className="text-lg font-bold text-white">
@@ -765,7 +770,13 @@ export default function AdminHomePage() {
                   </h3>
                   <button
                     type="button"
-                    onClick={() => setIsPortfolioModalOpen(false)}
+                    disabled={isSavingPortfolio || isOptimizingPortfolioImage}
+                    onClick={() => {
+                      setIsPortfolioModalOpen(false);
+                      setPortfolioImageFile(null);
+                      setRemovePortfolioImage(false);
+                      setPortfolioImageError(undefined);
+                    }}
                     className="text-slate-400 hover:text-white"
                   >
                     ✕
@@ -787,40 +798,28 @@ export default function AdminHomePage() {
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-slate-400 mb-1">Image</label>
-                    <div className="flex items-center gap-3">
-                      <label
-                        htmlFor="portfolio-image-input"
-                        className="shrink-0 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white rounded-xl text-xs font-semibold cursor-pointer transition"
-                      >
-                        Choose File
-                      </label>
-                      <input
-                        id="portfolio-image-input"
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => setPortfolioImageFile(e.target.files?.[0] || null)}
-                      />
-                      <span className="text-slate-400 truncate">
-                        {portfolioImageFile
-                          ? portfolioImageFile.name
-                          : portfolioForm.image || "No file chosen"}
-                      </span>
-                    </div>
-                    {(portfolioImageFile || portfolioForm.image) && (
-                      <img
-                        src={
-                          portfolioImageFile
-                            ? URL.createObjectURL(portfolioImageFile)
-                            : portfolioForm.image
-                        }
-                        alt="Portfolio preview"
-                        className="mt-3 h-28 rounded-xl border border-slate-800 object-cover"
-                      />
-                    )}
-                  </div>
+                  <AdminImageField
+                    label="Portfolio image"
+                    existingImageUrl={getImageUrl(portfolioForm.image)}
+                    existingImageFilename={getImageFilename(portfolioForm.image)}
+                    existingImageAlt={`Current saved image for ${
+                      portfolioForm.title || "this portfolio item"
+                    }`}
+                    selectedFile={portfolioImageFile}
+                    onSelectFile={(file) => {
+                      setPortfolioImageFile(file);
+                      setRemovePortfolioImage(false);
+                      setPortfolioImageError(undefined);
+                    }}
+                    onClearSelection={() => setPortfolioImageFile(null)}
+                    onProcessingChange={setIsOptimizingPortfolioImage}
+                    onRemoveExisting={() => setRemovePortfolioImage(true)}
+                    onUndoRemoval={() => setRemovePortfolioImage(false)}
+                    isExistingMarkedForRemoval={removePortfolioImage}
+                    disabled={isSavingPortfolio || isOptimizingPortfolioImage}
+                    error={portfolioImageError}
+                    aspectRatioGuidance="JPEG, PNG, or WebP source image."
+                  />
 
                   <div>
                     <label className="block text-slate-400 mb-1">Description *</label>
@@ -840,17 +839,25 @@ export default function AdminHomePage() {
                 <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
                   <button
                     type="button"
-                    onClick={() => setIsPortfolioModalOpen(false)}
+                    disabled={isSavingPortfolio || isOptimizingPortfolioImage}
+                    onClick={() => {
+                      setIsPortfolioModalOpen(false);
+                      setPortfolioImageFile(null);
+                      setRemovePortfolioImage(false);
+                      setPortfolioImageError(undefined);
+                    }}
                     className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-semibold"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    disabled={isSavingPortfolio}
+                    disabled={isSavingPortfolio || isOptimizingPortfolioImage}
                     className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-semibold shadow-lg disabled:opacity-50"
                   >
-                    {isSavingPortfolio
+                    {isOptimizingPortfolioImage
+                      ? "Optimizing image…"
+                      : isSavingPortfolio
                       ? "Saving..."
                       : editingPortfolioId
                       ? "Save Changes"

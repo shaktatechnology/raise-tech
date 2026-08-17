@@ -1,8 +1,15 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import AdminImageField from "@/components/admin/AdminImageField";
 import ProtectedRoute from "@/components/guards/ProtectedRoute";
-import { fetchApi, getImageUrl } from "@/lib/api";
+import {
+  fetchApi,
+  getApiErrorMessage,
+  getImageFilename,
+  getImageUrl,
+  getValidationError,
+} from "@/lib/api";
 import { SiteSettings } from "@/lib/types";
 
 // Converts common Google Maps URL formats (place links, search/query links,
@@ -60,30 +67,13 @@ export default function AdminSettingsPage() {
 
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [faviconFile, setFaviconFile] = useState<File | null>(null);
-  const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const [faviconPreview, setFaviconPreview] = useState<string | null>(null);
-
-  // Revoke object URLs on unmount / when replaced, to avoid leaking memory.
-  useEffect(() => {
-    return () => {
-      if (logoPreview) URL.revokeObjectURL(logoPreview);
-      if (faviconPreview) URL.revokeObjectURL(faviconPreview);
-    };
-  }, [logoPreview, faviconPreview]);
-
-  const handleLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setLogoFile(file);
-    setLogoPreview(URL.createObjectURL(file));
-  };
-
-  const handleFaviconSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setFaviconFile(file);
-    setFaviconPreview(URL.createObjectURL(file));
-  };
+  const [removeLogo, setRemoveLogo] = useState(false);
+  const [removeFavicon, setRemoveFavicon] = useState(false);
+  const [logoError, setLogoError] = useState<string>();
+  const [faviconError, setFaviconError] = useState<string>();
+  const [isOptimizingLogo, setIsOptimizingLogo] = useState(false);
+  const [isOptimizingFavicon, setIsOptimizingFavicon] = useState(false);
+  const isOptimizingBranding = isOptimizingLogo || isOptimizingFavicon;
 
   const loadSettings = useCallback(async () => {
     setLoading(true);
@@ -109,67 +99,59 @@ export default function AdminSettingsPage() {
           whatsapp_url: res.setting.whatsapp_url || "",
           is_cod_enabled: res.setting.is_cod_enabled ?? true,
         });
+        setLogoFile(null);
+        setFaviconFile(null);
+        setRemoveLogo(false);
+        setRemoveFavicon(false);
+        setLogoError(undefined);
+        setFaviconError(undefined);
       }
-    } catch (err: any) {
-      setError(err.message || "Failed to load site settings.");
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, "Failed to load site settings."));
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    loadSettings();
+    const timeoutId = window.setTimeout(() => void loadSettings(), 0);
+    return () => window.clearTimeout(timeoutId);
   }, [loadSettings]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitting || isOptimizingBranding) return;
     setSubmitting(true);
     setError(null);
     setSavedNotice(null);
+    setLogoError(undefined);
+    setFaviconError(undefined);
 
     try {
-      const hasNewFile = !!logoFile || !!faviconFile;
-      let res: { message: string; setting: SiteSettings };
+      const formData = new FormData();
+      formData.append("short_description", settings.short_description || "");
+      formData.append("phone1", settings.phone1 || "");
+      formData.append("phone2", settings.phone2 || "");
+      formData.append("email1", settings.email1 || "");
+      formData.append("email2", settings.email2 || "");
+      formData.append("location", settings.location || "");
+      formData.append("map_url", settings.map_url || "");
+      formData.append("facebook_url", settings.facebook_url || "");
+      formData.append("twitter_url", settings.twitter_url || "");
+      formData.append("instagram_url", settings.instagram_url || "");
+      formData.append("linkedin_url", settings.linkedin_url || "");
+      formData.append("tiktok_url", settings.tiktok_url || "");
+      formData.append("whatsapp_url", settings.whatsapp_url || "");
+      formData.append("is_cod_enabled", settings.is_cod_enabled ? "1" : "0");
+      formData.append("remove_logo", removeLogo ? "1" : "0");
+      formData.append("remove_favicon", removeFavicon ? "1" : "0");
+      if (logoFile) formData.append("logo", logoFile);
+      if (faviconFile) formData.append("favicon", faviconFile);
 
-      if (hasNewFile) {
-        const formData = new FormData();
-        formData.append("short_description", settings.short_description || "");
-        formData.append("phone1", settings.phone1 || "");
-        formData.append("phone2", settings.phone2 || "");
-        formData.append("email1", settings.email1 || "");
-        formData.append("email2", settings.email2 || "");
-        formData.append("location", settings.location || "");
-        formData.append("map_url", settings.map_url || "");
-        formData.append("facebook_url", settings.facebook_url || "");
-        formData.append("twitter_url", settings.twitter_url || "");
-        formData.append("instagram_url", settings.instagram_url || "");
-        formData.append("linkedin_url", settings.linkedin_url || "");
-        formData.append("tiktok_url", settings.tiktok_url || "");
-        formData.append("whatsapp_url", settings.whatsapp_url || "");
-        formData.append("is_cod_enabled", settings.is_cod_enabled ? "1" : "0");
-
-        if (logoFile) {
-          formData.append("logo", logoFile);
-        } else if (settings.logo) {
-          formData.append("logo", settings.logo);
-        }
-
-        if (faviconFile) {
-          formData.append("favicon", faviconFile);
-        } else if (settings.favicon) {
-          formData.append("favicon", settings.favicon);
-        }
-
-        res = await fetchApi<{ message: string; setting: SiteSettings }>("/settings", {
-          method: "POST",
-          body: formData,
-        });
-      } else {
-        res = await fetchApi<{ message: string; setting: SiteSettings }>("/settings", {
-          method: "POST",
-          body: JSON.stringify(settings),
-        });
-      }
+      const res = await fetchApi<{ message: string; setting: SiteSettings }>("/settings", {
+        method: "POST",
+        body: formData,
+      });
 
       setSavedNotice(res.message || "Settings updated successfully.");
       if (res.setting) {
@@ -177,11 +159,13 @@ export default function AdminSettingsPage() {
       }
       setLogoFile(null);
       setFaviconFile(null);
-      setLogoPreview(null);
-      setFaviconPreview(null);
+      setRemoveLogo(false);
+      setRemoveFavicon(false);
       setTimeout(() => setSavedNotice(null), 4000);
-    } catch (err: any) {
-      setError(err.message || "Failed to update site settings.");
+    } catch (err: unknown) {
+      setLogoError(getValidationError(err, "logo"));
+      setFaviconError(getValidationError(err, "favicon"));
+      setError(getApiErrorMessage(err, "Failed to update site settings."));
     } finally {
       setSubmitting(false);
     }
@@ -235,59 +219,46 @@ export default function AdminSettingsPage() {
                 <h3 className="text-sm font-bold text-emerald-400 uppercase tracking-wider">
                   Branding
                 </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-xs">
-                  {/* Logo */}
-                  <div>
-                    <label className="block text-slate-400 mb-2">Site Logo</label>
-                    <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 shrink-0 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-center overflow-hidden">
-                        {logoPreview || settings.logo ? (
-                          <img
-                            src={logoPreview || getImageUrl(settings.logo)}
-                            alt="Logo preview"
-                            className="w-full h-full object-contain"
-                          />
-                        ) : (
-                          <span className="text-slate-600 text-[10px]">No logo</span>
-                        )}
-                      </div>
-                      <label className="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs font-semibold text-slate-200 cursor-pointer transition">
-                        Choose File
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleLogoSelect}
-                          className="hidden"
-                        />
-                      </label>
-                    </div>
-                  </div>
+                <div className="space-y-6">
+                  <AdminImageField
+                    label="Site logo"
+                    existingImageUrl={getImageUrl(settings.logo)}
+                    existingImageFilename={getImageFilename(settings.logo)}
+                    existingImageAlt="Current site logo"
+                    selectedFile={logoFile}
+                    onSelectFile={setLogoFile}
+                    onClearSelection={() => setLogoFile(null)}
+                    onProcessingChange={setIsOptimizingLogo}
+                    onRemoveExisting={() => setRemoveLogo(true)}
+                    onUndoRemoval={() => setRemoveLogo(false)}
+                    isExistingMarkedForRemoval={removeLogo}
+                    disabled={submitting}
+                    error={logoError}
+                    aspectRatioGuidance="JPEG, PNG, or WebP up to 10 MB. Transparent or wide logo artwork works best."
+                    accent="cyan"
+                  />
 
                   {/* Favicon */}
-                  <div>
-                    <label className="block text-slate-400 mb-2">Favicon</label>
-                    <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 shrink-0 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-center overflow-hidden">
-                        {faviconPreview || settings.favicon ? (
-                          <img
-                            src={faviconPreview || getImageUrl(settings.favicon)}
-                            alt="Favicon preview"
-                            className="w-8 h-8 object-contain"
-                          />
-                        ) : (
-                          <span className="text-slate-600 text-[10px]">No favicon</span>
-                        )}
-                      </div>
-                      <label className="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs font-semibold text-slate-200 cursor-pointer transition">
-                        Choose File
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleFaviconSelect}
-                          className="hidden"
-                        />
-                      </label>
-                    </div>
+                  <div className="space-y-2">
+                    <AdminImageField
+                      label="Favicon"
+                      existingImageUrl={getImageUrl(settings.favicon)}
+                      existingImageFilename={getImageFilename(settings.favicon)}
+                      existingImageAlt="Current site favicon"
+                      selectedFile={faviconFile}
+                      onSelectFile={setFaviconFile}
+                      onClearSelection={() => setFaviconFile(null)}
+                      onProcessingChange={setIsOptimizingFavicon}
+                      onRemoveExisting={() => setRemoveFavicon(true)}
+                      onUndoRemoval={() => setRemoveFavicon(false)}
+                      isExistingMarkedForRemoval={removeFavicon}
+                      disabled={submitting}
+                      error={faviconError}
+                      accept="image/png,image/jpeg,image/webp"
+                      aspectRatioGuidance="Use a square PNG, JPEG, or WebP. It is resized to at most 512×512 and optimized below 200 KB."
+                      accent="cyan"
+                      optimizationOptions={{ maxDimension: 512, targetBytes: 200 * 1024 }}
+                    />
                     <p className="text-slate-600 text-[10px] mt-2">
                       Square image recommended (e.g. 32×32 or 64×64px).
                     </p>
@@ -504,10 +475,14 @@ export default function AdminSettingsPage() {
               <div className="flex justify-end">
                 <button
                   type="submit"
-                  disabled={submitting}
+                  disabled={submitting || isOptimizingBranding}
                   className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-lg shadow-emerald-950/40 transition cursor-pointer"
                 >
-                  {submitting ? "Saving Parameters..." : "Save Site Parameters"}
+                  {isOptimizingBranding
+                    ? "Optimizing Branding..."
+                    : submitting
+                      ? "Saving Parameters..."
+                      : "Save Site Parameters"}
                 </button>
               </div>
             </form>

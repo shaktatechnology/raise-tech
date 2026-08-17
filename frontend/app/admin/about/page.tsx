@@ -2,9 +2,19 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import ProtectedRoute from "@/components/guards/ProtectedRoute";
-import { fetchApi } from "@/lib/api";
+import {
+  fetchApi,
+  getApiErrorMessage,
+  getImageUrl as resolveImageUrl,
+  getValidationError,
+} from "@/lib/api";
 import { useToast } from "@/context/ToastContext";
 import RichTextEditor from "@/components/admin/RichTextEditor";
+import {
+  MAX_IMAGE_SOURCE_BYTES,
+  optimizeImageForUpload,
+  type OptimizedImageResult,
+} from "@/lib/imageCompression";
 
 export interface AboutSettingsData {
   id?: number;
@@ -36,12 +46,7 @@ export interface WhyChooseUsItemData {
 
 // Resolve a stored image path (e.g. "/storage/about/xyz.png") into a full URL.
 function getImageUrl(path: string | null): string | null {
-  if (!path) return null;
-  if (path.startsWith("http://") || path.startsWith("https://")) return path;
-
-  const baseUrl = process.env.NEXT_PUBLIC_STORAGE_URL || "http://localhost:8000";
-  return `${baseUrl}${path.startsWith("/") ? "" : "/"}${path}`;
-
+  return resolveImageUrl(path) || null;
 }
 
 interface ImageDropzoneProps {
@@ -49,16 +54,45 @@ interface ImageDropzoneProps {
   file: File | null;
   existingUrl: string | null;
   onFileSelect: (file: File | null) => void;
+  onProcessingChange: (processing: boolean) => void;
+  isMarkedForRemoval: boolean;
+  onRemoveExisting: () => void;
+  onUndoRemoval: () => void;
+  error?: string;
 }
 
-function ImageDropzone({ label, file, existingUrl, onFileSelect }: ImageDropzoneProps) {
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function ImageDropzone({
+  label,
+  file,
+  existingUrl,
+  onFileSelect,
+  onProcessingChange,
+  isMarkedForRemoval,
+  onRemoveExisting,
+  onUndoRemoval,
+  error,
+}: ImageDropzoneProps) {
   const [isDragActive, setIsDragActive] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isOptimizing, setIsOptimizing] = useState(false);
+  const [optimizationError, setOptimizationError] = useState<string>();
+  const [optimizationResult, setOptimizationResult] =
+    useState<OptimizedImageResult | null>(null);
   const inputRef = React.useRef<HTMLInputElement>(null);
+  const selectionRunRef = React.useRef(0);
 
   useEffect(() => {
     if (!file) {
+      // Synchronize the controlled File prop with the browser-owned preview state.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPreviewUrl(null);
+      if (inputRef.current) inputRef.current.value = "";
       return;
     }
     const objectUrl = URL.createObjectURL(file);
@@ -68,18 +102,53 @@ function ImageDropzone({ label, file, existingUrl, onFileSelect }: ImageDropzone
 
   const displayUrl = previewUrl || existingUrl;
 
-  const handleFiles = (fileList: FileList | null) => {
+  useEffect(
+    () => () => {
+      selectionRunRef.current += 1;
+      onProcessingChange(false);
+    },
+    [onProcessingChange]
+  );
+
+  const handleFiles = async (fileList: FileList | null) => {
     if (!fileList || fileList.length === 0) return;
     const picked = fileList[0];
-    if (!picked.type.startsWith("image/")) return;
-    onFileSelect(picked);
+    const selectionRun = selectionRunRef.current + 1;
+    selectionRunRef.current = selectionRun;
+    setOptimizationError(undefined);
+    setOptimizationResult(null);
+    setIsOptimizing(true);
+    onProcessingChange(true);
+
+    try {
+      const result = await optimizeImageForUpload(picked);
+      if (selectionRunRef.current !== selectionRun) return;
+      setOptimizationResult(result);
+      if (isMarkedForRemoval) onUndoRemoval();
+      onFileSelect(result.file);
+    } catch (error: unknown) {
+      if (selectionRunRef.current !== selectionRun) return;
+      setOptimizationError(
+        error instanceof Error
+          ? error.message
+          : "The selected image could not be optimized."
+      );
+      if (inputRef.current) inputRef.current.value = "";
+    } finally {
+      if (selectionRunRef.current === selectionRun) {
+        setIsOptimizing(false);
+        onProcessingChange(false);
+      }
+    }
   };
 
   return (
     <div>
       <label className="block text-slate-400 mb-1">{label}</label>
       <div
-        onClick={() => inputRef.current?.click()}
+        onClick={() => {
+          if (!isOptimizing) inputRef.current?.click();
+        }}
         onDragOver={(e) => {
           e.preventDefault();
           setIsDragActive(true);
@@ -88,7 +157,7 @@ function ImageDropzone({ label, file, existingUrl, onFileSelect }: ImageDropzone
         onDrop={(e) => {
           e.preventDefault();
           setIsDragActive(false);
-          handleFiles(e.dataTransfer.files);
+          void handleFiles(e.dataTransfer.files);
         }}
         className={`relative w-full rounded-xl border-2 border-dashed cursor-pointer transition-colors overflow-hidden ${
           isDragActive
@@ -99,15 +168,22 @@ function ImageDropzone({ label, file, existingUrl, onFileSelect }: ImageDropzone
         <input
           ref={inputRef}
           type="file"
-          accept="image/*"
+          accept="image/jpeg,image/png,image/webp"
+          disabled={isOptimizing}
           className="hidden"
-          onChange={(e) => handleFiles(e.target.files)}
+          onChange={(e) => void handleFiles(e.target.files)}
         />
 
         {displayUrl ? (
           <div className="relative h-36 w-full">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={displayUrl} alt={label} className="w-full h-full object-cover" />
+            <img
+              src={displayUrl}
+              alt={label}
+              className={`w-full h-full object-cover ${
+                isMarkedForRemoval && !file ? "opacity-30 grayscale" : ""
+              }`}
+            />
             <div className="absolute inset-0 bg-slate-950/0 hover:bg-slate-950/50 transition-colors flex items-center justify-center opacity-0 hover:opacity-100">
               <span className="text-[11px] font-semibold text-white">Click or drop to replace</span>
             </div>
@@ -115,6 +191,11 @@ function ImageDropzone({ label, file, existingUrl, onFileSelect }: ImageDropzone
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
+                selectionRunRef.current += 1;
+                setIsOptimizing(false);
+                onProcessingChange(false);
+                setOptimizationError(undefined);
+                setOptimizationResult(null);
                 onFileSelect(null);
                 if (inputRef.current) inputRef.current.value = "";
               }}
@@ -140,13 +221,63 @@ function ImageDropzone({ label, file, existingUrl, onFileSelect }: ImageDropzone
               />
             </svg>
             <p className="text-slate-500 text-[11px] leading-snug">
-              Drag &amp; drop an image, or click to choose a file
+              {isOptimizing
+                ? "Optimizing image..."
+                : "Drag & drop an image, or click to choose a file"}
             </p>
           </div>
         )}
       </div>
       {file && (
-        <p className="mt-1 text-[11px] text-slate-500 truncate">{file.name}</p>
+        <div className="mt-1 space-y-0.5 text-[11px] text-slate-500">
+          <p className="truncate">{file.name} ({formatFileSize(file.size)})</p>
+          {optimizationResult?.optimized && (
+            <p className="font-medium text-emerald-400">
+              Optimized from {formatFileSize(optimizationResult.originalSize)} to{" "}
+              {formatFileSize(file.size)} before upload.
+            </p>
+          )}
+        </div>
+      )}
+      {!file && !optimizationError && (
+        <p className="mt-1 text-[11px] text-slate-500">
+          JPEG, PNG, or WebP up to {Math.round(MAX_IMAGE_SOURCE_BYTES / (1024 * 1024))} MB.
+        </p>
+      )}
+      {optimizationError && (
+        <p role="alert" className="mt-1 text-[11px] text-red-400">
+          {optimizationError}
+        </p>
+      )}
+      {error && !optimizationError && (
+        <p role="alert" className="mt-1 text-[11px] text-red-400">
+          {error}
+        </p>
+      )}
+      {existingUrl && !file && (
+        <div className="mt-2 flex justify-end">
+          {isMarkedForRemoval ? (
+            <button
+              type="button"
+              onClick={onUndoRemoval}
+              className="rounded-lg border border-slate-700 bg-slate-800 px-2.5 py-1 text-[11px] font-semibold text-slate-200 hover:bg-slate-700"
+            >
+              Undo removal
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                if (window.confirm("Mark this saved image for removal when About settings are saved?")) {
+                  onRemoveExisting();
+                }
+              }}
+              className="rounded-lg border border-red-800/70 bg-red-950/60 px-2.5 py-1 text-[11px] font-semibold text-red-300 hover:bg-red-900/70"
+            >
+              Remove saved image
+            </button>
+          )}
+        </div>
       )}
     </div>
   );
@@ -167,6 +298,17 @@ export default function AdminAboutPage() {
   const [heroImageFile, setHeroImageFile] = useState<File | null>(null);
   const [aboutImageFile, setAboutImageFile] = useState<File | null>(null);
   const [whatWeDoImageFile, setWhatWeDoImageFile] = useState<File | null>(null);
+  const [isOptimizingHeroImage, setIsOptimizingHeroImage] = useState(false);
+  const [isOptimizingAboutImage, setIsOptimizingAboutImage] = useState(false);
+  const [isOptimizingWhatWeDoImage, setIsOptimizingWhatWeDoImage] = useState(false);
+  const isOptimizingAnyImage =
+    isOptimizingHeroImage || isOptimizingAboutImage || isOptimizingWhatWeDoImage;
+  const [removeHeroImage, setRemoveHeroImage] = useState(false);
+  const [removeAboutImage, setRemoveAboutImage] = useState(false);
+  const [removeWhatWeDoImage, setRemoveWhatWeDoImage] = useState(false);
+  const [heroImageError, setHeroImageError] = useState<string>();
+  const [aboutImageError, setAboutImageError] = useState<string>();
+  const [whatWeDoImageError, setWhatWeDoImageError] = useState<string>();
 
   const [whatWeDoItems, setWhatWeDoItems] = useState<WhatWeDoItemData[]>([]);
   const [whyChooseUsItems, setWhyChooseUsItems] = useState<WhyChooseUsItemData[]>([]);
@@ -211,22 +353,33 @@ export default function AdminAboutPage() {
         }
         setWhatWeDoItems(res.data.what_we_do_items || []);
         setWhyChooseUsItems(res.data.why_choose_us_items || []);
+        setHeroImageFile(null);
+        setAboutImageFile(null);
+        setWhatWeDoImageFile(null);
+        setRemoveHeroImage(false);
+        setRemoveAboutImage(false);
+        setRemoveWhatWeDoImage(false);
+        setHeroImageError(undefined);
+        setAboutImageError(undefined);
+        setWhatWeDoImageError(undefined);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to load about data:", err);
-      toast.error(err.message || "Failed to load About settings.");
+      toast.error(getApiErrorMessage(err, "Failed to load About settings."));
     } finally {
       setLoading(false);
     }
   }, [toast]);
 
   useEffect(() => {
-    loadAboutData();
+    const timeoutId = window.setTimeout(() => void loadAboutData(), 0);
+    return () => window.clearTimeout(timeoutId);
   }, [loadAboutData]);
 
   // POST /api/about/update (multipart/form-data — text fields + optional image files)
   const handleSaveAboutSettings = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSavingSettings || isOptimizingAnyImage) return;
     setIsSavingSettings(true);
     try {
       const formData = new FormData();
@@ -238,6 +391,9 @@ export default function AdminAboutPage() {
       if (heroImageFile) formData.append("hero_image", heroImageFile);
       if (aboutImageFile) formData.append("about_image", aboutImageFile);
       if (whatWeDoImageFile) formData.append("what_we_do_image", whatWeDoImageFile);
+      formData.append("remove_hero_image", removeHeroImage ? "1" : "0");
+      formData.append("remove_about_image", removeAboutImage ? "1" : "0");
+      formData.append("remove_what_we_do_image", removeWhatWeDoImage ? "1" : "0");
 
       // NOTE: don't set a Content-Type header here — the browser needs to
       // set its own multipart boundary. If fetchApi() forces
@@ -254,10 +410,16 @@ export default function AdminAboutPage() {
       setHeroImageFile(null);
       setAboutImageFile(null);
       setWhatWeDoImageFile(null);
+      setRemoveHeroImage(false);
+      setRemoveAboutImage(false);
+      setRemoveWhatWeDoImage(false);
       toast.success(res.message || "About settings updated successfully");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to update about settings:", err);
-      toast.error(err.message || "Error updating About settings.");
+      setHeroImageError(getValidationError(err, "hero_image"));
+      setAboutImageError(getValidationError(err, "about_image"));
+      setWhatWeDoImageError(getValidationError(err, "what_we_do_image"));
+      toast.error(getApiErrorMessage(err, "Error updating About settings."));
     } finally {
       setIsSavingSettings(false);
     }
@@ -312,9 +474,9 @@ export default function AdminAboutPage() {
       setNewWhatWeDo({ title: "", description: "" });
       setEditingWhatWeDoId(null);
       setIsWhatWeDoModalOpen(false);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to save What We Do item:", err);
-      toast.error(err.message || "Failed to save What We Do item.");
+      toast.error(getApiErrorMessage(err, "Failed to save What We Do item."));
     } finally {
       setIsAddingWhatWeDo(false);
     }
@@ -329,9 +491,9 @@ export default function AdminAboutPage() {
       });
       setWhatWeDoItems((prev) => prev.filter((item) => item.id !== id));
       toast.success(res.message || "What We Do item deleted successfully");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to delete What We Do item:", err);
-      toast.error(err.message || "Failed to delete What We Do item.");
+      toast.error(getApiErrorMessage(err, "Failed to delete What We Do item."));
     }
   };
 
@@ -384,9 +546,9 @@ export default function AdminAboutPage() {
       setNewWhyChooseUs({ name: "", description: "" });
       setEditingWhyChooseUsId(null);
       setIsWhyChooseUsModalOpen(false);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to save Why Choose Us item:", err);
-      toast.error(err.message || "Failed to save Why Choose Us item.");
+      toast.error(getApiErrorMessage(err, "Failed to save Why Choose Us item."));
     } finally {
       setIsAddingWhyChooseUs(false);
     }
@@ -401,9 +563,9 @@ export default function AdminAboutPage() {
       });
       setWhyChooseUsItems((prev) => prev.filter((item) => item.id !== id));
       toast.success(res.message || "Why Choose Us item deleted successfully");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to delete Why Choose Us item:", err);
-      toast.error(err.message || "Failed to delete Why Choose Us item.");
+      toast.error(getApiErrorMessage(err, "Failed to delete Why Choose Us item."));
     }
   };
 
@@ -450,10 +612,15 @@ export default function AdminAboutPage() {
                   </h2>
                   <button
                     type="submit"
-                    disabled={isSavingSettings}
+                    disabled={isSavingSettings || isOptimizingAnyImage}
                     className="px-5 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs rounded-xl shadow-lg transition cursor-pointer disabled:opacity-50 flex items-center gap-2"
                   >
-                    {isSavingSettings ? (
+                    {isOptimizingAnyImage ? (
+                      <>
+                        <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        Optimizing image...
+                      </>
+                    ) : isSavingSettings ? (
                       <>
                         <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                         Saving...
@@ -508,6 +675,11 @@ export default function AdminAboutPage() {
                       file={heroImageFile}
                       existingUrl={getImageUrl(aboutSettings.hero_image)}
                       onFileSelect={setHeroImageFile}
+                      onProcessingChange={setIsOptimizingHeroImage}
+                      isMarkedForRemoval={removeHeroImage}
+                      onRemoveExisting={() => setRemoveHeroImage(true)}
+                      onUndoRemoval={() => setRemoveHeroImage(false)}
+                      error={heroImageError}
                     />
 
                     <ImageDropzone
@@ -515,6 +687,11 @@ export default function AdminAboutPage() {
                       file={aboutImageFile}
                       existingUrl={getImageUrl(aboutSettings.about_image)}
                       onFileSelect={setAboutImageFile}
+                      onProcessingChange={setIsOptimizingAboutImage}
+                      isMarkedForRemoval={removeAboutImage}
+                      onRemoveExisting={() => setRemoveAboutImage(true)}
+                      onUndoRemoval={() => setRemoveAboutImage(false)}
+                      error={aboutImageError}
                     />
 
                     <ImageDropzone
@@ -522,6 +699,11 @@ export default function AdminAboutPage() {
                       file={whatWeDoImageFile}
                       existingUrl={getImageUrl(aboutSettings.what_we_do_image)}
                       onFileSelect={setWhatWeDoImageFile}
+                      onProcessingChange={setIsOptimizingWhatWeDoImage}
+                      isMarkedForRemoval={removeWhatWeDoImage}
+                      onRemoveExisting={() => setRemoveWhatWeDoImage(true)}
+                      onUndoRemoval={() => setRemoveWhatWeDoImage(false)}
+                      error={whatWeDoImageError}
                     />
                   </div>
                 </div>
