@@ -35,7 +35,10 @@ export default function VisionMissionSection({ mission }: VisionMissionSectionPr
           
           {hasMission && (
             <div className="p-6 sm:p-8">
-              <p className="text-gray-700 text-base leading-relaxed">{mission}</p>
+              <div
+                className="text-gray-700 text-base sm:text-lg leading-relaxed max-w-3xl mx-auto [&_p]:mb-3 [&_p:last-child]:mb-0 font-normal"
+                dangerouslySetInnerHTML={{ __html: mission as string }}
+              />
             </div>
           )}
         </div>

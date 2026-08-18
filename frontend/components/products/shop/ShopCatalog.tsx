@@ -337,9 +337,10 @@ export default function ShopCatalog() {
                               </Link>
 
                               {product.short_description && (
-                                <p className="text-xs text-gray-500 line-clamp-2 mb-3">
-                                  {product.short_description}
-                                </p>
+                                <div
+                                  className="text-xs text-gray-500 line-clamp-2 mb-3 [&_p]:m-0 [&_p]:inline"
+                                  dangerouslySetInnerHTML={{ __html: product.short_description }}
+                                />
                               )}
 
                               {/* Price */}

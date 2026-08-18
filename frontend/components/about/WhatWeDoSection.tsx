@@ -74,9 +74,10 @@ export default function WhatWeDoSection({ items, teamImage }: WhatWeDoSectionPro
                     <h3 className="text-xl sm:text-2xl font-semibold mb-1">
                       {item.title}
                     </h3>
-                    <p className="text-cyan-50 text-sm sm:text-base italic leading-relaxed">
-                      {item.description}
-                    </p>
+                    <div
+                      className="text-cyan-50 text-sm sm:text-base italic leading-relaxed [&_p]:m-0 [&_p]:inline"
+                      dangerouslySetInnerHTML={{ __html: item.description }}
+                    />
                   </div>
                 </div>
               </div>

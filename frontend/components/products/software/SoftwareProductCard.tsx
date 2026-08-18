@@ -41,9 +41,10 @@ export default function SoftwareProductCard({ product }: SoftwareProductCardProp
         </h3>
 
         {/* Short Description */}
-        <p className="text-sm text-gray-600 leading-relaxed mb-6">
-          {product.description}
-        </p>
+        <div
+          className="text-sm text-gray-600 leading-relaxed mb-6 [&_p]:m-0 [&_p]:inline"
+          dangerouslySetInnerHTML={{ __html: product.description }}
+        />
 
         {/* Features Bullet List */}
         <div className="mt-auto pt-4 border-t border-gray-100">

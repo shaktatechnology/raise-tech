@@ -120,11 +120,11 @@ export default function SoftwareProductsGrid() {
                       </p>
                     )}
 
-                    {/* Description */}
                     {item.description && (
-                      <p className="text-sm text-gray-600 leading-relaxed mb-6 line-clamp-4">
-                        {item.description}
-                      </p>
+                      <div
+                        className="text-sm text-gray-600 leading-relaxed mb-6 line-clamp-4 [&_p]:m-0 [&_p]:inline"
+                        dangerouslySetInnerHTML={{ __html: item.description }}
+                      />
                     )}
                   </div>
 
