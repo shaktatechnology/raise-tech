@@ -163,7 +163,7 @@ export default function AdminSettingsPage() {
       if (res.setting) {
         setSettings((prev) => ({ ...prev, ...res.setting }));
       }
-      await refetch();
+      await loadSettings();
       setLogoFile(null);
       setFaviconFile(null);
       setRemoveLogo(false);
