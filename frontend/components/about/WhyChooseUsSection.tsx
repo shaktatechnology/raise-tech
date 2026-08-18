@@ -103,13 +103,12 @@ export default function WhyChooseUsSection({ items }: WhyChooseUsSectionProps) {
                     {card.title}
                   </h3>
 
-                  <p
-                    className={`text-sm leading-relaxed italic ${
+                  <div
+                    className={`text-sm leading-relaxed italic [&_p]:m-0 [&_p]:inline ${
                       isBlue ? 'text-cyan-50' : 'text-gray-600'
                     }`}
-                  >
-                    {card.description}
-                  </p>
+                    dangerouslySetInnerHTML={{ __html: card.description }}
+                  />
                 </div>
 
                 {/* CTA Link / Button */}

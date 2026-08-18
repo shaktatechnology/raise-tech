@@ -45,7 +45,7 @@ export default function CompanyIntroduction({ aboutDescription, aboutImage }: Co
 
           {/* Right Column: About Section Image */}
           <div className="lg:col-span-5 w-full">
-            <div className="relative w-full h-[320px] sm:h-[400px] lg:h-[460px] rounded-2xl overflow-hidden shadow-xl border border-cyan-100">
+            <div className="relative w-full h-[320px] sm:h-[400px] lg:h-[460px] ">
               <Image
                 src={imageSrc}
                 alt="Raise Tech Pvt. Ltd. - About Us"

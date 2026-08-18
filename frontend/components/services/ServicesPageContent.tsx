@@ -144,9 +144,10 @@ export default function ServicesPageContent() {
                           </p>
                         )}
 
-                        <p className="text-sm sm:text-base text-gray-600 leading-relaxed whitespace-pre-line">
-                          {service.description}
-                        </p>
+                        <div
+                          className="text-sm sm:text-base text-gray-600 leading-relaxed [&_p]:mb-2 [&_p:last-child]:mb-0"
+                          dangerouslySetInnerHTML={{ __html: service.description }}
+                        />
 
                         <div className="pt-4">
                           <Link

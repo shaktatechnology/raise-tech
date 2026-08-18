@@ -78,13 +78,12 @@ export default function ServicesSection({ services }: ServicesSectionProps) {
                   </h3>
 
                   {/* Service Description */}
-                  <p
-                    className={`text-xs sm:text-sm leading-relaxed font-normal ${
+                  <div
+                    className={`text-xs sm:text-sm leading-relaxed font-normal [&_p]:m-0 [&_p]:inline ${
                       isActive ? 'text-cyan-50' : 'text-gray-500'
                     }`}
-                  >
-                    {service.description}
-                  </p>
+                    dangerouslySetInnerHTML={{ __html: service.description }}
+                  />
                 </Link>
               );
             })}

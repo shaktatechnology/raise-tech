@@ -4,7 +4,8 @@ import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { fetchApi } from "@/lib/api";
+import { useSiteSettings } from "@/context/SiteSettingsContext";
+import { fetchApi, getImageUrl } from "@/lib/api";
 import { ContactInquiry } from "@/lib/types";
 
 const INQUIRY_POLL_INTERVAL_MS = 30000; // 30s
@@ -12,6 +13,7 @@ const INQUIRY_POLL_INTERVAL_MS = 30000; // 30s
 export default function AdminSidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const { settings } = useSiteSettings();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [unreadInquiryCount, setUnreadInquiryCount] = useState<number>(0);
 
@@ -132,9 +134,14 @@ export default function AdminSidebar() {
       {/* Mobile Bar */}
       <div className="lg:hidden bg-slate-900 border-b border-slate-800 px-4 py-3 flex items-center justify-between sticky top-0 z-50">
         <Link href="/admin" className="flex items-center gap-2 font-black text-white text-base">
-          <span className="w-7 h-7 bg-cyan-500 rounded-lg flex items-center justify-center text-slate-950 font-bold text-xs">
-            RT
-          </span>
+          {settings?.logo ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={getImageUrl(settings.logo)} alt="Logo" className="w-7 h-7 object-contain" />
+          ) : (
+            <span className="w-7 h-7 bg-cyan-500 rounded-lg flex items-center justify-center text-slate-950 font-bold text-xs">
+              RT
+            </span>
+          )}
           <span>RaiseTech Admin</span>
         </Link>
         <button
@@ -169,9 +176,14 @@ export default function AdminSidebar() {
         <div>
           <div className="p-6 border-b border-slate-800/80 flex items-center justify-between">
             <Link href="/admin" className="flex items-center gap-3 font-black text-white text-lg tracking-tight">
-              <span className="w-9 h-9 bg-cyan-500 rounded-xl flex items-center justify-center text-slate-950 font-bold text-sm shadow-md shadow-cyan-500/20">
-                RT
-              </span>
+              {/* {settings?.logo ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={getImageUrl(settings.logo)} alt="Logo" className="w-9 h-9 object-contain" />
+              ) : (
+                <span className="w-9 h-9 bg-cyan-500 rounded-xl flex items-center justify-center text-slate-950 font-bold text-sm shadow-md shadow-cyan-500/20">
+                  RT
+                </span>
+              )} */}
               <div className="flex flex-col">
                 <span className="leading-none">RaiseTech</span>
                 <span className="text-[10px] text-cyan-400 font-mono uppercase tracking-wider mt-1">Admin Panel</span>

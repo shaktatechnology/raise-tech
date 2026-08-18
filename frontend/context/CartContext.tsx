@@ -46,6 +46,10 @@ interface CartContextType {
   isLoading: boolean;
   isUpdating: boolean;
   error: string | null;
+  isDrawerOpen: boolean;
+  openDrawer: () => void;
+  closeDrawer: () => void;
+  toggleDrawer: () => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -169,7 +173,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [synchronizedOwner, setSynchronizedOwner] = useState<number | "guest" | null>(null);
+
+  const openDrawer = useCallback(() => setIsDrawerOpen(true), []);
+  const closeDrawer = useCallback(() => setIsDrawerOpen(false), []);
+  const toggleDrawer = useCallback(() => setIsDrawerOpen((prev) => !prev), []);
   const expectedOwner = user?.id ?? "guest";
   const cartIsLoading =
     isAuthLoading || !isStorageReady || isLoading || synchronizedOwner !== expectedOwner;
@@ -311,6 +320,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             }),
           })
         );
+        setIsDrawerOpen(true);
         return;
       }
 
@@ -327,6 +337,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             : item
         );
       });
+      setIsDrawerOpen(true);
     },
     [cartIsLoading, runApiMutation, updateGuestItems, user]
   );
@@ -405,6 +416,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         isLoading: cartIsLoading,
         isUpdating,
         error,
+        isDrawerOpen,
+        openDrawer,
+        closeDrawer,
+        toggleDrawer,
       }}
     >
       {children}

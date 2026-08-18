@@ -337,9 +337,10 @@ export default function ShopCatalog() {
                               </Link>
 
                               {product.short_description && (
-                                <p className="text-xs text-gray-500 line-clamp-2 mb-3">
-                                  {product.short_description}
-                                </p>
+                                <div
+                                  className="text-xs text-gray-500 line-clamp-2 mb-3 [&_p]:m-0 [&_p]:inline"
+                                  dangerouslySetInnerHTML={{ __html: product.short_description }}
+                                />
                               )}
 
                               {/* Price */}
@@ -387,12 +388,12 @@ export default function ShopCatalog() {
                                 )}
                               </button>
 
-                              <Link
+                              {/* <Link
                                 href={`/products/shop/${product.slug}`}
                                 className="w-full py-2 rounded-xl text-xs font-semibold text-gray-700 hover:text-[#01A7E5] bg-gray-50 hover:bg-cyan-50 transition-colors flex items-center justify-center"
                               >
                                 View Details →
-                              </Link>
+                              </Link> */}
                             </div>
                           </div>
                         </div>
