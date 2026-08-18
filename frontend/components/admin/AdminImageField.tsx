@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useId, useRef, useState } from "react";
+import { useDeleteConfirmation } from "@/components/admin/DeleteConfirmation";
 import {
   MAX_IMAGE_SOURCE_BYTES,
   optimizeImageForUpload,
@@ -26,6 +27,8 @@ interface AdminImageFieldProps {
   aspectRatioGuidance?: string;
   accent?: "cyan" | "amber" | "purple" | "pink";
   optimizationOptions?: ImageOptimizationOptions;
+  previewMaxWidth?: string;
+  objectFit?: "contain" | "cover";
 }
 
 function formatFileSize(bytes: number): string {
@@ -52,7 +55,10 @@ export default function AdminImageField({
   aspectRatioGuidance,
   accent = "cyan",
   optimizationOptions,
+  previewMaxWidth = "max-w-md",
+  objectFit = "contain",
 }: AdminImageFieldProps) {
+  const { confirmDelete } = useDeleteConfirmation();
   const inputRef = useRef<HTMLInputElement>(null);
   const selectionRunRef = useRef(0);
   const inputId = `admin-image-${useId().replace(/:/g, "")}`;
@@ -142,13 +148,14 @@ export default function AdminImageField({
     onClearSelection();
   };
 
-  const handleRemove = () => {
+  const handleRemove = async () => {
     if (!onRemoveExisting) return;
-    if (
-      window.confirm(
-        "Mark the current saved image for removal? It will only be deleted when you save."
-      )
-    ) {
+    const confirmed = await confirmDelete({
+      title: "Remove saved image?",
+      message: "The saved image will be marked for removal and deleted after you save these changes.",
+      confirmLabel: "Remove image",
+    });
+    if (confirmed) {
       onRemoveExisting();
     }
   };
@@ -204,12 +211,22 @@ export default function AdminImageField({
         </p>
       )}
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        <section className="rounded-xl border border-slate-800 bg-slate-950/60 p-3">
+      <div>
+        <section className={`w-full ${previewMaxWidth} rounded-xl border border-slate-800 bg-slate-950/60 p-3`}>
           <div className="mb-2 flex min-h-7 flex-wrap items-center justify-between gap-2">
             <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
-              Current saved image
+              {selectedFile ? "Selected image preview" : "Current saved image"}
             </p>
+            {selectedFile && (
+              <button
+                type="button"
+                disabled={disabled}
+                onClick={handleClearSelection}
+                className={`rounded-lg border border-slate-700 bg-slate-800 px-2.5 py-1 text-[11px] font-semibold text-slate-200 transition hover:bg-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 ${focusClasses} disabled:cursor-not-allowed disabled:opacity-50`}
+              >
+                Clear selection
+              </button>
+            )}
             {existingImageUrl &&
               !selectedFile &&
               !isExistingMarkedForRemoval &&
@@ -217,7 +234,7 @@ export default function AdminImageField({
               <button
                 type="button"
                 disabled={disabled}
-                onClick={handleRemove}
+                onClick={() => void handleRemove()}
                 className={`rounded-lg border border-red-800/70 bg-red-950/60 px-2.5 py-1 text-[11px] font-semibold text-red-300 transition hover:bg-red-900/70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400 disabled:cursor-not-allowed disabled:opacity-50`}
               >
                 Remove image
@@ -235,17 +252,21 @@ export default function AdminImageField({
             )}
           </div>
 
-          {existingImageUrl ? (
+          {(selectedFile && localPreviewUrl) || existingImageUrl ? (
             <>
-              <div className="relative aspect-video overflow-hidden rounded-lg border border-slate-800 bg-slate-900">
-                {!existingImageFailed ? (
+              <div className="relative aspect-video overflow-hidden rounded-lg border border-slate-800 bg-slate-950/80 flex items-center justify-center p-2">
+                {selectedFile || !existingImageFailed ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src={existingImageUrl}
-                    alt={existingImageAlt}
-                    onError={() => setExistingImageFailed(true)}
-                    className={`h-full w-full object-cover ${
-                      isExistingMarkedForRemoval ? "opacity-30 grayscale" : ""
+                    src={selectedFile && localPreviewUrl ? localPreviewUrl : existingImageUrl || ""}
+                    alt={selectedFile ? `Selected preview for ${existingImageAlt}` : existingImageAlt}
+                    onError={() => {
+                      if (!selectedFile) setExistingImageFailed(true);
+                    }}
+                    className={`h-full w-full ${
+                      objectFit === "cover" ? "object-cover" : "object-contain"
+                    } ${
+                      !selectedFile && isExistingMarkedForRemoval ? "opacity-30 grayscale" : ""
                     }`}
                   />
                 ) : (
@@ -253,7 +274,7 @@ export default function AdminImageField({
                     The saved image could not be loaded.
                   </div>
                 )}
-                {isExistingMarkedForRemoval && (
+                {!selectedFile && isExistingMarkedForRemoval && (
                   <div className="absolute inset-0 flex items-center justify-center">
                     <span className="rounded-lg bg-red-950/90 px-3 py-1.5 text-xs font-bold text-red-300">
                       Marked for removal
@@ -261,51 +282,18 @@ export default function AdminImageField({
                   </div>
                 )}
               </div>
-              {existingImageFilename && (
-                <p className="mt-2 truncate text-[11px] text-slate-500" title={existingImageFilename}>
-                  {existingImageFilename}
+              {(selectedFile || existingImageFilename) && (
+                <p
+                  className="mt-2 truncate text-[11px] font-medium text-slate-300"
+                  title={selectedFile?.name || existingImageFilename || undefined}
+                >
+                  {selectedFile?.name || existingImageFilename}
                 </p>
               )}
-            </>
-          ) : (
-            <div className="flex aspect-video items-center justify-center rounded-lg border border-dashed border-slate-800 bg-slate-900/50 px-4 text-center text-xs text-slate-600">
-              No current saved image
-            </div>
-          )}
-        </section>
-
-        <section className="rounded-xl border border-slate-800 bg-slate-950/60 p-3">
-          <div className="mb-2 flex min-h-7 flex-wrap items-center justify-between gap-2">
-            <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
-              New selected image
-            </p>
-            {selectedFile && (
-              <button
-                type="button"
-                disabled={disabled}
-                onClick={handleClearSelection}
-                className={`rounded-lg border border-slate-700 bg-slate-800 px-2.5 py-1 text-[11px] font-semibold text-slate-200 transition hover:bg-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 ${focusClasses} disabled:cursor-not-allowed disabled:opacity-50`}
-              >
-                Clear selection
-              </button>
-            )}
-          </div>
-
-          {selectedFile && localPreviewUrl ? (
-            <>
-              <div className="aspect-video overflow-hidden rounded-lg border border-slate-800 bg-slate-900">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={localPreviewUrl}
-                  alt={`New selected preview for ${existingImageAlt}`}
-                  className="h-full w-full object-cover"
-                />
-              </div>
-              <p className="mt-2 truncate text-[11px] font-medium text-slate-300" title={selectedFile.name}>
-                {selectedFile.name}
-              </p>
-              <p className="text-[11px] text-slate-500">{formatFileSize(selectedFile.size)}</p>
-              {optimizationResult?.optimized && (
+              {selectedFile && (
+                <p className="text-[11px] text-slate-500">{formatFileSize(selectedFile.size)}</p>
+              )}
+              {selectedFile && optimizationResult?.optimized && (
                 <p className="mt-1 text-[11px] font-medium text-emerald-400">
                   Optimized from {formatFileSize(optimizationResult.originalSize)} to{" "}
                   {formatFileSize(selectedFile.size)} before upload.
@@ -318,6 +306,7 @@ export default function AdminImageField({
             </div>
           )}
         </section>
+
       </div>
     </fieldset>
   );

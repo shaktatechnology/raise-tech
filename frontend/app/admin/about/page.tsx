@@ -10,6 +10,7 @@ import {
 } from "@/lib/api";
 import { useToast } from "@/context/ToastContext";
 import RichTextEditor from "@/components/admin/RichTextEditor";
+import { useDeleteConfirmation } from "@/components/admin/DeleteConfirmation";
 import {
   MAX_IMAGE_SOURCE_BYTES,
   optimizeImageForUpload,
@@ -78,6 +79,7 @@ function ImageDropzone({
   onUndoRemoval,
   error,
 }: ImageDropzoneProps) {
+  const { confirmDelete } = useDeleteConfirmation();
   const [isDragActive, setIsDragActive] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isOptimizing, setIsOptimizing] = useState(false);
@@ -140,6 +142,15 @@ function ImageDropzone({
         onProcessingChange(false);
       }
     }
+  };
+
+  const handleRemoveSavedImage = async () => {
+    const confirmed = await confirmDelete({
+      title: "Remove saved image?",
+      message: "The saved image will be marked for removal and deleted after the About settings are saved.",
+      confirmLabel: "Remove image",
+    });
+    if (confirmed) onRemoveExisting();
   };
 
   return (
@@ -267,11 +278,7 @@ function ImageDropzone({
           ) : (
             <button
               type="button"
-              onClick={() => {
-                if (window.confirm("Mark this saved image for removal when About settings are saved?")) {
-                  onRemoveExisting();
-                }
-              }}
+              onClick={() => void handleRemoveSavedImage()}
               className="rounded-lg border border-red-800/70 bg-red-950/60 px-2.5 py-1 text-[11px] font-semibold text-red-300 hover:bg-red-900/70"
             >
               Remove saved image
@@ -285,6 +292,7 @@ function ImageDropzone({
 
 export default function AdminAboutPage() {
   const { toast } = useToast();
+  const { confirmDelete } = useDeleteConfirmation();
 
   const [aboutSettings, setAboutSettings] = useState<AboutSettingsData>({
     hero_image: "",
@@ -484,7 +492,12 @@ export default function AdminAboutPage() {
 
   // DELETE /api/about/what_we_do/{id}
   const handleDeleteWhatWeDo = async (id: number) => {
-    if (!window.confirm("Delete this What We Do item? This cannot be undone.")) return;
+    const confirmed = await confirmDelete({
+      title: "Delete What We Do item?",
+      message: "This item will be permanently removed. This action cannot be undone.",
+      confirmLabel: "Delete item",
+    });
+    if (!confirmed) return;
     try {
       const res = await fetchApi<{ message: string }>(`/about/what_we_do/${id}`, {
         method: "DELETE",
@@ -556,7 +569,12 @@ export default function AdminAboutPage() {
 
   // DELETE /api/about/why_choose_us/{id}
   const handleDeleteWhyChooseUs = async (id: number) => {
-    if (!window.confirm("Delete this Why Choose Us item? This cannot be undone.")) return;
+    const confirmed = await confirmDelete({
+      title: "Delete Why Choose Us item?",
+      message: "This item will be permanently removed. This action cannot be undone.",
+      confirmLabel: "Delete item",
+    });
+    if (!confirmed) return;
     try {
       const res = await fetchApi<{ message: string }>(`/about/why_choose_us/${id}`, {
         method: "DELETE",

@@ -313,7 +313,7 @@ export default function AdminProductsPage() {
                       <th className="py-3.5 px-4">Price</th>
                       <th className="py-3.5 px-4">Stock</th>
                       <th className="py-3.5 px-4">Status</th>
-                      <th className="py-3.5 px-4 text-right">Actions</th>
+                      <th className="py-3.5 px-4 text-center w-28 whitespace-nowrap">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800/60">
@@ -382,26 +382,36 @@ export default function AdminProductsPage() {
                               {product.is_active ? "Active" : "Inactive"}
                             </button>
                           </td>
-                          <td className="py-3.5 px-4 text-right whitespace-nowrap space-x-2">
-                            <button
-                              onClick={() => {
-                                setEditingProduct(product);
-                                setFeaturedImageFile(null);
-                                setGalleryFiles([]);
-                                setFeaturedImageError(undefined);
-                                setGalleryImageError(undefined);
-                                setIsModalOpen(true);
-                              }}
-                              className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs transition cursor-pointer"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => handleDelete(product.id)}
-                              className="px-2.5 py-1 bg-red-950/60 hover:bg-red-900 text-red-400 border border-red-900/50 rounded-lg text-xs transition cursor-pointer"
-                            >
-                              Delete
-                            </button>
+                          <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                            <div className="flex items-center justify-center gap-1.5">
+                              {/* Pencil Icon / Edit Button */}
+                              <button
+                                onClick={() => {
+                                  setEditingProduct(product);
+                                  setFeaturedImageFile(null);
+                                  setGalleryFiles([]);
+                                  setFeaturedImageError(undefined);
+                                  setGalleryImageError(undefined);
+                                  setIsModalOpen(true);
+                                }}
+                                title="Edit Product"
+                                className="p-2 bg-slate-800 hover:bg-slate-700 text-cyan-400 hover:text-cyan-300 rounded-lg border border-slate-700 transition cursor-pointer shadow-sm"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                              </button>
+                              {/* Trash Icon / Delete Button */}
+                              <button
+                                onClick={() => handleDelete(product.id)}
+                                title="Delete Product"
+                                className="p-2 bg-red-950/60 hover:bg-red-900/80 text-red-400 border border-red-900/50 rounded-lg transition cursor-pointer shadow-sm"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))

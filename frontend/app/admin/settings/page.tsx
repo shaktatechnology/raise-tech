@@ -11,6 +11,7 @@ import {
   getValidationError,
 } from "@/lib/api";
 import { SiteSettings } from "@/lib/types";
+import { useToast } from "@/context/ToastContext";
 
 // Converts common Google Maps URL formats (place links, search/query links,
 // share links) into an embeddable iframe URL. Returns null if the URL can't
@@ -41,6 +42,7 @@ export function toEmbeddableMapUrl(url?: string | null): string | null {
 }
 
 export default function AdminSettingsPage() {
+  const { showToast } = useToast();
   const [settings, setSettings] = useState<SiteSettings>({
     short_description: "",
     logo: null,
@@ -63,7 +65,6 @@ export default function AdminSettingsPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [savedNotice, setSavedNotice] = useState<string | null>(null);
 
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [faviconFile, setFaviconFile] = useState<File | null>(null);
@@ -107,11 +108,13 @@ export default function AdminSettingsPage() {
         setFaviconError(undefined);
       }
     } catch (err: unknown) {
-      setError(getApiErrorMessage(err, "Failed to load site settings."));
+      const message = getApiErrorMessage(err, "Failed to load site settings.");
+      setError(message);
+      showToast(message, "error");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [showToast]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => void loadSettings(), 0);
@@ -123,7 +126,6 @@ export default function AdminSettingsPage() {
     if (submitting || isOptimizingBranding) return;
     setSubmitting(true);
     setError(null);
-    setSavedNotice(null);
     setLogoError(undefined);
     setFaviconError(undefined);
 
@@ -153,7 +155,7 @@ export default function AdminSettingsPage() {
         body: formData,
       });
 
-      setSavedNotice(res.message || "Settings updated successfully.");
+      showToast(res.message || "Settings updated successfully.", "success");
       if (res.setting) {
         setSettings((prev) => ({ ...prev, ...res.setting }));
       }
@@ -161,11 +163,12 @@ export default function AdminSettingsPage() {
       setFaviconFile(null);
       setRemoveLogo(false);
       setRemoveFavicon(false);
-      setTimeout(() => setSavedNotice(null), 4000);
     } catch (err: unknown) {
       setLogoError(getValidationError(err, "logo"));
       setFaviconError(getValidationError(err, "favicon"));
-      setError(getApiErrorMessage(err, "Failed to update site settings."));
+      const message = getApiErrorMessage(err, "Failed to update site settings.");
+      setError(message);
+      showToast(message, "error");
     } finally {
       setSubmitting(false);
     }
@@ -194,12 +197,6 @@ export default function AdminSettingsPage() {
               Refresh
             </button>
           </div>
-
-          {savedNotice && (
-            <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs rounded-xl font-semibold animate-in fade-in">
-              ✓ {savedNotice}
-            </div>
-          )}
 
           {error && (
             <div className="p-4 bg-red-500/10 border border-red-500/30 text-red-400 text-xs rounded-xl font-semibold">

@@ -38,20 +38,20 @@ export default function Footer() {
           {/* Column 1: Company Logo & About */}
           <div className="space-y-4">
             <Link href="/" className="flex items-center gap-3 group inline-block">
-              <div className="relative w-10 h-10 shrink-0">
+              <div className="relative h-10 max-w-[200px] flex items-center shrink-0">
                 {settings?.logo ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={getImageUrl(settings.logo)}
                     alt="Raise Tech Logo"
-                    className="w-full h-full object-contain"
+                    className="h-full w-auto max-w-full object-contain object-left"
                   />
                 ) : (
-                  <Image
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
                     src="/images/home/logo.png"
                     alt="Raise Tech Logo"
-                    fill
-                    className="object-contain"
+                    className="h-full w-auto max-w-full object-contain object-left"
                   />
                 )}
               </div>
