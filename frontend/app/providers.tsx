@@ -8,12 +8,12 @@ import React from "react";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <AuthProvider>
-      <CartProvider>
-        <ToastProvider>
+    <ToastProvider>
+      <AuthProvider>
+        <CartProvider>
           <SiteSettingsProvider>{children}</SiteSettingsProvider>
-        </ToastProvider>
-      </CartProvider>
-    </AuthProvider>
+        </CartProvider>
+      </AuthProvider>
+    </ToastProvider>
   );
 }

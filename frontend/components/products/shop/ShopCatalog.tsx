@@ -387,12 +387,12 @@ export default function ShopCatalog() {
                                 )}
                               </button>
 
-                              <Link
+                              {/* <Link
                                 href={`/products/shop/${product.slug}`}
                                 className="w-full py-2 rounded-xl text-xs font-semibold text-gray-700 hover:text-[#01A7E5] bg-gray-50 hover:bg-cyan-50 transition-colors flex items-center justify-center"
                               >
                                 View Details →
-                              </Link>
+                              </Link> */}
                             </div>
                           </div>
                         </div>

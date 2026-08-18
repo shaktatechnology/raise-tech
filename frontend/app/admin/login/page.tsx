@@ -2,31 +2,35 @@
 
 import React, { useState, Suspense } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useSiteSettings } from "@/context/SiteSettingsContext";
+import { useToast } from "@/context/ToastContext";
 import { useRouter } from "next/navigation";
+import { getImageUrl } from "@/lib/api";
 
 function AdminLoginContent() {
   const { login } = useAuth();
+  const { settings } = useSiteSettings();
+  const { toast } = useToast();
   const router = useRouter();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
     setIsSubmitting(true);
 
     try {
       const user = await login(email, password);
       if (user.role !== "admin") {
-        setError("Access denied. Admin credentials required.");
+        toast.error("Access denied. Admin credentials required.");
         return;
       }
+      toast.success("Welcome back! Logged in successfully.");
       router.push("/admin");
     } catch (err: any) {
-      setError(err.message || "Invalid email or password.");
+      toast.error(err.message || "Invalid email or password.");
     } finally {
       setIsSubmitting(false);
     }
@@ -36,26 +40,29 @@ function AdminLoginContent() {
     <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
       <div className="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-xl p-8 shadow-2xl">
 
-        {/* Lock icon */}
+        {/* Brand Logo or Lock Icon */}
         <div className="flex justify-center mb-6">
-          <div className="w-14 h-14 bg-indigo-600/20 border border-indigo-500/30 rounded-full flex items-center justify-center">
-            <svg className="w-7 h-7 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
-          </div>
+          {settings?.logo ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={getImageUrl(settings.logo)}
+              alt="Site Logo"
+              className="h-14 w-auto object-contain"
+            />
+          ) : (
+            <div className="w-14 h-14 bg-indigo-600/20 border border-indigo-500/30 rounded-full flex items-center justify-center">
+              <svg className="w-7 h-7 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </div>
+          )}
         </div>
 
-        <div className="text-center mb-6">
+        {/* <div className="text-center mb-6">
           <h2 className="text-xl font-bold text-white">Admin Login</h2>
           <p className="text-slate-500 text-xs mt-1">Restricted access — admins only</p>
-        </div>
-
-        {error && (
-          <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded-lg text-center">
-            {error}
-          </div>
-        )}
+        </div> */}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -98,14 +105,14 @@ function AdminLoginContent() {
             {isSubmitting ? "Signing in..." : "Sign In as Admin"}
           </button>
 
-          <div className="text-center mt-4">
+          {/* <div className="text-center mt-4">
             <p className="text-xs text-slate-400">
               Need an admin account?{" "}
               <a href="/admin/signup" className="text-indigo-400 hover:underline font-semibold">
                 Register Admin
               </a>
             </p>
-          </div>
+          </div> */}
         </form>
       </div>
     </div>

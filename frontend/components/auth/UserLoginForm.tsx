@@ -2,9 +2,11 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useAuth, User } from "@/context/AuthContext";
+import { useSiteSettings } from "@/context/SiteSettingsContext";
+import { useToast } from "@/context/ToastContext";
 import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
 import Script from "next/script";
+import { getImageUrl } from "@/lib/api";
 
 declare global {
   interface Window {
@@ -24,17 +26,19 @@ export default function UserLoginForm({
   onSwitchToSignup,
 }: UserLoginFormProps) {
   const { googleLogin } = useAuth();
+  const { settings } = useSiteSettings();
+  const { toast } = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTarget = searchParams?.get("redirect");
 
-  const [error, setError] = useState<string | null>(null);
   const [googleLoaded, setGoogleLoaded] = useState(false);
 
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
   const handlePostLoginRedirect = (user: User) => {
     if (onClose) onClose();
+    toast.success(`Welcome back, ${user.name || "User"}!`);
     if (redirectTarget) {
       router.push(redirectTarget);
     } else {
@@ -44,15 +48,15 @@ export default function UserLoginForm({
 
   const handleGoogleCallback = useCallback(
     async (response: any) => {
-      setError(null);
       try {
         const user = await googleLogin(response.credential);
         handlePostLoginRedirect(user);
       } catch (err: any) {
-        setError(err.message || "Google Login Failed.");
+        const msg = err.message || "Invalid email or password.";
+        toast.error(msg);
       }
     },
-    [googleLogin, redirectTarget, router, onClose]
+    [googleLogin, redirectTarget, router, onClose, toast]
   );
 
   const initGoogleScript = useCallback(() => {
@@ -102,15 +106,13 @@ export default function UserLoginForm({
 
   const handleCustomGoogleClick = () => {
     if (!googleClientId) {
-      setError(
-        "Google Client ID is missing. Add NEXT_PUBLIC_GOOGLE_CLIENT_ID to your frontend .env file."
-      );
+      toast.error("Google Client ID is missing. Add NEXT_PUBLIC_GOOGLE_CLIENT_ID to your frontend .env file.");
       return;
     }
     if (window.google?.accounts?.id) {
       window.google.accounts.id.prompt();
     } else {
-      setError("Google Sign-In is initializing. Please try again in a moment.");
+      toast.error("Google Sign-In is initializing. Please try again in a moment.");
     }
   };
 
@@ -139,17 +141,21 @@ export default function UserLoginForm({
         )}
 
         <div className="text-center mb-8">
+          {settings?.logo && (
+            <div className="flex justify-center mb-4">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={getImageUrl(settings.logo)}
+                alt="Site Logo"
+                className="h-12 w-auto object-contain"
+              />
+            </div>
+          )}
           <h2 className="text-2xl font-bold text-white">Welcome Back</h2>
           <p className="text-slate-400 text-sm mt-1">
             Sign in to your account to continue
           </p>
         </div>
-
-        {error && (
-          <div className="mb-6 p-3 bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded-lg text-center">
-            {error}
-          </div>
-        )}
 
         {/* Google Sign In */}
         <div className="flex flex-col items-center justify-center">

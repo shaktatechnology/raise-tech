@@ -33,22 +33,21 @@ export function SiteSettingsProvider({ children }: { children: React.ReactNode }
   }, [load]);
 
   // Keep the browser tab favicon in sync once settings load.
-  // NOTE: this is a client-side swap after hydration — it won't affect the
-  // very first paint of a fresh page load, only subsequent tab/bookmark
-  // display. A fully dynamic favicon on first paint needs a server-side
-  // app/icon.tsx route instead.
   useEffect(() => {
-    let link = document.querySelector<HTMLLinkElement>("link[rel~='icon']");
-    if (!settings?.favicon) {
-      link?.remove();
-      return;
-    }
-    if (!link) {
-      link = document.createElement("link");
+    if (!settings?.favicon) return;
+    const faviconUrl = getImageUrl(settings.favicon);
+    
+    let links = document.querySelectorAll<HTMLLinkElement>("link[rel*='icon']");
+    if (links.length === 0) {
+      const link = document.createElement("link");
       link.rel = "icon";
+      link.href = faviconUrl;
       document.head.appendChild(link);
+    } else {
+      links.forEach((link) => {
+        link.href = faviconUrl;
+      });
     }
-    link.href = getImageUrl(settings.favicon);
   }, [settings?.favicon]);
 
   return (

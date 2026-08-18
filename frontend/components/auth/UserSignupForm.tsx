@@ -2,9 +2,12 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useAuth, User } from "@/context/AuthContext";
+import { useSiteSettings } from "@/context/SiteSettingsContext";
+import { useToast } from "@/context/ToastContext";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Script from "next/script";
+import { getImageUrl } from "@/lib/api";
 
 declare global {
   interface Window {
@@ -24,15 +27,17 @@ export default function UserSignupForm({
   onSwitchToLogin,
 }: UserSignupFormProps) {
   const { googleLogin } = useAuth();
+  const { settings } = useSiteSettings();
+  const { toast } = useToast();
   const router = useRouter();
 
-  const [error, setError] = useState<string | null>(null);
   const [googleLoaded, setGoogleLoaded] = useState(false);
 
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
   const handlePostLoginRedirect = (user: User) => {
     if (onClose) onClose();
+    toast.success("Account created successfully!");
     if (user.role === "admin") {
       router.push("/admin");
     } else {
@@ -42,15 +47,14 @@ export default function UserSignupForm({
 
   const handleGoogleCallback = useCallback(
     async (response: any) => {
-      setError(null);
       try {
         const user = await googleLogin(response.credential);
         handlePostLoginRedirect(user);
       } catch (err: any) {
-        setError(err.message || "Google Authentication failed.");
+        toast.error(err.message || "Google Authentication failed.");
       }
     },
-    [googleLogin, router, onClose]
+    [googleLogin, router, onClose, toast]
   );
 
   const initGoogleScript = useCallback(() => {
@@ -100,15 +104,13 @@ export default function UserSignupForm({
 
   const handleCustomGoogleClick = () => {
     if (!googleClientId) {
-      setError(
-        "Google Client ID is missing. Add NEXT_PUBLIC_GOOGLE_CLIENT_ID to your frontend .env file."
-      );
+      toast.error("Google Client ID is missing. Add NEXT_PUBLIC_GOOGLE_CLIENT_ID to your frontend .env file.");
       return;
     }
     if (window.google?.accounts?.id) {
       window.google.accounts.id.prompt();
     } else {
-      setError("Google Sign-Up is initializing. Please try again in a moment.");
+      toast.error("Google Sign-Up is initializing. Please try again in a moment.");
     }
   };
 
@@ -137,17 +139,21 @@ export default function UserSignupForm({
         )}
 
         <div className="text-center mb-8">
+          {settings?.logo && (
+            <div className="flex justify-center mb-4">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={getImageUrl(settings.logo)}
+                alt="Site Logo"
+                className="h-12 w-auto object-contain"
+              />
+            </div>
+          )}
           <h2 className="text-2xl font-bold text-white">Create an Account</h2>
           <p className="text-slate-400 text-sm mt-1">
             Sign up with your Google account to get started
           </p>
         </div>
-
-        {error && (
-          <div className="mb-6 p-3 bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded-lg text-center">
-            {error}
-          </div>
-        )}
 
         {/* Google Sign-Up */}
         <div className="flex flex-col items-center justify-center">

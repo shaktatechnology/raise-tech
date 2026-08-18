@@ -310,6 +310,9 @@ export default function AdminAboutPage() {
   const [aboutImageError, setAboutImageError] = useState<string>();
   const [whatWeDoImageError, setWhatWeDoImageError] = useState<string>();
 
+  type AboutTab = "company-info" | "what-we-do" | "why-choose-us";
+  const [activeTab, setActiveTab] = useState<AboutTab>("company-info");
+
   const [whatWeDoItems, setWhatWeDoItems] = useState<WhatWeDoItemData[]>([]);
   const [whyChooseUsItems, setWhyChooseUsItems] = useState<WhyChooseUsItemData[]>([]);
 
@@ -594,6 +597,54 @@ export default function AdminAboutPage() {
             </button>
           </div>
 
+          {/* Tab Navigation Buttons */}
+          <div className="flex items-center gap-2 border-b border-slate-800 pb-4 overflow-x-auto">
+            <button
+              type="button"
+              onClick={() => setActiveTab("company-info")}
+              className={`px-5 py-3 font-bold text-xs sm:text-sm rounded-xl transition-all cursor-pointer flex items-center gap-2.5 shrink-0 ${
+                activeTab === "company-info"
+                  ? "bg-cyan-600 text-white shadow-lg shadow-cyan-900/40 ring-2 ring-cyan-400/50"
+                  : "bg-slate-900/90 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800"
+              }`}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+              <span>Company Info</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab("what-we-do")}
+              className={`px-5 py-3 font-bold text-xs sm:text-sm rounded-xl transition-all cursor-pointer flex items-center gap-2.5 shrink-0 ${
+                activeTab === "what-we-do"
+                  ? "bg-cyan-600 text-white shadow-lg shadow-cyan-900/40 ring-2 ring-cyan-400/50"
+                  : "bg-slate-900/90 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800"
+              }`}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+              </svg>
+              <span>What We Do ({whatWeDoItems.length})</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab("why-choose-us")}
+              className={`px-5 py-3 font-bold text-xs sm:text-sm rounded-xl transition-all cursor-pointer flex items-center gap-2.5 shrink-0 ${
+                activeTab === "why-choose-us"
+                  ? "bg-cyan-600 text-white shadow-lg shadow-cyan-900/40 ring-2 ring-cyan-400/50"
+                  : "bg-slate-900/90 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800"
+              }`}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+              </svg>
+              <span>Why Choose Us ({whyChooseUsItems.length})</span>
+            </button>
+          </div>
+
           {loading ? (
             <div className="py-20 text-center text-slate-500 space-y-3">
               <div className="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto" />
@@ -602,10 +653,11 @@ export default function AdminAboutPage() {
           ) : (
             <>
               {/* Section 1: Main About Settings Form */}
-              <form
-                onSubmit={handleSaveAboutSettings}
-                className="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 space-y-6 shadow-xl"
-              >
+              {activeTab === "company-info" && (
+                <form
+                  onSubmit={handleSaveAboutSettings}
+                  className="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 space-y-6 shadow-xl animate-in fade-in duration-200"
+                >
                 <div className="flex items-center justify-between border-b border-slate-800 pb-4">
                   <h2 className="text-lg font-bold text-white flex items-center gap-2">
                     <span className="text-cyan-400">1.</span> Main About Page Settings
@@ -708,116 +760,219 @@ export default function AdminAboutPage() {
                   </div>
                 </div>
               </form>
+            )}
 
-              {/* Section 2: What We Do Slider Items */}
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 space-y-6 shadow-xl">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-                  <div>
-                    <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                      <span className="text-cyan-400">2.</span> &quot;What We Do&quot; Slider Items
-                    </h2>
-                    <p className="text-xs text-slate-400 mt-0.5">
-                      Items displayed in the interactive What We Do showcase slider.
-                    </p>
+            {/* Section 2: What We Do Slider Items */}
+              {activeTab === "what-we-do" && (
+                <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 space-y-6 shadow-xl animate-in fade-in duration-200">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+                    <div>
+                      <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                        <span className="text-cyan-400">2.</span> &quot;What We Do&quot; Slider Items
+                      </h2>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        Items displayed in the interactive What We Do showcase slider.
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={openAddWhatWeDo}
+                      className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs rounded-xl shadow-lg transition cursor-pointer"
+                    >
+                      + Add What We Do Item
+                    </button>
                   </div>
 
-                  <button
-                    onClick={openAddWhatWeDo}
-                    className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs rounded-xl shadow-lg transition cursor-pointer"
-                  >
-                    + Add What We Do Item
-                  </button>
+                  {whatWeDoItems.length === 0 ? (
+                    <div className="py-8 text-center text-slate-500 text-xs">
+                      No What We Do items created yet.
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/60">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead>
+                          <tr className="bg-slate-900/80 text-slate-300 font-semibold border-b border-slate-800">
+                            <th className="py-3.5 px-4 w-12 text-center">#</th>
+                            <th className="py-3.5 px-4 w-56 font-bold text-slate-200">Title</th>
+                            <th className="py-3.5 px-4 font-bold text-slate-200">Description</th>
+                            <th className="py-3.5 px-4 w-28 text-center font-bold text-slate-200">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-800/60">
+                          {whatWeDoItems.map((item, index) => (
+                            <tr
+                              key={item.id}
+                              className="hover:bg-slate-900/50 transition-colors"
+                            >
+                              <td className="py-3.5 px-4 text-center font-mono text-slate-500 font-medium">
+                                {index + 1}
+                              </td>
+                              <td className="py-3.5 px-4 font-bold text-white text-sm">
+                                {item.title}
+                              </td>
+                              <td className="py-3.5 px-4 text-slate-300 leading-relaxed max-w-lg">
+                                <p className="line-clamp-2">{item.description}</p>
+                              </td>
+                              <td className="py-3.5 px-4 text-center">
+                                <div className="flex items-center justify-center gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => openEditWhatWeDo(item)}
+                                    className="p-2 text-cyan-400 hover:text-cyan-300 hover:bg-cyan-950/60 border border-cyan-900/40 rounded-lg transition-colors cursor-pointer"
+                                    title="Edit item"
+                                    aria-label="Edit item"
+                                  >
+                                    <svg
+                                      className="w-4 h-4"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                      />
+                                    </svg>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteWhatWeDo(item.id)}
+                                    className="p-2 text-rose-400 hover:text-rose-300 hover:bg-rose-950/60 border border-rose-900/40 rounded-lg transition-colors cursor-pointer"
+                                    title="Delete item"
+                                    aria-label="Delete item"
+                                  >
+                                    <svg
+                                      className="w-4 h-4"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                      />
+                                    </svg>
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </div>
-
-                {whatWeDoItems.length === 0 ? (
-                  <div className="py-8 text-center text-slate-500 text-xs">
-                    No What We Do items created yet.
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {whatWeDoItems.map((item) => (
-                      <div
-                        key={item.id}
-                        className="bg-slate-950 p-4 rounded-xl border border-slate-800 text-xs space-y-2"
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <h4 className="font-bold text-white text-sm">{item.title}</h4>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <button
-                              onClick={() => openEditWhatWeDo(item)}
-                              className="text-cyan-400 hover:text-cyan-300 font-semibold"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => handleDeleteWhatWeDo(item.id)}
-                              className="text-red-400 hover:text-red-300 font-semibold"
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </div>
-                        <p className="text-slate-400 leading-relaxed line-clamp-3">{item.description}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              )}
 
               {/* Section 3: Why Choose Us Feature Items */}
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 space-y-6 shadow-xl">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-                  <div>
-                    <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                      <span className="text-cyan-400">3.</span> &quot;Why Choose Us&quot; Feature Items
-                    </h2>
-                    <p className="text-xs text-slate-400 mt-0.5">
-                      Core competitive highlights and value propositions.
-                    </p>
+              {activeTab === "why-choose-us" && (
+                <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 space-y-6 shadow-xl animate-in fade-in duration-200">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+                    <div>
+                      <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                        <span className="text-cyan-400">3.</span> &quot;Why Choose Us&quot; Feature Items
+                      </h2>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        Core competitive highlights and value propositions.
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={openAddWhyChooseUs}
+                      className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs rounded-xl shadow-lg transition cursor-pointer"
+                    >
+                      + Add Feature Item
+                    </button>
                   </div>
 
-                  <button
-                    onClick={openAddWhyChooseUs}
-                    className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs rounded-xl shadow-lg transition cursor-pointer"
-                  >
-                    + Add Feature Item
-                  </button>
+                  {whyChooseUsItems.length === 0 ? (
+                    <div className="py-8 text-center text-slate-500 text-xs">
+                      No Why Choose Us items created yet.
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/60">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead>
+                          <tr className="bg-slate-900/80 text-slate-300 font-semibold border-b border-slate-800">
+                            <th className="py-3.5 px-4 w-12 text-center">#</th>
+                            <th className="py-3.5 px-4 w-56 font-bold text-slate-200">Feature Name</th>
+                            <th className="py-3.5 px-4 font-bold text-slate-200">Description</th>
+                            <th className="py-3.5 px-4 w-28 text-center font-bold text-slate-200">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-800/60">
+                          {whyChooseUsItems.map((item, index) => (
+                            <tr
+                              key={item.id}
+                              className="hover:bg-slate-900/50 transition-colors"
+                            >
+                              <td className="py-3.5 px-4 text-center font-mono text-slate-500 font-medium">
+                                {index + 1}
+                              </td>
+                              <td className="py-3.5 px-4 font-bold text-cyan-400 text-sm">
+                                {item.name}
+                              </td>
+                              <td className="py-3.5 px-4 text-slate-300 leading-relaxed max-w-lg">
+                                <p className="line-clamp-2">{item.description}</p>
+                              </td>
+                              <td className="py-3.5 px-4 text-center">
+                                <div className="flex items-center justify-center gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => openEditWhyChooseUs(item)}
+                                    className="p-2 text-cyan-400 hover:text-cyan-300 hover:bg-cyan-950/60 border border-cyan-900/40 rounded-lg transition-colors cursor-pointer"
+                                    title="Edit feature item"
+                                    aria-label="Edit feature item"
+                                  >
+                                    <svg
+                                      className="w-4 h-4"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                      />
+                                    </svg>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteWhyChooseUs(item.id)}
+                                    className="p-2 text-rose-400 hover:text-rose-300 hover:bg-rose-950/60 border border-rose-900/40 rounded-lg transition-colors cursor-pointer"
+                                    title="Delete feature item"
+                                    aria-label="Delete feature item"
+                                  >
+                                    <svg
+                                      className="w-4 h-4"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                      />
+                                    </svg>
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </div>
-
-                {whyChooseUsItems.length === 0 ? (
-                  <div className="py-8 text-center text-slate-500 text-xs">
-                    No Why Choose Us items created yet.
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {whyChooseUsItems.map((item) => (
-                      <div
-                        key={item.id}
-                        className="bg-slate-950 p-4 rounded-xl border border-slate-800 text-xs space-y-2"
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <h4 className="font-bold text-cyan-400 text-sm">{item.name}</h4>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <button
-                              onClick={() => openEditWhyChooseUs(item)}
-                              className="text-cyan-400 hover:text-cyan-300 font-semibold"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => handleDeleteWhyChooseUs(item.id)}
-                              className="text-red-400 hover:text-red-300 font-semibold"
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </div>
-                        <p className="text-slate-400 leading-relaxed line-clamp-3">{item.description}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              )}
             </>
           )}
 

@@ -2,9 +2,12 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { NAV_LINKS } from '@/lib/data/homeData';
 import { useAuth } from '@/context/AuthContext';
+import { useSiteSettings } from '@/context/SiteSettingsContext';
+import { getImageUrl } from '@/lib/api';
 
 interface MobileNavProps {
   isOpen: boolean;
@@ -15,6 +18,7 @@ interface MobileNavProps {
 export default function MobileNav({ isOpen, onClose, onOpenLogin }: MobileNavProps) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const { settings } = useSiteSettings();
   const [productSubmenuOpen, setProductSubmenuOpen] = useState(false);
 
   // Close menu on route change
@@ -61,9 +65,27 @@ export default function MobileNav({ isOpen, onClose, onOpenLogin }: MobileNavPro
       <div className="relative ml-auto w-4/5 max-w-sm h-full bg-white shadow-2xl flex flex-col z-10 overflow-y-auto">
         {/* Drawer Header */}
         <div className="p-4 border-b border-gray-100 flex items-center justify-between">
-          <Link href="/" onClick={onClose} className="flex items-center gap-2">
-            <span className="text-xl font-bold text-[#01A7E5]">Raise Tech</span>
-            <span className="text-xs text-gray-500 font-medium">Pvt. Ltd.</span>
+          <Link href="/" onClick={onClose} className="flex items-center gap-3">
+            <div className="relative h-9 shrink-0 flex items-center">
+              {settings?.logo ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={getImageUrl(settings.logo)}
+                  alt="Raise Tech Logo"
+                  className="h-9 w-auto max-w-[140px] object-contain"
+                />
+              ) : (
+                <div className="relative w-9 h-9">
+                  <Image
+                    src="/images/home/logo.png"
+                    alt="Raise Tech Logo"
+                    fill
+                    className="object-contain"
+                  />
+                </div>
+              )}
+            </div>
+            <span className="text-lg font-bold text-[#01A7E5]">Raise Tech</span>
           </Link>
           <button
             onClick={onClose}

@@ -4,10 +4,13 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useSiteSettings } from "@/context/SiteSettingsContext";
+import { getImageUrl } from "@/lib/api";
 
 export default function AdminHeader({ title }: { title: string }) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const { settings } = useSiteSettings();
 
   const navLinks = [
     { label: "Dashboard", href: "/admin" },
@@ -26,9 +29,14 @@ export default function AdminHeader({ title }: { title: string }) {
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-6">
             <Link href="/admin" className="flex items-center gap-2 font-black text-white text-lg tracking-tight">
-              <span className="w-8 h-8 bg-cyan-500 rounded-lg flex items-center justify-center text-slate-950 font-bold text-sm">
-                RT
-              </span>
+              {settings?.logo ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={getImageUrl(settings.logo)} alt="Logo" className="w-8 h-8 object-contain" />
+              ) : (
+                <span className="w-8 h-8 bg-cyan-500 rounded-lg flex items-center justify-center text-slate-950 font-bold text-sm">
+                  RT
+                </span>
+              )}
               <span>RaiseTech <span className="text-xs text-cyan-400 font-mono uppercase bg-cyan-950 px-2 py-0.5 rounded-full border border-cyan-800">Admin</span></span>
             </Link>
 
