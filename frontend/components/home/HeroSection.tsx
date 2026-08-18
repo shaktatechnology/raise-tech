@@ -27,17 +27,17 @@ export default function HeroSection({ banner }: HeroSectionProps) {
   const remainingTitle = restOfTitle.join(' ');
 
   return (
-    <section className="relative bg-[#022c43] text-white overflow-hidden py-16 lg:h-[800px] flex items-center">
+    <section className="relative bg-[#022c43] text-white overflow-hidden py-16 lg:py-24 lg:min-h-[620px] flex items-center">
       {/* Background Hero Image */}
-      <div className="absolute inset-0 z-0">
+      <div className="absolute inset-0 z-0 overflow-hidden">
         <Image
           src={heroImage}
           alt="Technology Hero Background"
           fill
           priority
-          className="object-cover object-center"
+          className="object-cover object-center scale-115 sm:scale-120 lg:scale-125 origin-center"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#011b2b]/90 via-[#022c43]/70 to-transparent md:to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#011b2b]/95 via-[#022c43]/80 to-transparent md:to-transparent" />
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
@@ -53,9 +53,10 @@ export default function HeroSection({ banner }: HeroSectionProps) {
           </h1>
 
           {/* Supporting Description */}
-          <p className="text-sm sm:text-base text-slate-200 leading-relaxed font-normal pt-2">
-            {description}
-          </p>
+          <div
+            className="text-sm sm:text-base text-slate-200 leading-relaxed font-normal pt-2 [&_p]:m-0 [&_p]:inline"
+            dangerouslySetInnerHTML={{ __html: description }}
+          />
 
           {/* CTA Action */}
           <div className="pt-6">

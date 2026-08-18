@@ -199,44 +199,53 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Column 4: Stay Connected */}
-          <div>
+          {/* Column 4: Stay Connected / Quick Inquiry */}
+          <div className="space-y-3">
             <h3 className="text-base font-bold text-[#01A7E5] mb-2">
               Stay Connected
             </h3>
+            <p className="text-xs text-gray-500 leading-relaxed">
+              Have questions or need a custom quote for our IT solutions, POS software, or paper products? Reach out to our team today.
+            </p>
 
-            {subscribed ? (
-              <div className="bg-cyan-50 border border-cyan-200 text-[#01A7E5] text-xs rounded-lg p-3">
-                Successfully Subscribed!
-              </div>
-            ) : (
-              <form onSubmit={handleSubscribe} className="space-y-2.5">
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your email"
-                  className="w-full px-3.5 py-2 bg-white text-xs text-gray-900 border border-cyan-200 rounded-md focus:outline-none focus:ring-1 focus:ring-[#01A7E5] placeholder-gray-400"
-                  aria-label="Email address"
-                />
-
-                {error && <p className="text-xs text-rose-600">{error}</p>}
-
-                <button
-                  type="submit"
-                  className="w-full bg-[#01A7E5] hover:bg-[#018bc0] text-white text-xs font-semibold py-2.5 px-4 rounded-md transition-colors flex items-center justify-center gap-2"
+            <div className="pt-1 space-y-2">
+              <Link
+                href="/contact"
+                className="w-full bg-[#01A7E5] hover:bg-[#018bc0] text-white text-xs font-semibold py-2.5 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-sm"
+              >
+                <span>Request a Free Quote</span>
+                <svg
+                  className="w-3.5 h-3.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
                 >
-                  <span>Submit</span>
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M14 5l7 7m0 0l-7 7m7-7H3"
+                  />
+                </svg>
+              </Link>
+
+              {settings?.whatsapp_url && (
+                <a
+                  href={settings.whatsapp_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-sm"
+                >
+                  <span>Chat on WhatsApp</span>
                   <svg
-                    className="w-3.5 h-3.5 transform rotate-45"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
+                    className="w-3.5 h-3.5 fill-current"
+                    viewBox="0 0 24 24"
                   >
-                    <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+                    <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z" />
                   </svg>
-                </button>
-              </form>
-            )}
+                </a>
+              )}
+            </div>
           </div>
         </div>
 
@@ -280,7 +289,21 @@ export default function Footer() {
               </svg>
             </a>
           </div>
-          <p>© 2026 All rights reserved.</p> |<p> developed by </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p>© {new Date().getFullYear()} Raise Tech. All rights reserved.</p>
+            <span className="hidden sm:inline text-gray-300">|</span>
+            <p>
+              Developed by{" "}
+              <a
+                href="https://shaktatechnology.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-[#01A7E5] hover:underline"
+              >
+                Shakta Technology
+              </a>
+            </p>
+          </div>
         </div>
       </div>
     </footer>
