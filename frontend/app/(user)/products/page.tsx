@@ -13,7 +13,7 @@ export default function ProductsLandingPage() {
   return (
     <article className="w-full bg-[#f2fcff] min-h-screen">
       {/* Hero Banner */}
-      <section className="relative w-full h-[320px] sm:h-[400px] overflow-hidden bg-[#022c43]">
+      <section className="relative w-full h-[75vh] min-h-[450px] max-h-[660px] overflow-hidden bg-[#022c43]">
         <Image
           src="/images/products/software/software-hero.png"
           alt="Raise Tech Products Banner"
