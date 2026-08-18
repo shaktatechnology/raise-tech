@@ -37,16 +37,22 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 pb-12 border-b border-gray-200/80">
           {/* Column 1: Company Logo & About */}
           <div className="space-y-4">
-            <Link
-              href="/"
-              className="flex items-center gap-3 group inline-block"
-            >
-              {/* <div className="relative h-10 sm:h-12 shrink-0 flex items-center">
+            <Link href="/" className="flex items-center gap-3 group inline-block">
+              <div className="relative h-10 max-w-[200px] flex items-center shrink-0">
                 {settings?.logo ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={getImageUrl(settings.logo)}
                     alt="Raise Tech Logo"
+                    className="h-full w-auto max-w-full object-contain object-left"
+                  />
+                ) : (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src="/images/home/logo.png"
+                    alt="Raise Tech Logo"
+                    className="h-full w-auto max-w-full object-contain object-left"
+                  />
                     className="h-10 sm:h-12 w-auto max-w-[150px] object-contain"
                   />
                 ) : (

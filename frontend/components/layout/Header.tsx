@@ -48,27 +48,24 @@ export default function Header() {
     <>
       <header role="banner" className="sticky top-0 z-40 bg-white shadow-xs border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20 px-20">
+          <div className="flex items-center justify-between h-16 sm:h-20 px-0 sm:px-2">
             {/* Brand Logo */}
             <Link href="/" className="flex items-center gap-3 group focus-visible:outline-2 focus-visible:outline-[#01A7E5]">
-              <div className="relative h-10 sm:h-12 shrink-0 flex items-center">
+              <div className="relative h-8 sm:h-9 max-w-[170px] flex items-center shrink-0">
                 {settings?.logo ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={getImageUrl(settings.logo)}
                     alt="Raise Tech Logo"
-                    className="h-10 sm:h-12 w-auto max-w-[130px] object-contain"
+                    className="h-full w-auto max-w-full object-contain object-left"
                   />
                 ) : (
-                  <div className="relative w-12 h-12 sm:w-14 sm:h-14">
-                    <Image
-                      src="/images/home/logo.png"
-                      alt="Raise Tech Logo"
-                      fill
-                      className="object-contain"
-                      priority
-                    />
-                  </div>
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src="/images/home/logo.png"
+                    alt="Raise Tech Logo"
+                    className="h-full w-auto max-w-full object-contain object-left"
+                  />
                 )}
               </div>
               {/* <div className="flex flex-col">

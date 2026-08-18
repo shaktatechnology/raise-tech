@@ -1,11 +1,15 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
-import { fetchApi } from "@/lib/api";
+import { fetchApi, getApiErrorMessage } from "@/lib/api";
 import { ContactInquiry } from "@/lib/types";
 import ProtectedRoute from "@/components/guards/ProtectedRoute";
+import { useToast } from "@/context/ToastContext";
+import { useDeleteConfirmation } from "@/components/admin/DeleteConfirmation";
 
 export default function AdminInquiriesPage() {
+  const { showToast } = useToast();
+  const { confirmDelete } = useDeleteConfirmation();
   const [contacts, setContacts] = useState<ContactInquiry[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -21,19 +25,18 @@ export default function AdminInquiriesPage() {
     try {
       const res = await fetchApi<{ contacts: ContactInquiry[] }>("/inquiries");
       setContacts(res.contacts || []);
-    } catch (err: any) {
-      if (err.status === 401) {
-        setError("Unauthorized session. Please log in again as Admin.");
-      } else {
-        setError(err.message || "Failed to load inquiries.");
-      }
+    } catch (err: unknown) {
+      const message = getApiErrorMessage(err, "Failed to load inquiries.");
+      setError(message);
+      showToast(message, "error");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [showToast]);
 
   useEffect(() => {
-    loadInquiries();
+    const timeoutId = window.setTimeout(() => void loadInquiries(), 0);
+    return () => window.clearTimeout(timeoutId);
   }, [loadInquiries]);
 
   const handleMarkAsRead = async (inquiry: ContactInquiry) => {
@@ -49,15 +52,21 @@ export default function AdminInquiriesPage() {
       if (selectedInquiry?.id === inquiry.id) {
         setSelectedInquiry((prev) => (prev ? { ...prev, is_read: 1 } : null));
       }
-    } catch (err: any) {
-      alert(err.message || "Failed to mark inquiry as read.");
+      showToast("Inquiry marked as read.", "success");
+    } catch (err: unknown) {
+      showToast(getApiErrorMessage(err, "Failed to mark inquiry as read."), "error");
     } finally {
       setActionLoading(null);
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this contact inquiry?")) return;
+    const confirmed = await confirmDelete({
+      title: "Delete inquiry?",
+      message: "This contact inquiry will be permanently removed. This action cannot be undone.",
+      confirmLabel: "Delete inquiry",
+    });
+    if (!confirmed) return;
     setActionLoading(id);
     try {
       await fetchApi(`/inquiries/${id}`, { method: "DELETE" });
@@ -65,8 +74,9 @@ export default function AdminInquiriesPage() {
       if (selectedInquiry?.id === id) {
         setSelectedInquiry(null);
       }
-    } catch (err: any) {
-      alert(err.message || "Failed to delete inquiry.");
+      showToast("Inquiry deleted successfully.", "success");
+    } catch (err: unknown) {
+      showToast(getApiErrorMessage(err, "Failed to delete inquiry."), "error");
     } finally {
       setActionLoading(null);
     }
@@ -144,7 +154,7 @@ export default function AdminInquiriesPage() {
             </div>
           </div>
 
-          {/* Controls: Search & Tabs */}
+          {/* Controls: Search & Filter */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
             {/* Search Input */}
             <div className="relative w-full sm:w-80">
@@ -160,22 +170,20 @@ export default function AdminInquiriesPage() {
               </svg>
             </div>
 
-            {/* Filter Tabs */}
-            <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800 w-full sm:w-auto">
-              {(["all", "unread", "read"] as const).map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setFilter(tab)}
-                  className={`px-4 py-1.5 text-xs font-medium rounded-lg capitalize transition ${
-                    filter === tab
-                      ? "bg-cyan-600 text-white shadow-xs"
-                      : "text-slate-400 hover:text-slate-200"
-                  }`}
-                >
-                  {tab}
-                </button>
-              ))}
-            </div>
+            <label className="w-full sm:w-48">
+              <span className="sr-only">Filter inquiries by read status</span>
+              <select
+                value={filter}
+                onChange={(event) =>
+                  setFilter(event.target.value as "all" | "unread" | "read")
+                }
+                className="w-full cursor-pointer rounded-xl border border-slate-800 bg-slate-950 px-4 py-2.5 text-xs font-semibold capitalize text-slate-200 outline-none transition focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
+              >
+                <option value="all">All inquiries</option>
+                <option value="unread">Unread</option>
+                <option value="read">Read</option>
+              </select>
+            </label>
           </div>
 
           {/* Error Message */}
@@ -201,18 +209,18 @@ export default function AdminInquiriesPage() {
             </div>
           ) : (
             <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
-              <div>
-                <table className="w-full table-fixed text-left text-xs text-slate-300">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs text-slate-300 min-w-[900px]">
                   <thead className="bg-slate-950/80 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
                     <tr>
-                      <th className="py-3.5 px-4 w-[5%]">S.No</th>
-                      <th className="py-3.5 px-4 w-[9%]">Status</th>
-                      <th className="py-3.5 px-4 w-[15%]">Name</th>
-                      <th className="py-3.5 px-4 w-[18%]">Email</th>
-                      <th className="py-3.5 px-4 w-[12%]">Contact No</th>
-                      <th className="py-3.5 px-4 w-[21%]">Message Snippet</th>
-                      <th className="py-3.5 px-4 w-[12%]">Received At</th>
-                      <th className="py-3.5 px-4 w-[8%] text-right">Actions</th>
+                      <th className="py-3.5 px-4 w-12 text-center">S.No</th>
+                      <th className="py-3.5 px-4 w-24">Status</th>
+                      <th className="py-3.5 px-4">Name</th>
+                      <th className="py-3.5 px-4">Email</th>
+                      <th className="py-3.5 px-4">Contact No</th>
+                      <th className="py-3.5 px-4 max-w-xs">Message Snippet</th>
+                      <th className="py-3.5 px-4 whitespace-nowrap">Received At</th>
+                      <th className="py-3.5 px-4 text-center w-28 whitespace-nowrap">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800/60">
@@ -225,7 +233,7 @@ export default function AdminInquiriesPage() {
                             isUnread ? "bg-cyan-950/20 font-medium" : ""
                           }`}
                         >
-                          <td className="py-3.5 px-4 text-slate-500">
+                          <td className="py-3.5 px-4 text-center text-slate-500 font-mono">
                             {index + 1}
                           </td>
                           <td className="py-3.5 px-4">
@@ -235,26 +243,26 @@ export default function AdminInquiriesPage() {
                                 Unread
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-800 text-slate-400">
+                              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-800 text-slate-400 border border-slate-700">
                                 Read
                               </span>
                             )}
                           </td>
-                          <td className="py-3.5 px-4 text-white font-semibold truncate">
+                          <td className="py-3.5 px-4 text-white font-semibold whitespace-nowrap">
                             {contact.first_name} {contact.last_name || ""}
                           </td>
-                          <td className="py-3.5 px-4 text-slate-300 truncate">
-                            <a href={`mailto:${contact.email}`} className="hover:text-cyan-400">
+                          <td className="py-3.5 px-4 text-slate-300 whitespace-nowrap">
+                            <a href={`mailto:${contact.email}`} className="hover:text-cyan-400 transition">
                               {contact.email}
                             </a>
                           </td>
-                          <td className="py-3.5 px-4 text-slate-400 truncate">
+                          <td className="py-3.5 px-4 text-slate-400 whitespace-nowrap font-mono">
                             {contact.contact_no}
                           </td>
-                          <td className="py-3.5 px-4 text-slate-400 truncate">
+                          <td className="py-3.5 px-4 text-slate-400 max-w-xs truncate">
                             {contact.message || <span className="italic text-slate-600">No message</span>}
                           </td>
-                          <td className="py-3.5 px-4 text-slate-500 truncate">
+                          <td className="py-3.5 px-4 text-slate-400 whitespace-nowrap">
                             {contact.created_at
                               ? new Date(contact.created_at).toLocaleDateString("en-US", {
                                   month: "short",
@@ -265,34 +273,36 @@ export default function AdminInquiriesPage() {
                                 })
                               : "N/A"}
                           </td>
-                          <td className="py-3.5 px-4 text-right whitespace-nowrap space-x-2">
-                            <button
-                              onClick={() => {
-                                setSelectedInquiry(contact);
-                                if (contact.is_read === 0) {
-                                  handleMarkAsRead(contact);
-                                }
-                              }}
-                              className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs transition cursor-pointer"
-                            >
-                              View
-                            </button>
-                            {isUnread && (
+                          <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                            <div className="flex items-center justify-center gap-1.5">
+                              {/* Eye Icon / Details Button */}
                               <button
-                                onClick={() => handleMarkAsRead(contact)}
-                                disabled={actionLoading === contact.id}
-                                className="px-2.5 py-1 bg-cyan-950 hover:bg-cyan-900 text-cyan-400 border border-cyan-800 rounded-lg text-xs transition cursor-pointer disabled:opacity-50"
+                                onClick={() => {
+                                  setSelectedInquiry(contact);
+                                  if (contact.is_read === 0) {
+                                    handleMarkAsRead(contact);
+                                  }
+                                }}
+                                title="View Details"
+                                className="p-2 bg-slate-800 hover:bg-slate-700 text-cyan-400 hover:text-cyan-300 rounded-lg border border-slate-700 transition cursor-pointer shadow-sm"
                               >
-                                Mark Read
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
                               </button>
-                            )}
-                            <button
-                              onClick={() => handleDelete(contact.id)}
-                              disabled={actionLoading === contact.id}
-                              className="px-2.5 py-1 bg-red-950/60 hover:bg-red-900/80 text-red-400 border border-red-900/50 rounded-lg text-xs transition cursor-pointer disabled:opacity-50"
-                            >
-                              Delete
-                            </button>
+                              {/* Trash Icon / Delete Button */}
+                              <button
+                                onClick={() => handleDelete(contact.id)}
+                                disabled={actionLoading === contact.id}
+                                title="Delete Inquiry"
+                                className="p-2 bg-red-950/60 hover:bg-red-900/80 text-red-400 border border-red-900/50 rounded-lg transition cursor-pointer disabled:opacity-50 shadow-sm"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );
