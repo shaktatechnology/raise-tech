@@ -35,7 +35,7 @@ export default function HeroSection({ banner }: HeroSectionProps) {
           alt="Technology Hero Background"
           fill
           priority
-          className="object-cover object-center scale-115 sm:scale-120 lg:scale-125 origin-center"
+          className="object-cover object-center"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-[#011b2b]/95 via-[#022c43]/80 to-transparent md:to-transparent" />
       </div>

@@ -22,6 +22,21 @@ export default function Header() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const dropdownTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleMouseEnterDropdown = () => {
+    if (dropdownTimeoutRef.current) {
+      clearTimeout(dropdownTimeoutRef.current);
+      dropdownTimeoutRef.current = null;
+    }
+    setDropdownOpen(true);
+  };
+
+  const handleMouseLeaveDropdown = () => {
+    dropdownTimeoutRef.current = setTimeout(() => {
+      setDropdownOpen(false);
+    }, 600); // 600ms grace period delay so users can move mouse and click comfortably
+  };
 
   // Close dropdown on click outside or escape key
   useEffect(() => {
@@ -39,6 +54,7 @@ export default function Header() {
     document.addEventListener('mousedown', handleClickOutside);
     document.addEventListener('keydown', handleKeyDown);
     return () => {
+      if (dropdownTimeoutRef.current) clearTimeout(dropdownTimeoutRef.current);
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleKeyDown);
     };
@@ -90,8 +106,8 @@ export default function Header() {
                       key={link.label}
                       ref={dropdownRef}
                       className="relative"
-                      onMouseEnter={() => setDropdownOpen(true)}
-                      onMouseLeave={() => setDropdownOpen(false)}
+                      onMouseEnter={handleMouseEnterDropdown}
+                      onMouseLeave={handleMouseLeaveDropdown}
                     >
                       <button
                         onClick={() => setDropdownOpen(!dropdownOpen)}
@@ -120,24 +136,33 @@ export default function Header() {
 
                       {/* Dropdown Menu */}
                       {dropdownOpen && (
-                        <div className="absolute left-0 mt-1 w-64 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-                          {link.dropdown.map((subItem) => {
-                            const isSubActive = pathname === subItem.href;
-                            return (
-                              <Link
-                                key={subItem.href}
-                                href={subItem.href}
-                                onClick={() => setDropdownOpen(false)}
-                                className={`block px-4 py-2.5 text-sm font-medium transition-colors ${
-                                  isSubActive
-                                    ? 'text-[#01A7E5] bg-cyan-50 font-semibold'
-                                    : 'text-gray-700 hover:text-[#01A7E5] hover:bg-gray-50'
-                                }`}
-                              >
-                                {subItem.label}
-                              </Link>
-                            );
-                          })}
+                        <div
+                          className="absolute left-0 top-full pt-1.5 w-64 z-50"
+                          onMouseEnter={handleMouseEnterDropdown}
+                          onMouseLeave={handleMouseLeaveDropdown}
+                        >
+                          <div className="bg-white rounded-xl shadow-xl border border-gray-100/90 py-1.5 z-50 animate-in fade-in slide-in-from-top-2 duration-150 overflow-hidden">
+                            {link.dropdown.map((subItem, index) => {
+                              const isSubActive = pathname === subItem.href;
+                              return (
+                                <Link
+                                  key={subItem.href}
+                                  href={subItem.href}
+                                  onClick={() => setDropdownOpen(false)}
+                                  className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold transition-colors ${
+                                    index < link.dropdown!.length - 1 ? 'border-b border-gray-200/80' : ''
+                                  } ${
+                                    isSubActive
+                                      ? 'text-[#01A7E5] bg-cyan-50/70'
+                                      : 'text-gray-800 hover:text-[#01A7E5] hover:bg-gray-50'
+                                  }`}
+                                >
+                                  <span className="text-[#01A7E5] font-extrabold text-sm">»</span>
+                                  <span>{subItem.label}</span>
+                                </Link>
+                              );
+                            })}
+                          </div>
                         </div>
                       )}
                     </div>
