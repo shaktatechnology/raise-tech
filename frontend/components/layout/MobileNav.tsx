@@ -85,7 +85,6 @@ export default function MobileNav({ isOpen, onClose, onOpenLogin }: MobileNavPro
                 </div>
               )}
             </div>
-            <span className="text-lg font-bold text-[#01A7E5]">Raise Tech</span>
           </Link>
           <button
             onClick={onClose}

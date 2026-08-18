@@ -53,23 +53,7 @@ export default function Footer() {
                     alt="Raise Tech Logo"
                     className="h-full w-auto max-w-full object-contain object-left"
                   />
-                    className="h-10 sm:h-12 w-auto max-w-[150px] object-contain"
-                  />
-                ) : (
-                  <div className="relative w-10 h-10 sm:w-12 sm:h-12">
-                    <Image
-                      src="/images/home/logo.png"
-                      alt="Raise Tech Logo"
-                      fill
-                      className="object-contain"
-                    />
-                  </div>
                 )}
-              </div> */}
-              <div className="flex flex-col">
-                <span className="text-xl font-extrabold text-[#01A7E5]">
-                  RAISE TECH
-                </span>
               </div>
             </Link>
 
