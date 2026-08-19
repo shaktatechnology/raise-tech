@@ -66,6 +66,7 @@ export function getImageUrl(path?: string | null): string {
   if (!value) return "";
   if (/^https?:\/\//i.test(value) || value.startsWith("blob:")) return value;
   if (value.startsWith("//")) return "";
+  if (value.startsWith("/images/")) return value;
 
   const configuredBase = (
     process.env.NEXT_PUBLIC_STORAGE_URL || API_BASE_URL.replace(/\/api\/?$/, "")

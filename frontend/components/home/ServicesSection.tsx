@@ -44,15 +44,15 @@ export default function ServicesSection({ services }: ServicesSectionProps) {
                 <Link
                   key={service.id}
                   href="/services"
-                  className={`relative p-6 sm:p-7 rounded-2xl transition-all duration-300 flex flex-col justify-start text-center items-center shadow-xs hover:shadow-lg hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-[#01A7E5] ${
+                  className={`group relative p-6 sm:p-7 rounded-2xl transition-all duration-300 transform hover:-translate-y-1.5 hover:shadow-xl focus-visible:outline-2 focus-visible:outline-[#01A7E5] ${
                     isActive
-                      ? 'bg-[#01A7E5] text-white'
-                      : 'bg-white text-[#404040] border border-cyan-50'
+                      ? 'bg-[#01A7E5] text-white shadow-md'
+                      : 'bg-white text-[#404040] border border-cyan-50 shadow-xs hover:border-[#01A7E5]/30'
                   }`}
                 >
-                  {/* Circular Icon Container */}
+                  {/* Circular Icon Container with Micro-scale on Hover */}
                   <div
-                    className={`w-16 h-16 mb-5 rounded-full flex items-center justify-center p-3.5 shadow-sm ${
+                    className={`w-16 h-16 mb-5 rounded-full flex items-center justify-center p-3.5 shadow-sm transition-transform duration-300 group-hover:scale-110 ${
                       isActive ? 'bg-white text-[#01A7E5]' : 'bg-[#01A7E5] text-white'
                     }`}
                   >
@@ -61,7 +61,7 @@ export default function ServicesSection({ services }: ServicesSectionProps) {
                         src={iconPath}
                         alt={service.title}
                         fill
-                        className={`object-contain ${
+                        className={`object-contain transition-transform duration-300 ${
                           isActive ? '' : 'filter brightness-0 invert'
                         }`}
                       />

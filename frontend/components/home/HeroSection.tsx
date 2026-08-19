@@ -28,7 +28,7 @@ export default function HeroSection({ banner }: HeroSectionProps) {
 
   return (
     <section className="relative bg-[#022c43] text-white overflow-hidden py-16 lg:py-24 lg:min-h-[620px] flex items-center">
-      {/* Background Hero Image */}
+      {/* Background Hero Image displaying in full natural form */}
       <div className="absolute inset-0 z-0 overflow-hidden">
         <Image
           src={heroImage}
@@ -37,14 +37,18 @@ export default function HeroSection({ banner }: HeroSectionProps) {
           priority
           className="object-cover object-center"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#011b2b]/95 via-[#022c43]/80 to-transparent md:to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#011b2b]/95 via-[#022c43]/85 to-transparent" />
+        
+        {/* Animated Ambient Light Blobs */}
+        <div className="absolute -top-24 left-1/4 w-96 h-96 bg-[#01A7E5]/20 rounded-full blur-3xl animate-float-slow pointer-events-none" />
+        <div className="absolute -bottom-20 right-10 w-80 h-80 bg-emerald-500/15 rounded-full blur-3xl animate-pulse-glow pointer-events-none" />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full animate-scale-up">
         <div className="max-w-xl space-y-6">
           {/* Main Headline (dynamic, from admin-managed banner) */}
           <h1
-            className={`${carattere.className} font-normal text-white drop-shadow-md leading-tight`}
+            className={`${carattere.className} font-normal text-white drop-shadow-lg leading-tight tracking-wide`}
           >
             <span className="text-[150px]">{firstWord}</span>
             {remainingTitle && (
@@ -62,9 +66,22 @@ export default function HeroSection({ banner }: HeroSectionProps) {
           <div className="pt-6">
             <Link
               href="/contact"
-              className="inline-flex items-center justify-center px-8 py-3 text-base font-medium text-white border-2 border-white rounded-full hover:bg-white/10 transition-all duration-200 shadow-md backdrop-blur-xs focus-visible:outline-2 focus-visible:outline-white"
+              className="inline-flex items-center justify-center gap-2 px-8 py-3.5 text-base font-semibold text-white border-2 border-white/80 rounded-full hover:bg-white hover:text-[#022c43] transition-all duration-300 shadow-lg hover:shadow-[#01A7E5]/30 backdrop-blur-xs group"
             >
-              Contact Us
+              <span>Contact Us</span>
+              <svg
+                className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2.5"
+                  d="M14 5l7 7m0 0l-7 7m7-7H3"
+                />
+              </svg>
             </Link>
           </div>
         </div>
@@ -72,3 +89,4 @@ export default function HeroSection({ banner }: HeroSectionProps) {
     </section>
   );
 }
+
