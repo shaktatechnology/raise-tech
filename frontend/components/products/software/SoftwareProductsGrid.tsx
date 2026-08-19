@@ -93,16 +93,16 @@ export default function SoftwareProductsGrid() {
                   key={item.id}
                   className="bg-white rounded-2xl shadow-sm hover:shadow-lg border border-gray-100/90 transition-all duration-300 flex flex-col justify-between overflow-hidden group"
                 >
-                  {/* Image */}
+                  {/* Software Image: Uncropped Full View */}
                   {imageUrl && (
-                    <div className="relative w-full h-48 bg-slate-50 overflow-hidden">
+                    <div className="relative w-full h-52 sm:h-60 bg-slate-50/80 overflow-hidden flex items-center justify-center p-3 border-b border-gray-100">
                       <Image
                         src={imageUrl}
                         alt={item.title}
                         fill
                         unoptimized
                         sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                        className="object-cover object-center group-hover:scale-105 transition-transform duration-300"
+                        className="object-contain object-center p-2 transition-transform duration-300 group-hover:scale-102"
                       />
                     </div>
                   )}

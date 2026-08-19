@@ -36,8 +36,8 @@ export default function ServiceDetailSection({ service }: ServiceDetailSectionPr
               {service.subtitle}
             </h2>
 
-            {/* Description Paragraphs */}
-            <div className="space-y-4 text-[#3c3c3c] text-base leading-relaxed font-normal text-justify sm:text-left">
+            {/* Description Paragraphs: Text-Justified Alignment */}
+            <div className="space-y-4 text-[#3c3c3c] text-base leading-relaxed font-normal text-justify [&_p]:text-justify">
               {service.paragraphs.map((paragraph, idx) => (
                 <p key={idx}>{paragraph}</p>
               ))}
@@ -69,19 +69,19 @@ export default function ServiceDetailSection({ service }: ServiceDetailSectionPr
             )}
           </div>
 
-          {/* Image Illustration Column */}
+          {/* Image Illustration Column: Clean Uncropped View Without Border or Shadow */}
           <div
             className={`flex items-center justify-center ${
               isImageRight ? 'order-2 lg:order-2' : 'order-2 lg:order-1'
             }`}
           >
-            <div className="relative w-full max-w-lg lg:max-w-xl aspect-4/3 sm:aspect-16/10 flex items-center justify-center p-2">
+            <div className="w-full max-w-lg lg:max-w-xl flex items-center justify-center p-2">
               <Image
                 src={service.imagePath}
                 alt={service.imageAlt}
-                width={650}
-                height={1200}
-                className="w-full h-full max-h-[1600px] object-cover drop-shadow-sm transition-transform duration-300 hover:scale-[1.02]"
+                width={800}
+                height={600}
+                className="w-full h-auto max-h-[480px] object-contain transition-transform duration-300 hover:scale-[1.01]"
                 priority={service.id === 'web-development'}
               />
             </div>

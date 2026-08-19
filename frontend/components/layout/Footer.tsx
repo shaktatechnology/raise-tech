@@ -71,10 +71,10 @@ export default function Footer() {
             <ul className="space-y-2.5 text-xs font-medium text-gray-600">
               <li>
                 <Link
-                  href="/"
+                  href="/portfolio"
                   className="hover:text-[#01A7E5] transition-colors"
                 >
-                  Home
+                  Portfolio
                 </Link>
               </li>
               <li>

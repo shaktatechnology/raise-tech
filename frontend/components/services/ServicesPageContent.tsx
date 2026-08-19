@@ -62,23 +62,20 @@ export default function ServicesPageContent() {
   return (
     <div className="w-full">
       {/* Dynamic Hero Banner */}
-      <section className="relative w-full h-full sm:h-[420px] md:h-[500px] lg:h-[800px] overflow-hidden bg-[#022c43]">
+      <section className="relative w-full h-[280px] sm:h-[360px] md:h-[440px] lg:h-[520px] overflow-hidden bg-[#022c43] flex items-center justify-center">
         <Image
           src={heroImageUrl}
           alt="Raise Tech Services Banner"
           fill
           priority
           unoptimized
-          className="object-cover object-center"
+          className="object-cover [object-position:75%_center]"
         />
 
-        <div className="absolute inset-0 bg-gradient-to-b from-[#01a7e5]/90 via-[#01a7e5]/30 to-transparent pointer-events-none" />
+        {/* Vibrant Cyan-Blue Cover Up Color Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#01a7e5]/90 via-[#01a7e5]/40 to-transparent pointer-events-none" />
 
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex flex-col justify-center items-center text-center">
-          <p className="mt-4 text-base sm:text-lg md:text-xl text-cyan-50 max-w-2xl font-medium leading-relaxed">
-            {heroTitle}
-          </p>
-        </div>
+
       </section>
 
       {/* Services List Content */}
@@ -115,20 +112,21 @@ export default function ServicesPageContent() {
                         isEven ? "" : "lg:flex-row-reverse"
                       }`}
                     >
-                      {/* Image Column */}
+                      {/* Image Column: Clean Full View Without Border, Shadow or Cropping */}
                       {imageUrl && (
-                        <div className="relative w-full lg:w-1/2 h-64 sm:h-80 rounded-2xl overflow-hidden shadow-md shrink-0 bg-slate-50">
+                        <div className="w-full lg:w-1/2 flex items-center justify-center p-2 shrink-0">
                           <Image
                             src={imageUrl}
                             alt={service.title}
-                            fill
+                            width={800}
+                            height={600}
                             unoptimized
-                            className="object-cover object-center"
+                            className="w-full h-auto max-h-[480px] object-contain transition-transform duration-300 hover:scale-[1.01]"
                           />
                         </div>
                       )}
 
-                      {/* Content Column */}
+                      {/* Content Column: Text-Justified Paragraph Alignment */}
                       <div className="flex-1 space-y-4">
                         <div className="inline-block px-3 py-1 bg-cyan-50 text-[#01A7E5] text-xs font-bold uppercase tracking-wider rounded-md">
                           Service #{service.order}
@@ -145,7 +143,7 @@ export default function ServicesPageContent() {
                         )}
 
                         <div
-                          className="text-sm sm:text-base text-gray-600 leading-relaxed [&_p]:mb-2 [&_p:last-child]:mb-0"
+                          className="text-sm sm:text-base text-gray-600 leading-relaxed text-justify [&_p]:text-justify [&_p]:mb-2 [&_p:last-child]:mb-0"
                           dangerouslySetInnerHTML={{ __html: service.description }}
                         />
 

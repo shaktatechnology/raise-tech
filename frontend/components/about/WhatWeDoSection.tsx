@@ -64,14 +64,14 @@ export default function WhatWeDoSection({ items, teamImage }: WhatWeDoSectionPro
             {displayItems.map((item, idx) => (
               <div
                 key={item.id}
-                className="group relative bg-gradient-to-r from-[#01a7e5] via-[#0188ba] to-[#015d7f] text-white p-5 sm:p-6 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5 border border-cyan-300/20"
+                className="group relative bg-gradient-to-r from-[#01a7e5] via-[#0188ba] to-[#015d7f] text-white p-5 sm:p-6 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5 hover:translate-x-1.5 border border-cyan-300/20"
               >
                 <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-xs flex items-center justify-center shrink-0 text-white transition-transform duration-300 group-hover:scale-110 group-hover:bg-white/30">
+                  <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-xs flex items-center justify-center shrink-0 text-white transition-transform duration-300 group-hover:scale-110 group-hover:bg-white/35 shadow-xs">
                     {getProductIcon(idx)}
                   </div>
                   <div>
-                    <h3 className="text-xl sm:text-2xl font-semibold mb-1">
+                    <h3 className="text-xl sm:text-2xl font-semibold mb-1 group-hover:text-cyan-100 transition-colors">
                       {item.title}
                     </h3>
                     <div
