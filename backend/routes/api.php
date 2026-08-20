@@ -3,6 +3,7 @@
 use App\Http\Controllers\AboutController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CartController;
+use App\Http\Controllers\CheckoutProfileController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\OrderController;
@@ -33,7 +34,7 @@ Route::get('/products', [ProductController::class, 'index']);
 Route::get('/products/{slug}', [ProductController::class, 'show']);
 
 // Orders (public - guest checkout)
-Route::post('/orders', [OrderController::class, 'store']);
+Route::post('/orders', [OrderController::class, 'store'])->middleware('auth.optional');
 
 // Authenticated endpoints
 Route::middleware('auth:sanctum')->group(function () {
@@ -47,6 +48,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/cart/items/{cartItem}', [CartController::class, 'removeItem']);
     Route::delete('/cart', [CartController::class, 'clearCart']);
     Route::post('/cart/merge', [CartController::class, 'mergeCart']);
+
+    // Reusable checkout details for the authenticated customer only.
+    Route::get('/checkout-profile', [CheckoutProfileController::class, 'show']);
 
     // Settings administration
     Route::middleware('admin')->group(function () {

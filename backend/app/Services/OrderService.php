@@ -10,6 +10,12 @@ use Illuminate\Validation\ValidationException;
 
 class OrderService
 {
+    /** @var array<string, float> */
+    private const SHIPPING_CHARGES = [
+        'standard' => 100.0,
+        'express' => 250.0,
+    ];
+
     /**
      * @param  array<string, mixed>  $data
      */
@@ -67,13 +73,14 @@ class OrderService
                 ];
             }
 
-            $shippingCharge = 0.0;
+            $shippingCharge = self::SHIPPING_CHARGES[$data['delivery_type']];
 
             $order = new Order([
                 'customer_name' => $data['customer_name'],
                 'customer_email' => $data['customer_email'],
-                'customer_phone' => $data['customer_phone'] ?? $data['shipping_address']['phone_number'],
-                'payment_method' => 'cash_on_delivery',
+                'customer_phone' => $data['customer_phone'],
+                'payment_method' => $data['payment_method'],
+                'delivery_type' => $data['delivery_type'],
                 'notes' => $data['notes'] ?? null,
             ]);
             $order->user()->associate($user);
@@ -101,8 +108,60 @@ class OrderService
             $order->shippingAddress()->create($shippingAddress);
             $order->billingAddress()->create($billingAddress);
 
+            if ($user !== null) {
+                if ($data['save_for_future'] ?? false) {
+                    $this->saveCheckoutDetails(
+                        $user,
+                        $shippingAddress,
+                        $billingAddress,
+                        $data['billing_same_as_shipping'],
+                    );
+                }
+
+                $cart = $user->cart()->lockForUpdate()->first();
+                $cart?->items()->delete();
+            }
+
             return $order->load(['items', 'shippingAddress', 'billingAddress']);
         }, 3);
+    }
+
+    /**
+     * @param  array<string, string>  $shippingAddress
+     * @param  array<string, string>  $billingAddress
+     */
+    private function saveCheckoutDetails(
+        User $user,
+        array $shippingAddress,
+        array $billingAddress,
+        bool $billingSameAsShipping,
+    ): void {
+        $user->forceFill([
+            'phone' => $shippingAddress['phone_number'],
+        ])->save();
+
+        $addresses = ['shipping' => $shippingAddress];
+
+        if ($billingSameAsShipping) {
+            $user->addresses()->where('type', 'billing')->delete();
+        } else {
+            $addresses['billing'] = $billingAddress;
+        }
+
+        foreach ($addresses as $type => $address) {
+            $user->addresses()->updateOrCreate(
+                ['type' => $type],
+                [
+                    'label' => 'Checkout',
+                    'name' => $address['name'],
+                    'phone_number' => $address['phone_number'],
+                    'address' => $address['address'],
+                    'city' => $address['city'],
+                    'province' => $address['province'],
+                    'is_default' => true,
+                ],
+            );
+        }
     }
 
     private function effectivePrice(Product $product): float

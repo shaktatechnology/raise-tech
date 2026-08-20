@@ -1,29 +1,51 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { useAuth, User } from "@/context/AuthContext";
+import { useAuth } from "@/context/AuthContext";
+import type { User } from "@/context/AuthContext";
 import { useSiteSettings } from "@/context/SiteSettingsContext";
 import { useToast } from "@/context/ToastContext";
 import { useRouter, useSearchParams } from "next/navigation";
 import Script from "next/script";
 import { getImageUrl } from "@/lib/api";
 
-declare global {
-  interface Window {
-    google?: any;
-  }
+interface GoogleCredentialResponse {
+  credential: string;
+}
+
+interface GoogleIdentityApi {
+  initialize: (options: {
+    client_id: string;
+    callback: (response: GoogleCredentialResponse) => void;
+  }) => void;
+  renderButton: (
+    element: HTMLElement,
+    options: Record<string, string | number>
+  ) => void;
+  prompt: () => void;
+}
+
+function getGoogleIdentityApi(): GoogleIdentityApi | undefined {
+  if (typeof window === "undefined") return undefined;
+
+  return (
+    window as Window & {
+      google?: { accounts?: { id?: GoogleIdentityApi } };
+    }
+  ).google?.accounts?.id;
 }
 
 interface UserLoginFormProps {
   isModal?: boolean;
   onClose?: () => void;
   onSwitchToSignup?: () => void;
+  onAuthenticated?: (user: User) => void;
 }
 
 export default function UserLoginForm({
   isModal = false,
   onClose,
-  onSwitchToSignup,
+  onAuthenticated,
 }: UserLoginFormProps) {
   const { googleLogin } = useAuth();
   const { settings } = useSiteSettings();
@@ -36,35 +58,43 @@ export default function UserLoginForm({
 
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
-  const handlePostLoginRedirect = (user: User) => {
-    if (onClose) onClose();
-    toast.success(`Welcome back, ${user.name || "User"}!`);
-    if (redirectTarget) {
-      router.push(redirectTarget);
-    } else {
-      router.push("/");
-    }
-  };
+  const handlePostLoginRedirect = useCallback(
+    (user: User) => {
+      if (onClose) onClose();
+      toast.success(`Welcome back, ${user.name || "User"}!`);
+      if (onAuthenticated) {
+        onAuthenticated(user);
+        return;
+      }
+      if (redirectTarget) {
+        router.push(redirectTarget);
+      } else {
+        router.push("/");
+      }
+    },
+    [onAuthenticated, onClose, redirectTarget, router, toast]
+  );
 
   const handleGoogleCallback = useCallback(
-    async (response: any) => {
+    async (response: GoogleCredentialResponse) => {
       try {
         const user = await googleLogin(response.credential);
         handlePostLoginRedirect(user);
-      } catch (err: any) {
-        const msg = err.message || "Invalid email or password.";
+      } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : "Google sign-in failed.";
         toast.error(msg);
       }
     },
-    [googleLogin, redirectTarget, router, onClose, toast]
+    [googleLogin, handlePostLoginRedirect, toast]
   );
 
   const initGoogleScript = useCallback(() => {
-    if (typeof window !== "undefined" && window.google?.accounts?.id) {
+    const googleId = getGoogleIdentityApi();
+    if (googleId) {
       setGoogleLoaded(true);
       if (googleClientId) {
         try {
-          window.google.accounts.id.initialize({
+          googleId.initialize({
             client_id: googleClientId,
             callback: handleGoogleCallback,
           });
@@ -74,7 +104,7 @@ export default function UserLoginForm({
             const btnContainer = document.getElementById(btnId);
             if (btnContainer) {
               btnContainer.innerHTML = "";
-              window.google.accounts.id.renderButton(btnContainer, {
+              googleId.renderButton(btnContainer, {
                 theme: "outline",
                 size: "large",
                 text: "signin_with",
@@ -91,11 +121,12 @@ export default function UserLoginForm({
   }, [googleClientId, handleGoogleCallback, isModal]);
 
   useEffect(() => {
-    if (typeof window !== "undefined" && window.google?.accounts?.id) {
-      initGoogleScript();
+    if (getGoogleIdentityApi()) {
+      const timeoutId = window.setTimeout(initGoogleScript, 0);
+      return () => window.clearTimeout(timeoutId);
     } else {
       const interval = setInterval(() => {
-        if (typeof window !== "undefined" && window.google?.accounts?.id) {
+        if (getGoogleIdentityApi()) {
           initGoogleScript();
           clearInterval(interval);
         }
@@ -109,8 +140,9 @@ export default function UserLoginForm({
       toast.error("Google Client ID is missing. Add NEXT_PUBLIC_GOOGLE_CLIENT_ID to your frontend .env file.");
       return;
     }
-    if (window.google?.accounts?.id) {
-      window.google.accounts.id.prompt();
+    const googleId = getGoogleIdentityApi();
+    if (googleId) {
+      googleId.prompt();
     } else {
       toast.error("Google Sign-In is initializing. Please try again in a moment.");
     }

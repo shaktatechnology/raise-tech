@@ -1,28 +1,35 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useCallback, useState, useEffect, Suspense } from "react";
 import UserLoginForm from "./UserLoginForm";
 import UserSignupForm from "./UserSignupForm";
+import type { User } from "@/context/AuthContext";
 
 interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialMode?: "login" | "signup";
+  onAuthenticated?: (user: User) => void;
 }
 
-export default function LoginModal({ isOpen, onClose, initialMode = "login" }: LoginModalProps) {
+export default function LoginModal({
+  isOpen,
+  onClose,
+  initialMode = "login",
+  onAuthenticated,
+}: LoginModalProps) {
   const [mode, setMode] = useState<"login" | "signup">(initialMode);
-
-  useEffect(() => {
+  const handleClose = useCallback(() => {
     setMode(initialMode);
-  }, [initialMode, isOpen]);
+    onClose();
+  }, [initialMode, onClose]);
 
   // Lock scroll when open & handle Escape key
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
       const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === "Escape") onClose();
+        if (e.key === "Escape") handleClose();
       };
       window.addEventListener("keydown", handleKeyDown);
       return () => {
@@ -32,7 +39,7 @@ export default function LoginModal({ isOpen, onClose, initialMode = "login" }: L
     } else {
       document.body.style.overflow = "";
     }
-  }, [isOpen, onClose]);
+  }, [handleClose, isOpen]);
 
   if (!isOpen) return null;
 
@@ -45,7 +52,7 @@ export default function LoginModal({ isOpen, onClose, initialMode = "login" }: L
       {/* Backdrop */}
       <div
         className="absolute inset-0"
-        onClick={onClose}
+        onClick={handleClose}
         aria-hidden="true"
       />
 
@@ -61,14 +68,16 @@ export default function LoginModal({ isOpen, onClose, initialMode = "login" }: L
           {mode === "login" ? (
             <UserLoginForm
               isModal={true}
-              onClose={onClose}
+              onClose={handleClose}
               onSwitchToSignup={() => setMode("signup")}
+              onAuthenticated={onAuthenticated}
             />
           ) : (
             <UserSignupForm
               isModal={true}
-              onClose={onClose}
+              onClose={handleClose}
               onSwitchToLogin={() => setMode("login")}
+              onAuthenticated={onAuthenticated}
             />
           )}
         </Suspense>

@@ -73,6 +73,7 @@ export interface Order {
   shipping_address: OrderAddress | null;
   billing_address: OrderAddress | null;
   payment_method: string;
+  delivery_type: 'standard' | 'express';
   status: 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
   subtotal: number;
   shipping_charge: number;

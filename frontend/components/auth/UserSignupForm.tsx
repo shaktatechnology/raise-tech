@@ -19,12 +19,14 @@ interface UserSignupFormProps {
   isModal?: boolean;
   onClose?: () => void;
   onSwitchToLogin?: () => void;
+  onAuthenticated?: (user: User) => void;
 }
 
 export default function UserSignupForm({
   isModal = false,
   onClose,
   onSwitchToLogin,
+  onAuthenticated,
 }: UserSignupFormProps) {
   const { googleLogin } = useAuth();
   const { settings } = useSiteSettings();
@@ -38,6 +40,10 @@ export default function UserSignupForm({
   const handlePostLoginRedirect = (user: User) => {
     if (onClose) onClose();
     toast.success("Account created successfully!");
+    if (onAuthenticated) {
+      onAuthenticated(user);
+      return;
+    }
     if (user.role === "admin") {
       router.push("/admin");
     } else {
