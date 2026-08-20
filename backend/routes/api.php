@@ -7,6 +7,7 @@ use App\Http\Controllers\CheckoutProfileController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\PortfolioController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\SettingController;
@@ -24,6 +25,8 @@ Route::get('/services', [ServiceController::class, 'index']);
 Route::get('/about', [AboutController::class, 'index']);
 Route::get('/team', [TeamController::class, 'index']);
 Route::get('/software', [SoftwareController::class, 'index']);
+Route::get('/portfolio', [PortfolioController::class, 'index']);
+Route::get('/portfolio/{portfolio}', [PortfolioController::class, 'show']);
 Route::get('/home', [HomeController::class, 'index']);
 
 // API Documentation redirect
@@ -97,6 +100,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/software', [SoftwareController::class, 'store']);
         Route::post('/software/{software}', [SoftwareController::class, 'update']);
         Route::delete('/software/{software}', [SoftwareController::class, 'destroy']);
+    });
+
+    // Portfolio administration
+    Route::middleware('admin')->group(function () {
+        Route::post('/portfolio/header', [PortfolioController::class, 'updateHeader']);
+        Route::post('/portfolio/store', [PortfolioController::class, 'store']);
+        Route::post('/portfolio/{portfolio}', [PortfolioController::class, 'update']);
+        Route::delete('/portfolio/{portfolio}', [PortfolioController::class, 'destroy']);
     });
 
     // Homepage administration
