@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 class StoreOrderRequest extends FormRequest
 {
@@ -20,10 +21,11 @@ class StoreOrderRequest extends FormRequest
         return [
             'customer_name' => ['required', 'string', 'max:255'],
             'customer_email' => ['required', 'string', 'email:rfc', 'max:255'],
-            'customer_phone' => ['nullable', 'string', 'max:30', $this->phoneNumberRule()],
-            'delivery_type' => ['sometimes', 'string', 'in:standard'],
-            'payment_method' => ['sometimes', 'string', 'in:cash_on_delivery'],
+            'customer_phone' => ['required', 'string', 'max:30', $this->phoneNumberRule()],
+            'delivery_type' => ['required', 'string', 'in:standard,express'],
+            'payment_method' => ['required', 'string', 'in:cash_on_delivery'],
             'notes' => ['nullable', 'string', 'max:2000'],
+            'save_for_future' => ['sometimes', 'boolean'],
             'items' => ['required', 'array', 'min:1'],
             'items.*' => ['required', 'array:product_id,quantity'],
             'items.*.product_id' => ['required', 'integer', 'distinct', 'exists:products,id'],
@@ -73,6 +75,20 @@ class StoreOrderRequest extends FormRequest
                 'max:30',
                 $this->phoneNumberRule(),
             ],
+        ];
+    }
+
+    public function after(): array
+    {
+        return [
+            function (Validator $validator): void {
+                if ($this->boolean('save_for_future') && $this->user('sanctum') === null) {
+                    $validator->errors()->add(
+                        'save_for_future',
+                        'You must be signed in to save checkout details for future orders.',
+                    );
+                }
+            },
         ];
     }
 

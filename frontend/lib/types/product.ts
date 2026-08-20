@@ -60,10 +60,18 @@ export interface CheckoutFormData {
   email: string;
   phone: string;
   city: string;
+  province: string;
   address: string;
   deliveryMethod: 'standard' | 'express';
   paymentMethod: 'cod';
   notes?: string;
+  billingSameAsShipping: boolean;
+  billingFullName: string;
+  billingPhone: string;
+  billingCity: string;
+  billingProvince: string;
+  billingAddress: string;
+  saveForFuture: boolean;
   acceptTerms: boolean;
 }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useCallback, useContext, useState, useEffect } from "react";
 import { fetchApi } from "@/lib/api";
 
 export interface User {
@@ -35,18 +35,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  const clearCookies = () => {
+  const clearCookies = useCallback(() => {
     document.cookie = "auth_token=; path=/; max-age=0";
     document.cookie = "user_data=; path=/; max-age=0";
-  };
+  }, []);
 
-  const logoutLocally = () => {
+  const logoutLocally = useCallback(() => {
     localStorage.removeItem("auth_token");
     localStorage.removeItem("user_data");
     clearCookies();
     setToken(null);
     setUser(null);
-  };
+  }, [clearCookies]);
 
   useEffect(() => {
     const initAuth = async () => {
@@ -72,7 +72,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(false);
     };
     initAuth();
-  }, []);
+  }, [logoutLocally]);
 
   const setCookies = (token: string, user: User) => {
     const maxAge = 60 * 60 * 24 * 7; // 7 days

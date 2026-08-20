@@ -31,7 +31,8 @@ class OrderCheckoutAddressesTest extends TestCase
             ->assertJsonPath('data.shipping_address.city', 'Bhaktapur')
             ->assertJsonPath('data.billing_address.city', 'Kathmandu')
             ->assertJsonPath('data.subtotal', '2501.00')
-            ->assertJsonPath('data.total', '2501.00');
+            ->assertJsonPath('data.shipping_charge', '100.00')
+            ->assertJsonPath('data.total', '2601.00');
 
         $orderId = $response->json('data.id');
 
@@ -221,8 +222,8 @@ class OrderCheckoutAddressesTest extends TestCase
         $this->assertSame($authenticatedUser->id, $order->user_id);
         $this->assertSame('pending', $order->status);
         $this->assertSame('200.00', $order->subtotal);
-        $this->assertSame('0.00', $order->shipping_charge);
-        $this->assertSame('200.00', $order->total);
+        $this->assertSame('100.00', $order->shipping_charge);
+        $this->assertSame('300.00', $order->total);
         $this->assertFalse($order->getConnection()->getSchemaBuilder()->hasColumn('orders', 'payment_status'));
     }
 
@@ -234,6 +235,7 @@ class OrderCheckoutAddressesTest extends TestCase
         return [
             'customer_name' => 'Example Customer',
             'customer_email' => 'customer@example.com',
+            'customer_phone' => '+9779800000000',
             'delivery_type' => 'standard',
             'payment_method' => 'cash_on_delivery',
             'notes' => null,

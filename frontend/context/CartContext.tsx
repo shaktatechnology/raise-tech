@@ -40,6 +40,7 @@ interface CartContextType {
   removeItem: (id: string, size?: string) => Promise<void>;
   updateQuantity: (id: string, quantity: number, size?: string) => Promise<void>;
   clearCart: () => Promise<void>;
+  completeCheckout: () => void;
   refreshCart: () => Promise<void>;
   totalItems: number;
   subtotal: number;
@@ -393,6 +394,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     updateGuestItems(() => []);
   }, [runApiMutation, updateGuestItems, user]);
 
+  const completeCheckout = useCallback((): void => {
+    if (!user) writeGuestCart([]);
+    setItems([]);
+    setError(null);
+  }, [user]);
+
   const totalItems = useMemo(
     () => items.reduce((sum, item) => sum + item.quantity, 0),
     [items]
@@ -410,6 +417,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         removeItem,
         updateQuantity,
         clearCart,
+        completeCheckout,
         refreshCart,
         totalItems,
         subtotal,
