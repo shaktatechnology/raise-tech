@@ -5,6 +5,11 @@ import PortfolioSection from '@/components/home/PortfolioSection';
 import TestimonialsSection from '@/components/home/TestimonialsSection';
 import type { Banner, HomeService, Portfolio, Testimonial } from '@/lib/types/home';
 
+// The homepage always fetches fresh data (cache: 'no-store').
+// Declare it as dynamic so Next.js does not treat DYNAMIC_SERVER_USAGE as an error.
+export const dynamic = 'force-dynamic';
+
+
 interface HomeApiResponse {
   status: string;
   data: {
@@ -27,8 +32,12 @@ async function getHomeData() {
 
     const json: HomeApiResponse = await res.json();
     return json.data;
-  } catch (err) {
-    console.error('Failed to load homepage data:', err);
+  } catch (err: unknown) {
+    // Only log genuine network/API failures, not Next.js internal control-flow.
+    const digest = (err as { digest?: string })?.digest;
+    if (digest !== 'DYNAMIC_SERVER_USAGE') {
+      console.error('Failed to load homepage data:', err);
+    }
     // Fall back to empty state so the page still renders instead of crashing.
     return {
       banner: null,

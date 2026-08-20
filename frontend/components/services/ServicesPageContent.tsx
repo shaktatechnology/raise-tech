@@ -4,6 +4,8 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { fetchApi, getApiErrorMessage, getImageUrl } from "@/lib/api";
+import Reveal from "@/components/motion/Reveal";
+import PageIntro from "@/components/motion/PageIntro";
 
 export interface ServiceHeaderAPI {
   id: number;
@@ -57,10 +59,9 @@ export default function ServicesPageContent() {
   }, []);
 
   const heroImageUrl = getImageUrl(headerData?.hero_image) || "/images/services/services-hero.png";
-  const heroTitle = headerData?.title || "Comprehensive IT & Software Solutions Designed to Scale Your Enterprise";
 
   return (
-    <div className="w-full">
+    <PageIntro className="w-full">
       {/* Dynamic Hero Banner */}
       <section className="relative w-full h-[280px] sm:h-[360px] md:h-[440px] lg:h-[520px] overflow-hidden bg-[#022c43] flex items-center justify-center">
         <Image
@@ -74,8 +75,6 @@ export default function ServicesPageContent() {
 
         {/* Vibrant Cyan-Blue Cover Up Color Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-b from-[#01a7e5]/90 via-[#01a7e5]/40 to-transparent pointer-events-none" />
-
-
       </section>
 
       {/* Services List Content */}
@@ -106,27 +105,28 @@ export default function ServicesPageContent() {
                   const isEven = idx % 2 === 0;
 
                   return (
-                    <div
+                    <Reveal
                       key={service.id}
-                      className={`flex flex-col lg:flex-row items-center gap-10 lg:gap-16 bg-white rounded-3xl p-8 sm:p-12 shadow-sm border border-gray-100 ${
+                      variant="fadeUp"
+                      className={`flex flex-col lg:flex-row items-center gap-10 lg:gap-16 bg-white rounded-3xl p-8 sm:p-12 shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-300 ${
                         isEven ? "" : "lg:flex-row-reverse"
                       }`}
                     >
-                      {/* Image Column: Clean Full View Without Border, Shadow or Cropping */}
+                      {/* Image Column */}
                       {imageUrl && (
-                        <div className="w-full lg:w-1/2 flex items-center justify-center p-2 shrink-0">
+                        <div className="w-full lg:w-1/2 flex items-center justify-center p-2 shrink-0 overflow-hidden">
                           <Image
                             src={imageUrl}
                             alt={service.title}
                             width={800}
                             height={600}
                             unoptimized
-                            className="w-full h-auto max-h-[480px] object-contain transition-transform duration-300 hover:scale-[1.01]"
+                            className="w-full h-auto max-h-[480px] object-contain transition-transform duration-500 hover:scale-[1.03]"
                           />
                         </div>
                       )}
 
-                      {/* Content Column: Text-Justified Paragraph Alignment */}
+                      {/* Content Column */}
                       <div className="flex-1 space-y-4">
                         <div className="inline-block px-3 py-1 bg-cyan-50 text-[#01A7E5] text-xs font-bold uppercase tracking-wider rounded-md">
                           Service #{service.order}
@@ -150,20 +150,20 @@ export default function ServicesPageContent() {
                         <div className="pt-4">
                           <Link
                             href={`/contact?subject=Inquiry%20about%20${encodeURIComponent(service.title)}`}
-                            className="inline-flex items-center gap-2 px-6 py-3 bg-[#01A7E5] hover:bg-[#018bc0] text-white font-bold text-sm rounded-xl shadow-xs transition-colors"
+                            className="inline-flex items-center gap-2 px-6 py-3 bg-[#01A7E5] hover:bg-[#018bc0] text-white font-bold text-sm rounded-xl shadow-xs transition-all duration-200 hover:shadow-md transform hover:-translate-y-0.5"
                           >
                             <span>Get Technical Consultation</span>
                             <span>→</span>
                           </Link>
                         </div>
                       </div>
-                    </div>
+                    </Reveal>
                   );
                 })}
             </div>
           )}
         </div>
       </section>
-    </div>
+    </PageIntro>
   );
 }
