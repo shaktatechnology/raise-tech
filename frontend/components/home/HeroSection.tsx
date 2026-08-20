@@ -1,6 +1,9 @@
+"use client";
+
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { motion } from 'motion/react';
 import { Carattere } from 'next/font/google';
 import type { Banner } from '@/lib/types/home';
 import { getImageUrl } from '@/lib/api';
@@ -44,29 +47,40 @@ export default function HeroSection({ banner }: HeroSectionProps) {
         <div className="absolute -bottom-20 right-10 w-80 h-80 bg-emerald-500/15 rounded-full blur-3xl animate-pulse-glow pointer-events-none" />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full animate-scale-up">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <div className="max-w-xl space-y-6">
           {/* Main Headline (dynamic, from admin-managed banner) */}
-          <h1
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
             className={`${carattere.className} font-normal text-white drop-shadow-lg leading-tight tracking-wide`}
           >
             <span className="text-[150px]">{firstWord}</span>
             {remainingTitle && (
               <span className="text-[55px]"> {remainingTitle}</span>
             )}
-          </h1>
+          </motion.h1>
 
           {/* Supporting Description */}
-          <div
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.18, ease: [0.16, 1, 0.3, 1] }}
             className="text-sm sm:text-base text-slate-200 leading-relaxed font-normal pt-2 [&_p]:m-0 [&_p]:inline"
             dangerouslySetInnerHTML={{ __html: description }}
           />
 
           {/* CTA Action */}
-          <div className="pt-6">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.32, ease: [0.16, 1, 0.3, 1] }}
+            className="pt-6"
+          >
             <Link
               href="/contact"
-              className="inline-flex items-center justify-center gap-2 px-8 py-3.5 text-base font-semibold text-white border-2 border-white/80 rounded-full hover:bg-white hover:text-[#022c43] transition-all duration-300 shadow-lg hover:shadow-[#01A7E5]/30 backdrop-blur-xs group"
+              className="inline-flex items-center justify-center gap-2 px-8 py-3.5 text-base font-semibold text-white border-2 border-white/80 rounded-full hover:bg-white hover:text-[#022c43] transition-all duration-300 shadow-lg hover:shadow-[#01A7E5]/30 backdrop-blur-xs group hover:scale-[1.02] active:scale-[0.98]"
             >
               <span>Contact Us</span>
               <svg
@@ -83,10 +97,9 @@ export default function HeroSection({ banner }: HeroSectionProps) {
                 />
               </svg>
             </Link>
-          </div>
+          </motion.div>
         </div>
       </div>
     </section>
   );
 }
-

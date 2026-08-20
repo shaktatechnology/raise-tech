@@ -2,9 +2,10 @@ import React from 'react';
 import Image from 'next/image';
 import { ABOUT_PAGE_COPY, WHAT_WE_DO_ITEMS } from '@/lib/data/aboutData';
 import { isValidImageSrc, type WhatWeDoApiItem } from '@/lib/data/getAboutPageData';
+import Reveal from '@/components/motion/Reveal';
+import StaggerGroup from '@/components/motion/StaggerGroup';
+import StaggerItem from '@/components/motion/StaggerItem';
 
-// Cycles through these 4 icons by position since API items only have
-// numeric ids (no 'trackingmandu' / 'ecalculo' style keys to switch on).
 function getProductIcon(index: number) {
   const icons = [
     <svg key="0" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -34,22 +35,22 @@ export default function WhatWeDoSection({ items, teamImage }: WhatWeDoSectionPro
   const imageSrc = isValidImageSrc(teamImage) ? teamImage : '/images/about/raise-tech-team.png';
 
   return (
-    <section className="py-12 sm:py-16 lg:py-20 bg-[#f2fcff]">
+    <section className="py-12 sm:py-16 lg:py-20 bg-[#f2fcff] overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <div className="max-w-3xl space-y-3 mb-10 sm:mb-14">
+        <Reveal variant="fadeUp" className="max-w-3xl space-y-3 mb-10 sm:mb-14">
           <h2 className="font-carattere text-5xl sm:text-6xl text-[#01a7e5]">
             {ABOUT_PAGE_COPY.whatWeDoHeading}
           </h2>
           <p className="text-gray-700 text-base sm:text-lg leading-relaxed">
             {ABOUT_PAGE_COPY.whatWeDoSubtitle}
           </p>
-        </div>
+        </Reveal>
 
         {/* Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
           {/* Left Column: Team / Company Image */}
-          <div className="lg:col-span-5 relative w-full h-[350px] sm:h-[450px] lg:h-[580px] rounded-2xl overflow-hidden shadow-xl border border-cyan-100 group">
+          <Reveal variant="slideLeft" className="lg:col-span-5 relative w-full h-[350px] sm:h-[450px] lg:h-[580px] rounded-2xl overflow-hidden shadow-xl border border-cyan-100 group">
             <Image
               src={imageSrc}
               alt="Raise Tech Engineering Team & Office Culture"
@@ -57,31 +58,34 @@ export default function WhatWeDoSection({ items, teamImage }: WhatWeDoSectionPro
               className="object-cover object-center group-hover:scale-105 transition-transform duration-500"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
-          </div>
+          </Reveal>
 
           {/* Right Column: Product Cards */}
-          <div className="lg:col-span-7 space-y-4 sm:space-y-5">
-            {displayItems.map((item, idx) => (
-              <div
-                key={item.id}
-                className="group relative bg-gradient-to-r from-[#01a7e5] via-[#0188ba] to-[#015d7f] text-white p-5 sm:p-6 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5 hover:translate-x-1.5 border border-cyan-300/20"
-              >
-                <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-xs flex items-center justify-center shrink-0 text-white transition-transform duration-300 group-hover:scale-110 group-hover:bg-white/35 shadow-xs">
-                    {getProductIcon(idx)}
+          <div className="lg:col-span-7">
+            <StaggerGroup className="space-y-4 sm:space-y-5">
+              {displayItems.map((item, idx) => (
+                <StaggerItem key={item.id}>
+                  <div
+                    className="group relative bg-gradient-to-r from-[#01a7e5] via-[#0188ba] to-[#015d7f] text-white p-5 sm:p-6 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5 hover:translate-x-1.5 border border-cyan-300/20"
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-xs flex items-center justify-center shrink-0 text-white transition-transform duration-300 group-hover:scale-110 group-hover:bg-white/35 shadow-xs">
+                        {getProductIcon(idx)}
+                      </div>
+                      <div>
+                        <h3 className="text-xl sm:text-2xl font-semibold mb-1 group-hover:text-cyan-100 transition-colors">
+                          {item.title}
+                        </h3>
+                        <div
+                          className="text-cyan-50 text-sm sm:text-base italic leading-relaxed [&_p]:m-0 [&_p]:inline"
+                          dangerouslySetInnerHTML={{ __html: item.description }}
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-xl sm:text-2xl font-semibold mb-1 group-hover:text-cyan-100 transition-colors">
-                      {item.title}
-                    </h3>
-                    <div
-                      className="text-cyan-50 text-sm sm:text-base italic leading-relaxed [&_p]:m-0 [&_p]:inline"
-                      dangerouslySetInnerHTML={{ __html: item.description }}
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
+                </StaggerItem>
+              ))}
+            </StaggerGroup>
           </div>
         </div>
       </div>
