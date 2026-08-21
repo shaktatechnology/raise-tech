@@ -7,6 +7,7 @@ import { motion, type Variants } from 'motion/react';
 import { Carattere } from 'next/font/google';
 import type { Banner } from '@/lib/types/home';
 import { getImageUrl } from '@/lib/api';
+import GlitterCanvas from '@/components/home/GlitterCanvas';
 
 const carattere = Carattere({
   subsets: ['latin'],
@@ -100,6 +101,9 @@ export default function HeroSection({ banner }: HeroSectionProps) {
           className="absolute -bottom-20 right-10 w-80 h-80 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none" 
         />
       </div>
+
+      {/* Interactive Glitter Particles following mouse cursor */}
+      <GlitterCanvas />
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <div className="max-w-xl space-y-6">
