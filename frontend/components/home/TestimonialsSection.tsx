@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, type Variants } from 'motion/react';
 import type { Testimonial } from '@/lib/types/home';
 import Reveal from '@/components/motion/Reveal';
 
@@ -19,7 +19,7 @@ function getInitials(name: string) {
     .join('');
 }
 
-const starsContainerVariants = {
+const starsContainerVariants: Variants = {
   hidden: {},
   visible: {
     transition: {
@@ -29,21 +29,21 @@ const starsContainerVariants = {
   },
 };
 
-const starVariants = {
+const starVariants: Variants = {
   hidden: { opacity: 0, scale: 0.4, rotate: -15 },
   visible: {
     opacity: 1,
     scale: 1,
     rotate: 0,
     transition: {
-      type: "spring",
+      type: "spring" as const,
       stiffness: 300,
       damping: 15,
     },
   },
 };
 
-const avatarsContainerVariants = {
+const avatarsContainerVariants: Variants = {
   hidden: {},
   visible: {
     transition: {
@@ -53,13 +53,13 @@ const avatarsContainerVariants = {
   },
 };
 
-const avatarVariants = {
+const avatarVariants: Variants = {
   hidden: { scale: 0, opacity: 0 },
   visible: {
     scale: 1,
     opacity: 1,
     transition: {
-      type: "spring",
+      type: "spring" as const,
       stiffness: 300,
       damping: 18,
     },
@@ -161,7 +161,7 @@ export default function TestimonialsSection({ testimonials }: TestimonialsSectio
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+                  transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] as const }}
                   className="flex flex-col justify-between h-full space-y-6 pointer-events-none"
                 >
                   <div>

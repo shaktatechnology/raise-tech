@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { motion } from 'motion/react';
+import { motion, type Variants } from 'motion/react';
 import { Carattere } from 'next/font/google';
 import type { Banner } from '@/lib/types/home';
 import { getImageUrl } from '@/lib/api';
@@ -16,7 +16,7 @@ const carattere = Carattere({
 
 const MotionLink = motion.create(Link);
 
-const titleContainerVariants = {
+const titleContainerVariants: Variants = {
   hidden: {},
   visible: {
     transition: {
@@ -26,7 +26,7 @@ const titleContainerVariants = {
   },
 };
 
-const wordVariants = {
+const wordVariants: Variants = {
   hidden: { opacity: 0, y: 24 },
   visible: {
     opacity: 1,
