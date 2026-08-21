@@ -61,8 +61,11 @@ export default function AdminSettingsPage() {
     tiktok_url: "",
     whatsapp_url: "",
     is_cod_enabled: true,
+    standard_delivery_charge: "100",
+    express_delivery_charge: "250",
   });
 
+  const { refetch: refetchGlobalSettings } = useSiteSettings();
   const [loading, setLoading] = useState<boolean>(true);
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -103,6 +106,8 @@ export default function AdminSettingsPage() {
           tiktok_url: res.setting.tiktok_url || "",
           whatsapp_url: res.setting.whatsapp_url || "",
           is_cod_enabled: res.setting.is_cod_enabled ?? true,
+          standard_delivery_charge: res.setting.standard_delivery_charge != null ? String(res.setting.standard_delivery_charge) : "100",
+          express_delivery_charge: res.setting.express_delivery_charge != null ? String(res.setting.express_delivery_charge) : "250",
         });
         setLogoFile(null);
         setFaviconFile(null);
@@ -149,6 +154,18 @@ export default function AdminSettingsPage() {
       formData.append("tiktok_url", settings.tiktok_url || "");
       formData.append("whatsapp_url", settings.whatsapp_url || "");
       formData.append("is_cod_enabled", settings.is_cod_enabled ? "1" : "0");
+      formData.append(
+        "standard_delivery_charge",
+        settings.standard_delivery_charge !== undefined && settings.standard_delivery_charge !== null && settings.standard_delivery_charge !== ""
+          ? String(settings.standard_delivery_charge)
+          : "100"
+      );
+      formData.append(
+        "express_delivery_charge",
+        settings.express_delivery_charge !== undefined && settings.express_delivery_charge !== null && settings.express_delivery_charge !== ""
+          ? String(settings.express_delivery_charge)
+          : "250"
+      );
       formData.append("remove_logo", removeLogo ? "1" : "0");
       formData.append("remove_favicon", removeFavicon ? "1" : "0");
       if (logoFile) formData.append("logo", logoFile);
@@ -161,8 +178,14 @@ export default function AdminSettingsPage() {
 
       showToast(res.message || "Settings updated successfully.", "success");
       if (res.setting) {
-        setSettings((prev) => ({ ...prev, ...res.setting }));
+        setSettings((prev) => ({
+          ...prev,
+          ...res.setting,
+          standard_delivery_charge: res.setting.standard_delivery_charge != null ? String(res.setting.standard_delivery_charge) : prev.standard_delivery_charge,
+          express_delivery_charge: res.setting.express_delivery_charge != null ? String(res.setting.express_delivery_charge) : prev.express_delivery_charge,
+        }));
       }
+      await refetchGlobalSettings();
       await loadSettings();
       setLogoFile(null);
       setFaviconFile(null);
@@ -505,17 +528,38 @@ export default function AdminSettingsPage() {
 
                   <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
                     <h3 className="text-sm font-bold text-emerald-400 uppercase tracking-wider">
-                      E-Commerce Checkout Parameters
+                      E-Commerce Delivery Parameters
                     </h3>
-                    <label className="flex items-center gap-3 cursor-pointer text-xs text-slate-300">
-                      <input
-                        type="checkbox"
-                        checked={settings.is_cod_enabled ?? true}
-                        onChange={(e) => setSettings({ ...settings, is_cod_enabled: e.target.checked })}
-                        className="w-4 h-4 rounded text-emerald-500 focus:ring-emerald-500"
-                      />
-                      <span>Enable Cash On Delivery (COD) for Paper Roll Product Orders</span>
-                    </label>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs pt-1">
+                      <div>
+                        <label className="block text-slate-400 mb-1">Standard Delivery Charge (NPR)</label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={settings.standard_delivery_charge ?? ""}
+                          onChange={(e) => setSettings({ ...settings, standard_delivery_charge: e.target.value })}
+                          className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
+                          placeholder="100"
+                        />
+                        <p className="text-[11px] text-slate-500 mt-1">Default fee applied when standard delivery is selected at checkout.</p>
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-400 mb-1">Express Delivery Charge (NPR)</label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={settings.express_delivery_charge ?? ""}
+                          onChange={(e) => setSettings({ ...settings, express_delivery_charge: e.target.value })}
+                          className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
+                          placeholder="250"
+                        />
+                        <p className="text-[11px] text-slate-500 mt-1">Fee applied when express delivery is selected at checkout.</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
