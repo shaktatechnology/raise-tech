@@ -13,7 +13,14 @@ const MAP_EMBED_CACHE_PREFIX = "map_embed_cache:";
 
 function toEmbeddableMapUrl(url?: string | null): string | null {
   if (!url) return null;
-  if (url.includes("/maps/embed")) return url;
+
+  // If the user pastes an entire iframe tag, extract the src
+  const iframeMatch = url.match(/<iframe[^>]+src=["']([^"']+)["']/i);
+  if (iframeMatch && iframeMatch[1]) {
+    return iframeMatch[1];
+  }
+
+  if (url.includes("/maps/embed") || url.includes("pb=")) return url;
   if (url.includes("goo.gl")) return null;
 
   if (url.includes("google.com/maps") || url.includes("maps.google.com")) {
