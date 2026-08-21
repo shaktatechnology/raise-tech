@@ -138,11 +138,11 @@ export default function ShopCatalog() {
     <section className="w-full py-12 sm:py-16 bg-[#f2fcff]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Desktop Filter Sidebar */}
+          {/* Desktop Filter Sidebar
           <aside className="hidden lg:block w-64 shrink-0">
             <div className="bg-white rounded-2xl p-6 shadow-xs border border-gray-100 sticky top-24 space-y-6">
               {/* In-Stock Filter */}
-              <div>
+              {/* <div>
                 <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#404040] mb-4">
                   Filters
                 </h3>
@@ -158,9 +158,9 @@ export default function ShopCatalog() {
                   />
                   <span className="text-sm font-medium text-gray-700">In-Stock Only</span>
                 </label>
-              </div>
+              </div> 
 
-              {/* Reset Filters */}
+              {/* Reset Filters 
               {(search !== '' || onlyInStock) && (
                 <button
                   onClick={handleResetFilters}
@@ -170,14 +170,14 @@ export default function ShopCatalog() {
                 </button>
               )}
             </div>
-          </aside>
+          </aside>*/}
 
           {/* Main Catalog View */}
           <main className="flex-1">
             {/* Top Search & Filter Bar */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mb-6">
-              {/* Search Box */}
-              <div className="relative flex-1">
+              {/* Search Box with In-Stock Toggle */}
+              <div className="relative flex-1 flex items-center">
                 <svg
                   className="w-5 h-5 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
                   fill="none"
@@ -199,8 +199,25 @@ export default function ShopCatalog() {
                     setPage(1);
                   }}
                   placeholder="Search thermal rolls, label stickers, paper sizes..."
-                  className="w-full bg-white border border-gray-200 rounded-xl pl-10 pr-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#01A7E5] shadow-xs text-gray-800"
+                  className="w-full bg-white border border-gray-200 rounded-xl pl-10 pr-28 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#01A7E5] shadow-xs text-gray-800"
                 />
+                {/* In-Stock Toggle inside search bar */}
+                <button
+                  onClick={() => {
+                    setOnlyInStock((prev) => !prev);
+                    setPage(1);
+                  }}
+                  className={`absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer ${
+                    onlyInStock
+                      ? "bg-[#01A7E5] text-white shadow-sm"
+                      : "bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700"
+                  }`}
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                  </svg>
+                  In Stock
+                </button>
               </div>
 
               {/* Controls Group */}

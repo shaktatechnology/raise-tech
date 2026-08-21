@@ -2,8 +2,8 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Order } from "@/lib/types";
-import { fetchApi } from "@/lib/api";
+import { Order, Product } from "@/lib/types";
+import { fetchApi, getImageUrl } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
 
@@ -17,6 +17,8 @@ export default function MyOrdersPage() {
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  // Map of product_id → featured_image URL (fetched from public /products API)
+  const [productImages, setProductImages] = useState<Record<number, string>>({});
 
   const fetchMyOrders = useCallback(async () => {
     setIsLoading(true);
@@ -36,6 +38,26 @@ export default function MyOrdersPage() {
       setIsLoading(false);
     }
   }, [toast]);
+
+  // Fetch public products to build a product_id → image map
+  useEffect(() => {
+    async function loadProductImages() {
+      try {
+        const res = await fetchApi<{ status: string; data: Product[] } | Product[]>("/products");
+        const products: Product[] = Array.isArray(res) ? res : res?.data ?? [];
+        const map: Record<number, string> = {};
+        for (const p of products) {
+          if (p.featured_image) {
+            map[p.id] = p.featured_image;
+          }
+        }
+        setProductImages(map);
+      } catch {
+        // Product images are non-critical — silently ignore
+      }
+    }
+    void loadProductImages();
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -205,23 +227,48 @@ export default function MyOrdersPage() {
                   </div>
                 </div>
 
-                {/* Items preview if exists */}
+                {/* Ordered Items with product images */}
                 {order.items && order.items.length > 0 && (
-                  <div className="bg-slate-50 rounded-xl p-3 border border-gray-100 text-xs space-y-1.5">
+                  <div className="bg-slate-50 rounded-xl p-3 border border-gray-100 text-xs space-y-2">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 block">
                       Ordered Items ({order.items.length})
                     </span>
                     <div className="divide-y divide-gray-200">
-                      {order.items.map((item) => (
-                        <div key={item.id} className="py-1.5 flex justify-between items-center">
-                          <span className="font-medium text-gray-800">
-                            {item.product_title} <span className="text-gray-400">× {item.quantity}</span>
-                          </span>
-                          <span className="font-bold text-gray-900">
-                            NPR {Number(item.subtotal || 0).toLocaleString()}
-                          </span>
-                        </div>
-                      ))}
+                      {order.items.map((item) => {
+                        const imgSrc = getImageUrl(productImages[item.product_id]);
+                        return (
+                          <div key={item.id} className="py-2 flex items-center gap-3">
+                            {/* Product Thumbnail */}
+                            <div className="w-11 h-11 rounded-lg bg-white border border-gray-200 flex-shrink-0 overflow-hidden flex items-center justify-center">
+                              {imgSrc ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                  src={imgSrc}
+                                  alt={item.product_title}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <svg className="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                </svg>
+                              )}
+                            </div>
+                            {/* Product Info */}
+                            <div className="flex-1 min-w-0">
+                              <span className="font-medium text-gray-800 block truncate">
+                                {item.product_title}
+                              </span>
+                              <span className="text-gray-400 text-[11px]">
+                                Qty: {item.quantity} × NPR {Number(item.unit_price || 0).toLocaleString()}
+                              </span>
+                            </div>
+                            {/* Subtotal */}
+                            <span className="font-bold text-gray-900 whitespace-nowrap">
+                              NPR {Number(item.subtotal || 0).toLocaleString()}
+                            </span>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
