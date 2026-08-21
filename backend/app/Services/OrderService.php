@@ -4,18 +4,13 @@ namespace App\Services;
 
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class OrderService
 {
-    /** @var array<string, float> */
-    private const SHIPPING_CHARGES = [
-        'standard' => 100.0,
-        'express' => 250.0,
-    ];
-
     /**
      * @param  array<string, mixed>  $data
      */
@@ -73,7 +68,14 @@ class OrderService
                 ];
             }
 
-            $shippingCharge = self::SHIPPING_CHARGES[$data['delivery_type']];
+            $setting = Setting::first();
+            $standardFee = (float) ($setting?->standard_delivery_charge ?? 100.0);
+            $expressFee = (float) ($setting?->express_delivery_charge ?? 250.0);
+            $shippingCharges = [
+                'standard' => $standardFee,
+                'express' => $expressFee,
+            ];
+            $shippingCharge = $shippingCharges[$data['delivery_type']] ?? $standardFee;
 
             $order = new Order([
                 'customer_name' => $data['customer_name'],

@@ -12,11 +12,11 @@ export default function VisionMissionSection({ mission }: VisionMissionSectionPr
   if (!hasMission) {
     return (
       <section className="py-16 sm:py-20 bg-[#f2fcff] text-center border-t border-cyan-100">
-        <Reveal variant="fadeUp" className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
+        <Reveal variant="fadeUp" className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
           <h2 className="font-carattere text-5xl sm:text-6xl text-[#01a7e5]">
             {ABOUT_PAGE_COPY.visionMissionHeading}
           </h2>
-          <p className="text-gray-700 text-base sm:text-lg md:text-xl leading-relaxed max-w-3xl mx-auto font-normal">
+          <p className="text-gray-700 text-base sm:text-lg md:text-xl leading-relaxed max-w-5xl mx-auto font-normal text-justify sm:text-center">
             {ABOUT_PAGE_COPY.visionMissionBody}
           </p>
         </Reveal>
@@ -26,7 +26,7 @@ export default function VisionMissionSection({ mission }: VisionMissionSectionPr
 
   return (
     <section className="py-16 sm:py-20 bg-[#f2fcff] text-center border-t border-cyan-100">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
         <Reveal variant="fadeUp">
           <h2 className="font-carattere text-5xl sm:text-6xl text-[#01a7e5]">
             {ABOUT_PAGE_COPY.visionMissionHeading}
@@ -36,7 +36,7 @@ export default function VisionMissionSection({ mission }: VisionMissionSectionPr
         <Reveal variant="fadeUp" delay={0.15} className="text-center">
           <div className="p-6 sm:p-8">
             <div
-              className="text-gray-700 text-base sm:text-lg leading-relaxed max-w-3xl mx-auto [&_p]:mb-3 [&_p:last-child]:mb-0 font-normal"
+              className="text-gray-700 text-base sm:text-lg leading-relaxed max-w-5xl mx-auto [&_p]:mb-3 [&_p:last-child]:mb-0 font-normal text-justify sm:text-center"
               dangerouslySetInnerHTML={{ __html: mission as string }}
             />
           </div>

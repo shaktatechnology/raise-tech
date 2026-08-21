@@ -72,7 +72,7 @@ export interface CheckoutFormData {
   billingProvince: string;
   billingAddress: string;
   saveForFuture: boolean;
-  acceptTerms: boolean;
+  acceptTerms?: boolean;
 }
 
 export interface MockOrder {

@@ -12,7 +12,10 @@ class SettingController extends Controller
     // get settings public
     public function index()
     {
-        $setting = Setting::first() ?? new Setting;
+        $setting = Setting::first() ?? Setting::create([
+            'standard_delivery_charge' => 100.00,
+            'express_delivery_charge' => 250.00,
+        ]);
 
         return response()->json([
             'setting' => $setting,
@@ -23,7 +26,10 @@ class SettingController extends Controller
     #[ApiResponse(403, 'Administrator authorization is required.')]
     public function update(UpdateSettingsRequest $request, ManagedImageStorage $images)
     {
-        $setting = Setting::first() ?? new Setting;
+        $setting = Setting::first() ?? Setting::create([
+            'standard_delivery_charge' => 100.00,
+            'express_delivery_charge' => 250.00,
+        ]);
         $setting->fill($request->safe()->except([
             'logo',
             'favicon',
