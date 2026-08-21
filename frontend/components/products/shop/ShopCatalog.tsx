@@ -11,7 +11,7 @@ import MobileFilterDrawer from './MobileFilterDrawer';
 import StaggerGroup from '@/components/motion/StaggerGroup';
 import StaggerItem from '@/components/motion/StaggerItem';
 
-const ITEMS_PER_PAGE = 8;
+const ITEMS_PER_PAGE = 16;
 
 export default function ShopCatalog() {
   const { addItem, isLoading: isCartLoading, isUpdating: isCartUpdating } = useCart();
@@ -107,7 +107,8 @@ export default function ShopCatalog() {
         (p.sku && p.sku.toLowerCase().includes(query)) ||
         (p.short_description && p.short_description.toLowerCase().includes(query));
       const matchStock = !onlyInStock || p.stock_quantity > 0;
-      return matchSearch && matchStock;
+      const matchActive = p.is_active === undefined || p.is_active;
+      return matchSearch && matchStock && matchActive;
     });
 
     if (sortOption === 'price-asc') {

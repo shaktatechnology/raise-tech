@@ -3,7 +3,9 @@
 import React, { useState, useEffect, useCallback } from "react";
 import AdminGalleryImageField from "@/components/admin/AdminGalleryImageField";
 import AdminImageField from "@/components/admin/AdminImageField";
+import { useDeleteConfirmation } from "@/components/admin/DeleteConfirmation";
 import ProtectedRoute from "@/components/guards/ProtectedRoute";
+import { useToast } from "@/context/ToastContext";
 import {
   fetchApi,
   getApiErrorMessage,
@@ -42,6 +44,8 @@ const generateSkuCode = (): string => {
 };
 
 export default function AdminProductsPage() {
+  const { toast } = useToast();
+  const { confirmDelete } = useDeleteConfirmation();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -147,24 +151,41 @@ export default function AdminProductsPage() {
         setProducts((prev) =>
           prev.map((p) => (p.id === product.id ? { ...p, is_active: !product.is_active } : p))
         );
+        toast.success(`Product ${!product.is_active ? "activated" : "deactivated"} successfully.`);
       }
     } catch {
-      alert("Failed to update status.");
+      toast.error("Failed to update product status.");
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this product catalog item and its images?")) return;
+    const productToDelete = products.find((p) => p.id === id);
+    const confirmed = await confirmDelete({
+      title: "Delete Product",
+      message: `Are you sure you want to delete "${productToDelete?.title || "this product"}" and all its gallery images? This action cannot be undone.`,
+      confirmLabel: "Delete Product",
+      cancelLabel: "Cancel",
+    });
+    if (!confirmed) return;
+
     try {
       await fetchApi(`/products/${id}`, { method: "DELETE" });
       setProducts((prev) => prev.filter((p) => p.id !== id));
+      toast.success("Product deleted successfully.");
     } catch (err: unknown) {
-      alert(getApiErrorMessage(err, "Failed to delete product."));
+      toast.error(getApiErrorMessage(err, "Failed to delete product."));
     }
   };
 
   const handleDeleteGalleryImage = async (galleryId: number, productId: number) => {
-    if (!confirm("Delete this gallery image?")) return;
+    const confirmed = await confirmDelete({
+      title: "Delete Gallery Image",
+      message: "Are you sure you want to remove this gallery image?",
+      confirmLabel: "Delete Image",
+      cancelLabel: "Cancel",
+    });
+    if (!confirmed) return;
+
     try {
       await fetchApi(`/products/gallery/${galleryId}`, { method: "DELETE" });
       setProducts((prev) =>
@@ -181,20 +202,21 @@ export default function AdminProductsPage() {
           galleries: prev?.galleries?.filter((g) => g.id !== galleryId),
         }));
       }
+      toast.success("Gallery image removed.");
     } catch (err: unknown) {
-      alert(getApiErrorMessage(err, "Failed to delete gallery image."));
+      toast.error(getApiErrorMessage(err, "Failed to delete gallery image."));
     }
   };
 
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingProduct?.title || editingProduct?.original_price === undefined) {
-      alert("Title and Original Price are required.");
+      toast.info("Title and Original Price are required.");
       return;
     }
 
     if (!editingProduct.id && !featuredImageFile) {
-      alert("Featured Image is required for new products.");
+      toast.info("Featured Image is required for new products.");
       return;
     }
     if (actionLoading || isOptimizingImages) return;
@@ -248,8 +270,10 @@ export default function AdminProductsPage() {
         setProducts((prev) =>
           prev.map((p) => (p.id === editingProduct.id ? resData.data : p))
         );
+        toast.success("Product updated successfully.");
       } else {
         setProducts((prev) => [resData.data, ...prev]);
+        toast.success("Product created successfully.");
       }
 
       setIsModalOpen(false);
@@ -261,7 +285,7 @@ export default function AdminProductsPage() {
       setGalleryImageError(
         getValidationError(err, "gallery") || getValidationError(err, "gallery.0")
       );
-      alert(getApiErrorMessage(err, "Error saving product."));
+      toast.error(getApiErrorMessage(err, "Error saving product."));
     } finally {
       setActionLoading(false);
     }
