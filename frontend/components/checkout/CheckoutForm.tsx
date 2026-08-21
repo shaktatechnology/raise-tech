@@ -249,6 +249,10 @@ export default function CheckoutForm() {
     void refetchSettings();
   }, [refetchSettings]);
 
+  const isStandardEnabled = settings?.is_standard_delivery_enabled ?? true;
+  const isExpressEnabled = settings?.is_express_delivery_enabled ?? true;
+  const hasAnyDeliveryMethod = isStandardEnabled || isExpressEnabled;
+
   const standardFee = settings?.standard_delivery_charge !== undefined && settings?.standard_delivery_charge !== null && settings?.standard_delivery_charge !== ""
     ? Number(settings.standard_delivery_charge)
     : 100;
@@ -261,7 +265,22 @@ export default function CheckoutForm() {
     express: isNaN(expressFee) ? 250 : expressFee,
   }), [standardFee, expressFee]);
 
-  const deliveryFee = shippingFees[formData.deliveryMethod];
+  const availableMethods = useMemo(() => {
+    const list: Array<"standard" | "express"> = [];
+    if (isStandardEnabled) list.push("standard");
+    if (isExpressEnabled) list.push("express");
+    return list;
+  }, [isStandardEnabled, isExpressEnabled]);
+
+  useEffect(() => {
+    if (!isStandardEnabled && isExpressEnabled && formData.deliveryMethod !== "express") {
+      setFormData((prev) => ({ ...prev, deliveryMethod: "express" }));
+    } else if (isStandardEnabled && !isExpressEnabled && formData.deliveryMethod !== "standard") {
+      setFormData((prev) => ({ ...prev, deliveryMethod: "standard" }));
+    }
+  }, [isStandardEnabled, isExpressEnabled, formData.deliveryMethod]);
+
+  const deliveryFee = hasAnyDeliveryMethod ? (shippingFees[formData.deliveryMethod] ?? 0) : 0;
   const grandTotal = subtotal + deliveryFee;
   const checkoutBlocked = checkoutMode === "authenticated" && (authExpired || !token);
 
@@ -801,48 +820,50 @@ export default function CheckoutForm() {
           </section>
 
           {/* 3. Delivery Method */}
-          <section className="bg-white rounded-2xl p-6 sm:p-8 shadow-xs border border-gray-100 space-y-4" aria-labelledby="delivery-heading">
-            <h2 id="delivery-heading" className="text-lg font-bold text-gray-900 border-b border-gray-100 pb-3">
-              3. Delivery method
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {(["standard", "express"] as const).map((method) => (
-                <label
-                  key={method}
-                  className={`p-4 rounded-2xl border cursor-pointer flex items-start gap-3.5 transition select-none ${
-                    formData.deliveryMethod === method
-                      ? "border-[#01A7E5] bg-cyan-50/50 shadow-xs"
-                      : "border-gray-200 hover:bg-gray-50"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="deliveryMethod"
-                    value={method}
-                    checked={formData.deliveryMethod === method}
-                    onChange={handleChange}
-                    className="mt-1 text-[#01A7E5] focus:ring-[#01A7E5]"
-                  />
-                  <div>
-                    <span className="block font-bold text-sm text-gray-900">
-                      {method === "standard" ? "Standard delivery" : "Express priority"}
-                    </span>
-                    <span className="block text-xs text-gray-500 mt-0.5">
-                      {method === "standard" ? "3–5 business days" : "1–2 business days"}
-                    </span>
-                    <span className="block text-xs font-extrabold text-[#018bc0] mt-2">
-                      NPR {shippingFees[method].toLocaleString()}
-                    </span>
-                  </div>
-                </label>
-              ))}
-            </div>
-          </section>
+          {hasAnyDeliveryMethod && (
+            <section className="bg-white rounded-2xl p-6 sm:p-8 shadow-xs border border-gray-100 space-y-4" aria-labelledby="delivery-heading">
+              <h2 id="delivery-heading" className="text-lg font-bold text-gray-900 border-b border-gray-100 pb-3">
+                3. Delivery method
+              </h2>
+              <div className={`grid gap-4 ${availableMethods.length > 1 ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"}`}>
+                {availableMethods.map((method) => (
+                  <label
+                    key={method}
+                    className={`p-4 rounded-2xl border cursor-pointer flex items-start gap-3.5 transition select-none ${
+                      formData.deliveryMethod === method
+                        ? "border-[#01A7E5] bg-cyan-50/50 shadow-xs"
+                        : "border-gray-200 hover:bg-gray-50"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="deliveryMethod"
+                      value={method}
+                      checked={formData.deliveryMethod === method}
+                      onChange={handleChange}
+                      className="mt-1 text-[#01A7E5] focus:ring-[#01A7E5]"
+                    />
+                    <div>
+                      <span className="block font-bold text-sm text-gray-900">
+                        {method === "standard" ? "Standard delivery" : "Express priority"}
+                      </span>
+                      <span className="block text-xs text-gray-500 mt-0.5">
+                        {method === "standard" ? "3–5 business days" : "1–2 business days"}
+                      </span>
+                      <span className="block text-xs font-extrabold text-[#018bc0] mt-2">
+                        NPR {shippingFees[method].toLocaleString()}
+                      </span>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* 4. Payment Method & Confirmation */}
           <section className="bg-white rounded-2xl p-6 sm:p-8 shadow-xs border border-gray-100 space-y-4" aria-labelledby="payment-heading">
             <h2 id="payment-heading" className="text-lg font-bold text-gray-900 border-b border-gray-100 pb-3">
-              4. Payment method
+              {hasAnyDeliveryMethod ? "4. Payment method" : "3. Payment method"}
             </h2>
 
             <label className="p-4 rounded-2xl border border-[#01A7E5] bg-cyan-50/50 flex items-start gap-3.5">
@@ -904,8 +925,14 @@ export default function CheckoutForm() {
                 <span className="font-semibold text-gray-900">NPR {subtotal.toLocaleString()}</span>
               </div>
               <div className="flex justify-between text-gray-600">
-                <span>Delivery ({formData.deliveryMethod === "express" ? "Express" : "Standard"})</span>
-                <span className="font-semibold text-gray-900">NPR {deliveryFee.toLocaleString()}</span>
+                <span>
+                  {hasAnyDeliveryMethod
+                    ? `Delivery (${formData.deliveryMethod === "express" ? "Express" : "Standard"})`
+                    : "Delivery"}
+                </span>
+                <span className="font-semibold text-gray-900">
+                  {deliveryFee > 0 ? `NPR ${deliveryFee.toLocaleString()}` : "Free"}
+                </span>
               </div>
               <div className="pt-3 border-t border-gray-100 flex justify-between items-baseline">
                 <span className="text-base font-bold text-gray-900">Estimated Total</span>

@@ -69,13 +69,24 @@ class OrderService
             }
 
             $setting = Setting::first();
+            $isStandardEnabled = $setting?->is_standard_delivery_enabled ?? true;
+            $isExpressEnabled = $setting?->is_express_delivery_enabled ?? true;
             $standardFee = (float) ($setting?->standard_delivery_charge ?? 100.0);
             $expressFee = (float) ($setting?->express_delivery_charge ?? 250.0);
-            $shippingCharges = [
-                'standard' => $standardFee,
-                'express' => $expressFee,
-            ];
-            $shippingCharge = $shippingCharges[$data['delivery_type']] ?? $standardFee;
+
+            if (! $isStandardEnabled && ! $isExpressEnabled) {
+                $shippingCharge = 0.0;
+            } elseif ($data['delivery_type'] === 'express' && $isExpressEnabled) {
+                $shippingCharge = $expressFee;
+            } elseif ($data['delivery_type'] === 'standard' && $isStandardEnabled) {
+                $shippingCharge = $standardFee;
+            } elseif ($isStandardEnabled) {
+                $shippingCharge = $standardFee;
+            } elseif ($isExpressEnabled) {
+                $shippingCharge = $expressFee;
+            } else {
+                $shippingCharge = 0.0;
+            }
 
             $order = new Order([
                 'customer_name' => $data['customer_name'],
