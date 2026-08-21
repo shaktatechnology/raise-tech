@@ -34,7 +34,7 @@ export default function TeamMemberCard({ member }: TeamMemberCardProps) {
           </p>
 
           {/* Biography */}
-          <p className="text-sm font-normal italic text-[#3c3c3c] leading-relaxed">
+          <p className="text-sm font-normal italic text-[#3c3c3c] leading-relaxed text-justify">
             {member.bio}
           </p>
         </div>

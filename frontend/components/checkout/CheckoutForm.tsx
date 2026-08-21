@@ -6,6 +6,7 @@ import Image from "next/image";
 import LoginModal from "@/components/auth/LoginModal";
 import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
+import { useSiteSettings } from "@/context/SiteSettingsContext";
 import { useToast } from "@/context/ToastContext";
 import { fetchApi } from "@/lib/api";
 import type { ApiRequestError } from "@/lib/api";
@@ -57,12 +58,6 @@ const INITIAL_FORM_DATA: CheckoutFormData = {
   billingProvince: "Bagmati",
   billingAddress: "",
   saveForFuture: false,
-  acceptTerms: false,
-};
-
-const SHIPPING_FEES: Record<CheckoutFormData["deliveryMethod"], number> = {
-  standard: 100,
-  express: 250,
 };
 
 const API_FIELD_MAP: Record<string, keyof CheckoutFormData> = {
@@ -248,7 +243,25 @@ export default function CheckoutForm() {
     };
   }, [token, user]);
 
-  const deliveryFee = SHIPPING_FEES[formData.deliveryMethod];
+  const { settings, refetch: refetchSettings } = useSiteSettings();
+
+  useEffect(() => {
+    void refetchSettings();
+  }, [refetchSettings]);
+
+  const standardFee = settings?.standard_delivery_charge !== undefined && settings?.standard_delivery_charge !== null && settings?.standard_delivery_charge !== ""
+    ? Number(settings.standard_delivery_charge)
+    : 100;
+  const expressFee = settings?.express_delivery_charge !== undefined && settings?.express_delivery_charge !== null && settings?.express_delivery_charge !== ""
+    ? Number(settings.express_delivery_charge)
+    : 250;
+
+  const shippingFees: Record<CheckoutFormData["deliveryMethod"], number> = useMemo(() => ({
+    standard: isNaN(standardFee) ? 100 : standardFee,
+    express: isNaN(expressFee) ? 250 : expressFee,
+  }), [standardFee, expressFee]);
+
+  const deliveryFee = shippingFees[formData.deliveryMethod];
   const grandTotal = subtotal + deliveryFee;
   const checkoutBlocked = checkoutMode === "authenticated" && (authExpired || !token);
 
@@ -301,10 +314,6 @@ export default function CheckoutForm() {
       if (!formData.billingProvince.trim()) {
         nextErrors.billingProvince = "Billing province is required.";
       }
-    }
-
-    if (!formData.acceptTerms) {
-      nextErrors.acceptTerms = "Accept the terms and conditions to continue.";
     }
 
     setErrors(nextErrors);
@@ -822,7 +831,7 @@ export default function CheckoutForm() {
                       {method === "standard" ? "3–5 business days" : "1–2 business days"}
                     </span>
                     <span className="block text-xs font-extrabold text-[#018bc0] mt-2">
-                      NPR {SHIPPING_FEES[method]}
+                      NPR {shippingFees[method].toLocaleString()}
                     </span>
                   </div>
                 </label>
@@ -852,22 +861,6 @@ export default function CheckoutForm() {
                 </span>
               </div>
             </label>
-
-
-            <div className="pt-2">
-              <label className="flex items-start gap-3 text-sm text-gray-700 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  name="acceptTerms"
-                  checked={formData.acceptTerms}
-                  onChange={handleChange}
-                  aria-invalid={Boolean(errors.acceptTerms)}
-                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-[#01A7E5] focus:ring-[#01A7E5]"
-                />
-                <span>I confirm my order details and agree to the purchase terms.</span>
-              </label>
-              {errors.acceptTerms && <p className="text-xs text-rose-600 mt-1">{errors.acceptTerms}</p>}
-            </div>
           </section>
         </div>
 

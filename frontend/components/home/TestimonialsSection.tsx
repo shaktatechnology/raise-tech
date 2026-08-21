@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
-import { motion, AnimatePresence, type Variants } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import type { Testimonial } from '@/lib/types/home';
 import Reveal from '@/components/motion/Reveal';
 
@@ -19,52 +19,7 @@ function getInitials(name: string) {
     .join('');
 }
 
-const starsContainerVariants: Variants = {
-  hidden: {},
-  visible: {
-    transition: {
-      staggerChildren: 0.05,
-      delayChildren: 0.08,
-    },
-  },
-};
 
-const starVariants: Variants = {
-  hidden: { opacity: 0, scale: 0.4, rotate: -15 },
-  visible: {
-    opacity: 1,
-    scale: 1,
-    rotate: 0,
-    transition: {
-      type: "spring" as const,
-      stiffness: 300,
-      damping: 15,
-    },
-  },
-};
-
-const avatarsContainerVariants: Variants = {
-  hidden: {},
-  visible: {
-    transition: {
-      staggerChildren: 0.06,
-      delayChildren: 0.15,
-    },
-  },
-};
-
-const avatarVariants: Variants = {
-  hidden: { scale: 0, opacity: 0 },
-  visible: {
-    scale: 1,
-    opacity: 1,
-    transition: {
-      type: "spring" as const,
-      stiffness: 300,
-      damping: 18,
-    },
-  },
-};
 
 export default function TestimonialsSection({ testimonials }: TestimonialsSectionProps) {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -95,7 +50,7 @@ export default function TestimonialsSection({ testimonials }: TestimonialsSectio
 
         {/* Testimonials Split Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-stretch">
-          {/* Left Column: Wall Graphic + Overlay Pill */}
+          {/* Left Column: Wall Graphic */}
           <Reveal variant="slideLeft" className="lg:col-span-5 relative h-72 sm:h-80 lg:h-auto min-h-[320px] rounded-3xl overflow-hidden shadow-lg border border-cyan-100/60">
             <Image
               src="/images/home/testimonial-main.png"
@@ -103,39 +58,6 @@ export default function TestimonialsSection({ testimonials }: TestimonialsSectio
               fill
               className="object-cover object-center"
             />
-
-            {/* Trusted Clients Bottom Overlay */}
-            <motion.div 
-              initial={{ opacity: 0, y: 15 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.2, duration: 0.5 }}
-              className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-white/80 shadow-md flex items-center gap-3 select-none z-20"
-            >
-              <span className="text-xs font-semibold text-gray-800 whitespace-nowrap">
-                Trusted Clients
-              </span>
-              <motion.div 
-                variants={avatarsContainerVariants}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true }}
-                className="flex items-center -space-x-2"
-              >
-                <motion.div variants={avatarVariants} whileHover={{ y: -3, scale: 1.1, zIndex: 10 }} className="w-7 h-7 rounded-full overflow-hidden border-2 border-white relative shrink-0 cursor-pointer transition-transform duration-200">
-                  <Image src="/images/home/avatar-1.png" alt="Client 1" fill className="object-cover" />
-                </motion.div>
-                <motion.div variants={avatarVariants} whileHover={{ y: -3, scale: 1.1, zIndex: 10 }} className="w-7 h-7 rounded-full overflow-hidden border-2 border-white relative shrink-0 cursor-pointer transition-transform duration-200">
-                  <Image src="/images/home/avatar-2.png" alt="Client 2" fill className="object-cover" />
-                </motion.div>
-                <motion.div variants={avatarVariants} whileHover={{ y: -3, scale: 1.1, zIndex: 10 }} className="w-7 h-7 rounded-full overflow-hidden border-2 border-white relative shrink-0 cursor-pointer transition-transform duration-200">
-                  <Image src="/images/home/avatar-3.png" alt="Client 3" fill className="object-cover" />
-                </motion.div>
-                <motion.div variants={avatarVariants} className="w-7 h-7 rounded-full bg-[#01A7E5] border-2 border-white flex items-center justify-center text-white text-xs font-bold shrink-0">
-                  +
-                </motion.div>
-              </motion.div>
-            </motion.div>
           </Reveal>
  
           {/* Right Column: Cyan Testimonial Card */}
@@ -174,30 +96,24 @@ export default function TestimonialsSection({ testimonials }: TestimonialsSectio
                         </svg>
                       </div>
  
-                      {/* Star Rating (dynamic, from testimonial.rating) */}
-                      <motion.div 
-                        variants={starsContainerVariants}
-                        initial="hidden"
-                        animate="visible"
-                        className="flex items-center gap-1 text-white"
-                      >
+                      {/* Star Rating (dynamic, slides with activeIndex) */}
+                      <div className="flex items-center gap-1 text-white">
                         {[...Array(5)].map((_, i) => (
-                          <motion.svg
+                          <svg
                             key={i}
-                            variants={starVariants}
-                            className={`w-5 h-5 fill-current ${
+                            className={`w-5 h-5 fill-current transition-opacity duration-200 ${
                               i < current.rating ? 'opacity-100' : 'opacity-30'
                             }`}
                             viewBox="0 0 20 20"
                           >
                             <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                          </motion.svg>
+                          </svg>
                         ))}
-                      </motion.div>
+                      </div>
                     </div>
  
                     {/* Testimonial Quote */}
-                    <blockquote className="text-white text-sm sm:text-base font-normal leading-relaxed">
+                    <blockquote className="text-white text-sm sm:text-base font-normal leading-relaxed text-justify">
                       {current.description}
                     </blockquote>
                   </div>

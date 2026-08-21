@@ -154,4 +154,6 @@ export interface SiteSettings {
   location?: string;
   map_url?: string;
   is_cod_enabled?: boolean;
+  standard_delivery_charge?: number | string | null;
+  express_delivery_charge?: number | string | null;
 }
