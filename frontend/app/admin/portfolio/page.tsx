@@ -50,6 +50,11 @@ export default function AdminPortfolioPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [supportsHeaderSettings, setSupportsHeaderSettings] = useState(true);
 
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const ITEMS_PER_PAGE = 10;
+  const [viewingItem, setViewingItem] = useState<PortfolioItemData | null>(null);
+
   // Header state
   const [headerTitleInput, setHeaderTitleInput] = useState<string>("");
   const [headerHeroFile, setHeaderHeroFile] = useState<File | null>(null);
@@ -93,6 +98,33 @@ export default function AdminPortfolioPage() {
     const id = window.setTimeout(() => void loadPortfolioData(), 0);
     return () => window.clearTimeout(id);
   }, [loadPortfolioData]);
+
+  const filteredPortfolio = React.useMemo(() => {
+    if (!searchTerm.trim()) return portfolioItems;
+    const q = searchTerm.toLowerCase();
+    return portfolioItems.filter(
+      (item) =>
+        item.title.toLowerCase().includes(q) ||
+        (item.description && item.description.toLowerCase().includes(q))
+    );
+  }, [portfolioItems, searchTerm]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredPortfolio.length / ITEMS_PER_PAGE));
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedPortfolio = filteredPortfolio.slice(
+    startIndex,
+    startIndex + ITEMS_PER_PAGE
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   // Save Header
   const handleSaveHeader = async (e: React.FormEvent) => {
@@ -316,11 +348,11 @@ export default function AdminPortfolioPage() {
         </div>
 
         {/* Section 2: Portfolio Case Studies */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                📁 Case Studies &amp; Projects ({portfolioItems.length})
+                📁 Case Studies &amp; Projects
               </h2>
               <p className="text-xs text-slate-400 mt-0.5">
                 Projects showcased on the homepage and the Portfolio page.
@@ -337,83 +369,265 @@ export default function AdminPortfolioPage() {
             </button>
           </div>
 
+          {/* Search Controls */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-950/60 p-4 rounded-xl border border-slate-800">
+            <div className="relative w-full sm:w-80">
+              <input
+                type="text"
+                placeholder="Search projects by title or description..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+              />
+              <svg className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+
+            <div className="text-xs text-slate-400">
+              Total: <span className="text-white font-bold">{filteredPortfolio.length}</span> projects
+            </div>
+          </div>
+
           {loading ? (
             <div className="py-16 text-center text-slate-400">
               <div className="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
               <p className="text-sm">Loading portfolio items...</p>
             </div>
-          ) : portfolioItems.length === 0 ? (
-            <div className="py-16 text-center bg-slate-950/50 rounded-2xl border border-slate-800/80">
-              <p className="text-base font-semibold text-slate-400 mb-1">No portfolio projects yet</p>
-              <p className="text-xs text-slate-500 mb-4">Click &quot;Add New Project&quot; to publish your first case study.</p>
-              <button
-                onClick={handleOpenCreate}
-                className="px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold rounded-xl transition"
-              >
-                Add First Project
-              </button>
-            </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {portfolioItems.map((item) => {
-                const img = getImageUrl(item.image);
-                return (
-                  <div
-                    key={item.id}
-                    className="bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden flex flex-col group hover:border-slate-700 transition"
-                  >
-                    <div className="relative aspect-[16/10] bg-slate-900 overflow-hidden">
-                      {img ? (
-                        <EnhancedImage
-                          src={img}
-                          alt={item.title}
-                          fill
-                          className="object-cover"
-                          containerClassName="w-full h-full"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-xs text-slate-500">
-                          No Image
-                        </div>
-                      )}
-                    </div>
+            <div className="bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+              <table className="w-full text-left text-xs text-slate-300">
+                <thead className="bg-slate-900/80 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
+                  <tr>
+                    <th className="py-3 px-3 text-center w-14">S.No</th>
+                    <th className="py-3 px-3">Project Details</th>
+                    <th className="py-3 px-3 text-center w-32 whitespace-nowrap">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60">
+                  {paginatedPortfolio.length === 0 ? (
+                    <tr>
+                      <td colSpan={3} className="py-12 text-center text-slate-500">
+                        {portfolioItems.length === 0
+                          ? "No portfolio projects yet."
+                          : "No matching portfolio projects found."}
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedPortfolio.map((item, index) => {
+                      const serialNumber = startIndex + index + 1;
+                      const img = getImageUrl(item.image);
 
-                    <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
-                      <div>
-                        <h3 className="font-bold text-white text-sm group-hover:text-cyan-400 transition-colors line-clamp-1">
-                          {item.title}
-                        </h3>
-                        <div
-                          className="text-xs text-slate-400 mt-2 line-clamp-3 leading-relaxed [&_p]:m-0 [&_p]:inline"
-                          dangerouslySetInnerHTML={{ __html: item.description }}
-                        />
-                      </div>
+                      return (
+                        <tr key={item.id} className="hover:bg-slate-900/40 transition-colors">
+                          <td className="py-3 px-3 text-center font-mono text-slate-400 font-semibold">
+                            {serialNumber}
+                          </td>
+                          <td className="py-3 px-3 min-w-0">
+                            <div className="flex items-center gap-3">
+                              <div className="w-14 h-10 rounded-lg bg-slate-900 border border-slate-800 overflow-hidden shrink-0 flex items-center justify-center">
+                                {img ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img
+                                    src={img}
+                                    alt={item.title}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <span className="text-cyan-400 font-bold text-xs">
+                                    PR
+                                  </span>
+                                )}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="font-bold text-white text-sm truncate" title={item.title}>
+                                  {item.title}
+                                </div>
+                                <div
+                                  className="text-[11px] text-slate-500 line-clamp-1 mt-0.5 [&_p]:m-0 [&_p]:inline"
+                                  dangerouslySetInnerHTML={{ __html: item.description }}
+                                />
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-3 px-3 text-center whitespace-nowrap">
+                            <div className="flex items-center justify-center gap-1.5">
+                              {/* View Button */}
+                              <button
+                                type="button"
+                                onClick={() => setViewingItem(item)}
+                                title="View Project Details"
+                                className="p-1.5 bg-slate-900 hover:bg-slate-800 text-cyan-400 hover:text-cyan-300 rounded-lg border border-slate-800 transition cursor-pointer shadow-sm"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                              </button>
 
-                      <div className="flex items-center justify-between pt-3 border-t border-slate-800/80">
-                        <span className="text-[10px] text-slate-500 font-mono">ID #{item.id}</span>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handleOpenEdit(item)}
-                            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg transition cursor-pointer"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleDeleteItem(item.id)}
-                            disabled={isDeleting}
-                            className="px-3 py-1.5 bg-red-950/40 hover:bg-red-900/60 text-red-400 border border-red-900/40 text-xs font-semibold rounded-lg transition cursor-pointer disabled:opacity-50"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </div>
-                    </div>
+                              {/* Edit Button */}
+                              <button
+                                type="button"
+                                onClick={() => handleOpenEdit(item)}
+                                title="Edit Project"
+                                className="p-1.5 bg-slate-900 hover:bg-slate-800 text-amber-400 hover:text-amber-300 rounded-lg border border-slate-800 transition cursor-pointer shadow-sm"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                              </button>
+
+                              {/* Delete Button */}
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteItem(item.id)}
+                                disabled={isDeleting}
+                                title="Delete Project"
+                                className="p-1.5 bg-red-950/60 hover:bg-red-900/80 text-red-400 border border-red-900/50 rounded-lg transition cursor-pointer disabled:opacity-50 shadow-sm"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+
+              {/* Pagination Controls */}
+              {filteredPortfolio.length > 0 && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border-t border-slate-800/80 bg-slate-900/40 text-xs text-slate-400">
+                  <div>
+                    Showing <span className="text-white font-semibold">{startIndex + 1}</span> to{" "}
+                    <span className="text-white font-semibold">
+                      {Math.min(startIndex + ITEMS_PER_PAGE, filteredPortfolio.length)}
+                    </span>{" "}
+                    of <span className="text-white font-semibold">{filteredPortfolio.length}</span> projects
                   </div>
-                );
-              })}
+
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                      disabled={currentPage === 1}
+                      className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed border border-slate-800 rounded-lg text-slate-300 transition cursor-pointer"
+                    >
+                      ‹ Prev
+                    </button>
+
+                    {Array.from({ length: totalPages }, (_, i) => i + 1)
+                      .filter((page) => {
+                        return (
+                          page === 1 ||
+                          page === totalPages ||
+                          Math.abs(page - currentPage) <= 1
+                        );
+                      })
+                      .map((page, idx, arr) => {
+                        const prev = arr[idx - 1];
+                        const showEllipsis = prev && page - prev > 1;
+
+                        return (
+                          <React.Fragment key={page}>
+                            {showEllipsis && <span className="px-1 text-slate-600">...</span>}
+                            <button
+                              type="button"
+                              onClick={() => setCurrentPage(page)}
+                              className={`w-8 h-8 rounded-lg font-semibold transition text-xs cursor-pointer ${
+                                currentPage === page
+                                  ? "bg-cyan-600 text-white shadow-md shadow-cyan-950/50"
+                                  : "bg-slate-900 hover:bg-slate-800 text-slate-400 border border-slate-800"
+                              }`}
+                            >
+                              {page}
+                            </button>
+                          </React.Fragment>
+                        );
+                      })}
+
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                      className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed border border-slate-800 rounded-lg text-slate-300 transition cursor-pointer"
+                    >
+                      Next ›
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
+
+        {/* View Project Details Modal */}
+        {viewingItem && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xs">
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 className="text-lg font-bold text-white">Project Case Study Details</h3>
+                <button
+                  type="button"
+                  onClick={() => setViewingItem(null)}
+                  className="text-slate-400 hover:text-white cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="space-y-4 text-xs">
+                {viewingItem.image && (
+                  <div className="w-full h-48 relative bg-slate-950 rounded-xl overflow-hidden border border-slate-800">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={getImageUrl(viewingItem.image)}
+                      alt={viewingItem.title}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+
+                <div>
+                  <span className="text-slate-500 uppercase tracking-wider text-[10px] font-bold block mb-0.5">Project Title</span>
+                  <p className="text-base font-bold text-white">{viewingItem.title}</p>
+                </div>
+
+                <div>
+                  <span className="text-slate-500 uppercase tracking-wider text-[10px] font-bold block mb-0.5">Case Study Description</span>
+                  <div
+                    className="text-slate-300 leading-relaxed max-w-none prose prose-invert prose-xs"
+                    dangerouslySetInnerHTML={{ __html: viewingItem.description }}
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setViewingItem(null)}
+                  className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-semibold hover:bg-slate-700 cursor-pointer"
+                >
+                  Close
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const toEdit = viewingItem;
+                    setViewingItem(null);
+                    handleOpenEdit(toEdit);
+                  }}
+                  className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-semibold shadow-lg transition cursor-pointer"
+                >
+                  Edit Project
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Create / Edit Modal */}
         {isModalOpen && editingItem !== null && (

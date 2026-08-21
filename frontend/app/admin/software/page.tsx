@@ -35,6 +35,11 @@ export default function AdminSoftwarePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const ITEMS_PER_PAGE = 10;
+  const [viewingItem, setViewingItem] = useState<SoftwareItem | null>(null);
+
   const [heroImageFile, setHeroImageFile] = useState<File | null>(null);
   const [removeHeroImage, setRemoveHeroImage] = useState(false);
   const [heroImageError, setHeroImageError] = useState<string>();
@@ -89,6 +94,34 @@ export default function AdminSoftwarePage() {
     const timeoutId = window.setTimeout(() => void loadSoftwareData(), 0);
     return () => window.clearTimeout(timeoutId);
   }, [loadSoftwareData]);
+
+  const filteredSoftware = React.useMemo(() => {
+    if (!searchTerm.trim()) return softwareList;
+    const q = searchTerm.toLowerCase();
+    return softwareList.filter(
+      (item) =>
+        item.title.toLowerCase().includes(q) ||
+        (item.slogan && item.slogan.toLowerCase().includes(q)) ||
+        (item.description && item.description.toLowerCase().includes(q))
+    );
+  }, [softwareList, searchTerm]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredSoftware.length / ITEMS_PER_PAGE));
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedSoftware = filteredSoftware.slice(
+    startIndex,
+    startIndex + ITEMS_PER_PAGE
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   const handleUpdateHeroImage = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -290,101 +323,305 @@ export default function AdminSoftwarePage() {
             </div>
           </form>
 
-          {error && (
-            <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-xs text-red-400">
-              {error}
+          {/* Search Controls */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
+            <div className="relative w-full sm:w-80">
+              <input
+                type="text"
+                placeholder="Search software by title, slogan, or description..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-purple-500"
+              />
+              <svg className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
             </div>
-          )}
 
+            <div className="text-xs text-slate-400">
+              Total: <span className="text-white font-bold">{filteredSoftware.length}</span> products
+            </div>
+          </div>
+
+          {/* Loading State */}
           {loading ? (
             <div className="space-y-3 py-20 text-center text-slate-500">
               <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-purple-500 border-t-transparent" />
               <p className="text-xs">Fetching software products...</p>
             </div>
-          ) : softwareList.length === 0 ? (
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/40 py-16 text-center">
-              <p className="text-sm font-semibold text-slate-400">No software products listed.</p>
-            </div>
           ) : (
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {softwareList.map((software) => {
-                const imageSrc = getImageUrl(software.image);
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+              <table className="w-full text-left text-xs text-slate-300">
+                <thead className="bg-slate-950/80 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
+                  <tr>
+                    <th className="py-3 px-3 text-center w-14">S.No</th>
+                    <th className="py-3 px-3">Software Details</th>
+                    <th className="py-3 px-3 w-24 text-center">Status</th>
+                    <th className="py-3 px-3 text-center w-32 whitespace-nowrap">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60">
+                  {paginatedSoftware.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="py-12 text-center text-slate-500">
+                        {softwareList.length === 0
+                          ? "No software products listed."
+                          : "No matching software products found."}
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedSoftware.map((software, index) => {
+                      const serialNumber = startIndex + index + 1;
+                      const imageSrc = getImageUrl(software.image);
 
-                return (
-                  <article
-                    key={software.id}
-                    className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-lg transition hover:border-purple-500/40"
+                      return (
+                        <tr key={software.id} className="hover:bg-slate-800/40 transition-colors">
+                          <td className="py-3 px-3 text-center font-mono text-slate-400 font-semibold">
+                            {serialNumber}
+                          </td>
+                          <td className="py-3 px-3 min-w-0">
+                            <div className="flex items-center gap-3">
+                              <div className="w-14 h-10 rounded-lg bg-slate-950 border border-slate-800 overflow-hidden shrink-0 flex items-center justify-center">
+                                {imageSrc ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img
+                                    src={imageSrc}
+                                    alt={software.title}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <span className="text-purple-400 font-bold text-xs">
+                                    SW
+                                  </span>
+                                )}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="font-bold text-white text-sm truncate" title={software.title}>
+                                  {software.title}
+                                </div>
+                                {software.slogan && (
+                                  <div className="text-purple-300/90 text-[11px] font-medium truncate" title={software.slogan}>
+                                    {software.slogan}
+                                  </div>
+                                )}
+                                <div className="text-[11px] text-slate-500 line-clamp-1 mt-0.5" title={software.description || ""}>
+                                  {software.description || "No description provided."}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-3 px-3 text-center whitespace-nowrap">
+                            <span
+                              className={`px-2.5 py-1 text-[10px] font-bold rounded-full border uppercase tracking-wider ${
+                                software.is_active
+                                  ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
+                                  : "bg-slate-800 text-slate-500 border-slate-700"
+                              }`}
+                            >
+                              {software.is_active ? "Active" : "Hidden"}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 text-center whitespace-nowrap">
+                            <div className="flex items-center justify-center gap-1.5">
+                              {/* View Button */}
+                              <button
+                                type="button"
+                                onClick={() => setViewingItem(software)}
+                                title="View Software Product"
+                                className="p-1.5 bg-slate-800 hover:bg-slate-700 text-cyan-400 hover:text-cyan-300 rounded-lg border border-slate-700 transition cursor-pointer shadow-sm"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                              </button>
+
+                              {/* Edit Button */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditingItem(software);
+                                  setSoftwareImageFile(null);
+                                  setRemoveSoftwareImage(false);
+                                  setSoftwareImageError(undefined);
+                                  setIsModalOpen(true);
+                                }}
+                                title="Edit Software Product"
+                                className="p-1.5 bg-slate-800 hover:bg-slate-700 text-purple-400 hover:text-purple-300 rounded-lg border border-slate-700 transition cursor-pointer shadow-sm"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                              </button>
+
+                              {/* Delete Button */}
+                              <button
+                                type="button"
+                                disabled={isDeleting}
+                                onClick={() => void handleDelete(software.id)}
+                                title="Delete Software Product"
+                                className="p-1.5 bg-red-950/60 hover:bg-red-900/80 text-red-400 border border-red-900/50 rounded-lg transition cursor-pointer disabled:opacity-50 shadow-sm"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+
+              {/* Pagination Controls */}
+              {filteredSoftware.length > 0 && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border-t border-slate-800/80 bg-slate-950/40 text-xs text-slate-400">
+                  <div>
+                    Showing <span className="text-white font-semibold">{startIndex + 1}</span> to{" "}
+                    <span className="text-white font-semibold">
+                      {Math.min(startIndex + ITEMS_PER_PAGE, filteredSoftware.length)}
+                    </span>{" "}
+                    of <span className="text-white font-semibold">{filteredSoftware.length}</span> products
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                      disabled={currentPage === 1}
+                      className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed border border-slate-800 rounded-lg text-slate-300 transition cursor-pointer"
+                    >
+                      ‹ Prev
+                    </button>
+
+                    {Array.from({ length: totalPages }, (_, i) => i + 1)
+                      .filter((page) => {
+                        return (
+                          page === 1 ||
+                          page === totalPages ||
+                          Math.abs(page - currentPage) <= 1
+                        );
+                      })
+                      .map((page, idx, arr) => {
+                        const prev = arr[idx - 1];
+                        const showEllipsis = prev && page - prev > 1;
+
+                        return (
+                          <React.Fragment key={page}>
+                            {showEllipsis && <span className="px-1 text-slate-600">...</span>}
+                            <button
+                              onClick={() => setCurrentPage(page)}
+                              className={`w-8 h-8 rounded-lg font-semibold transition text-xs cursor-pointer ${
+                                currentPage === page
+                                  ? "bg-purple-600 text-white shadow-md shadow-purple-950/50"
+                                  : "bg-slate-900 hover:bg-slate-800 text-slate-400 border border-slate-800"
+                              }`}
+                            >
+                              {page}
+                            </button>
+                          </React.Fragment>
+                        );
+                      })}
+
+                    <button
+                      onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                      className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed border border-slate-800 rounded-lg text-slate-300 transition cursor-pointer"
+                    >
+                      Next ›
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* View Software Details Modal */}
+          {viewingItem && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xs">
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                  <h3 className="text-lg font-bold text-white">Software Product Details</h3>
+                  <button
+                    type="button"
+                    onClick={() => setViewingItem(null)}
+                    className="text-slate-400 hover:text-white cursor-pointer"
                   >
-                    {imageSrc ? (
-                      // eslint-disable-next-line @next/next/no-img-element
+                    ✕
+                  </button>
+                </div>
+
+                <div className="space-y-4 text-xs">
+                  {viewingItem.image && (
+                    <div className="w-full h-48 relative bg-slate-950 rounded-xl overflow-hidden border border-slate-800">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={imageSrc}
-                        alt={software.title}
-                        className="aspect-video w-full border-b border-slate-800 bg-slate-950 object-cover"
+                        src={getImageUrl(viewingItem.image)}
+                        alt={viewingItem.title}
+                        className="w-full h-full object-cover"
                       />
-                    ) : (
-                      <div className="flex aspect-video w-full items-center justify-center border-b border-slate-800 bg-slate-950/70 text-sm font-black text-purple-400">
-                        SW
-                      </div>
-                    )}
-
-                    <div className="flex min-h-52 flex-col justify-between p-6">
-                      <div>
-                        <div className="mb-3 flex items-start justify-between gap-3">
-                          <h3 className="text-lg font-bold text-white">{software.title}</h3>
-                          <span
-                            className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-bold ${
-                              software.is_active
-                                ? "border-emerald-500/30 bg-emerald-500/20 text-emerald-300"
-                                : "border-slate-700 bg-slate-800 text-slate-500"
-                            }`}
-                          >
-                            {software.is_active ? "Active" : "Hidden"}
-                          </span>
-                        </div>
-                        {software.slogan && (
-                          <p className="mb-3 text-xs font-medium text-purple-300/80">
-                            {software.slogan}
-                          </p>
-                        )}
-                        <p className="text-xs leading-relaxed text-slate-400">
-                          {software.description || "No description provided."}
-                        </p>
-                      </div>
-
-                      <div className="mt-6 flex items-center justify-end gap-1.5 border-t border-slate-800 pt-4">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setEditingItem(software);
-                            setSoftwareImageFile(null);
-                            setRemoveSoftwareImage(false);
-                            setSoftwareImageError(undefined);
-                            setIsModalOpen(true);
-                          }}
-                          title="Edit Software Product"
-                          className="p-2 bg-slate-800 hover:bg-slate-700 text-purple-400 hover:text-purple-300 rounded-lg border border-slate-700 transition cursor-pointer shadow-sm"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                          </svg>
-                        </button>
-                        <button
-                          type="button"
-                          disabled={isDeleting}
-                          onClick={() => void handleDelete(software.id)}
-                          title="Delete Software Product"
-                          className="p-2 bg-red-950/60 hover:bg-red-900/80 text-red-400 border border-red-900/50 rounded-lg transition cursor-pointer disabled:opacity-50 shadow-sm"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
-                      </div>
                     </div>
-                  </article>
-                );
-              })}
+                  )}
+
+                  <div>
+                    <span className="text-slate-500 uppercase tracking-wider text-[10px] font-bold block mb-0.5">Software Title</span>
+                    <p className="text-base font-bold text-white">{viewingItem.title}</p>
+                  </div>
+
+                  {viewingItem.slogan && (
+                    <div>
+                      <span className="text-slate-500 uppercase tracking-wider text-[10px] font-bold block mb-0.5">Tagline / Slogan</span>
+                      <p className="text-purple-300/90 font-medium">{viewingItem.slogan}</p>
+                    </div>
+                  )}
+
+                  <div>
+                    <span className="text-slate-500 uppercase tracking-wider text-[10px] font-bold block mb-0.5">Description</span>
+                    <p className="text-slate-300 leading-relaxed whitespace-pre-line">
+                      {viewingItem.description || "No description provided."}
+                    </p>
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-800">
+                    <span className="text-slate-500 block text-[10px] font-bold">Status</span>
+                    <span
+                      className={`inline-block px-2 py-0.5 text-[10px] font-bold rounded-full border uppercase tracking-wider mt-0.5 ${
+                        viewingItem.is_active
+                          ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
+                          : "bg-slate-800 text-slate-500 border-slate-700"
+                      }`}
+                    >
+                      {viewingItem.is_active ? "Active" : "Hidden"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setViewingItem(null)}
+                    className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-semibold hover:bg-slate-700 cursor-pointer"
+                  >
+                    Close
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const toEdit = viewingItem;
+                      setViewingItem(null);
+                      setEditingItem(toEdit);
+                      setSoftwareImageFile(null);
+                      setRemoveSoftwareImage(false);
+                      setSoftwareImageError(undefined);
+                      setIsModalOpen(true);
+                    }}
+                    className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-semibold shadow-lg transition cursor-pointer"
+                  >
+                    Edit Product
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 

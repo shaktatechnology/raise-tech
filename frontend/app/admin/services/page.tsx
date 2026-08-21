@@ -51,6 +51,11 @@ export default function AdminServicesPage() {
   // Modal / Form state for Service create/edit
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [editingService, setEditingService] = useState<Partial<ServiceData> | null>(null);
+  const [viewingService, setViewingService] = useState<ServiceData | null>(null);
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const ITEMS_PER_PAGE = 5;
+
   const [serviceImageFile, setServiceImageFile] = useState<File | null>(null);
   const [removeServiceImage, setRemoveServiceImage] = useState(false);
   const [serviceImageError, setServiceImageError] = useState<string>();
@@ -89,6 +94,36 @@ export default function AdminServicesPage() {
     const timeoutId = window.setTimeout(() => void loadServices(), 0);
     return () => window.clearTimeout(timeoutId);
   }, [loadServices]);
+
+  const filteredServices = React.useMemo(() => {
+    if (!searchTerm.trim()) return services;
+    const q = searchTerm.toLowerCase();
+    return services.filter(
+      (s) =>
+        s.title.toLowerCase().includes(q) ||
+        (s.slogan && s.slogan.toLowerCase().includes(q)) ||
+        s.description.toLowerCase().includes(q)
+    );
+  }, [services, searchTerm]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredServices.length / ITEMS_PER_PAGE));
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedServices = filteredServices.slice(
+    startIndex,
+    startIndex + ITEMS_PER_PAGE
+  );
+
+  // Reset to page 1 on search change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  // Adjust page if out of bounds
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   // POST /api/services/header (multipart/form-data)
   const handleSaveHeader = async (e: React.FormEvent) => {
@@ -319,6 +354,26 @@ export default function AdminServicesPage() {
             </div>
           </form>
 
+          {/* Search Controls */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
+            <div className="relative w-full sm:w-80">
+              <input
+                type="text"
+                placeholder="Search services by title, slogan, or description..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
+              />
+              <svg className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+
+            <div className="text-xs text-slate-400">
+              Total: <span className="text-white font-bold">{filteredServices.length}</span> services
+            </div>
+          </div>
+
           {/* Loading & Error States */}
           {loading ? (
             <div className="py-20 text-center text-slate-500 space-y-3">
@@ -329,94 +384,299 @@ export default function AdminServicesPage() {
             <div className="p-4 bg-red-500/10 border border-red-500/30 text-red-400 text-xs rounded-xl text-center">
               {error}
             </div>
-          ) : services.length === 0 ? (
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center text-slate-500">
-              No services found. Click &quot;+ Add New Service&quot; above to create one.
-            </div>
           ) : (
-            /* Service Items Grid */
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {services.map((item) => {
-                const isActive = Boolean(item.is_active);
-                const imageUrl = getImageUrl(item.image);
+            /* Services Table */
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+              <table className="w-full text-left text-xs text-slate-300">
+                <thead className="bg-slate-950/80 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
+                  <tr>
+                    <th className="py-3 px-3 text-center w-14">S.No</th>
+                    <th className="py-3 px-3">Service Details</th>
+                    <th className="py-3 px-3 w-20 text-center">Order</th>
+                    <th className="py-3 px-3 w-24 text-center">Status</th>
+                    <th className="py-3 px-3 text-center w-32 whitespace-nowrap">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60">
+                  {paginatedServices.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-12 text-center text-slate-500">
+                        {services.length === 0
+                          ? 'No services found. Click "+ Add New Service" above to create one.'
+                          : 'No matching services found.'}
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedServices.map((item, index) => {
+                      const serialNumber = startIndex + index + 1;
+                      const isActive = Boolean(item.is_active);
+                      const imageUrl = getImageUrl(item.image);
 
-                return (
-                  <div
-                    key={item.id}
-                    className="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between hover:border-amber-500/40 transition overflow-hidden"
+                      return (
+                        <tr key={item.id} className="hover:bg-slate-800/40 transition-colors">
+                          <td className="py-3 px-3 text-center font-mono text-slate-400 font-semibold">
+                            {serialNumber}
+                          </td>
+                          <td className="py-3 px-3 min-w-0">
+                            <div className="flex items-center gap-3">
+                              <div className="w-12 h-12 bg-slate-950 rounded-lg border border-slate-800 overflow-hidden shrink-0 flex items-center justify-center">
+                                {imageUrl ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img
+                                    src={imageUrl}
+                                    alt={item.title}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <span className="text-amber-400 font-bold text-xs">
+                                    {item.title.substring(0, 2).toUpperCase()}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="font-bold text-white text-sm truncate" title={item.title}>
+                                  {item.title}
+                                </div>
+                                {item.slogan && (
+                                  <div className="text-amber-400/90 text-[11px] font-medium truncate" title={item.slogan}>
+                                    {item.slogan}
+                                  </div>
+                                )}
+                                <div className="text-[11px] text-slate-500 line-clamp-1 mt-0.5" title={item.description}>
+                                  {item.description}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-3 px-3 text-center">
+                            <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-md bg-slate-950 border border-slate-800 font-mono text-amber-400 font-bold text-xs">
+                              #{item.order}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 text-center whitespace-nowrap">
+                            <span
+                              className={`px-2.5 py-1 text-[10px] font-bold rounded-full border uppercase tracking-wider ${
+                                isActive
+                                  ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
+                                  : "bg-slate-800 text-slate-500 border-slate-700"
+                              }`}
+                            >
+                              {isActive ? "Active" : "Hidden"}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 text-center whitespace-nowrap">
+                            <div className="flex items-center justify-center gap-1.5">
+                              {/* View Button */}
+                              <button
+                                onClick={() => setViewingService(item)}
+                                title="View Service Details"
+                                className="p-1.5 bg-slate-800 hover:bg-slate-700 text-cyan-400 hover:text-cyan-300 rounded-lg border border-slate-700 transition cursor-pointer shadow-sm"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                              </button>
+
+                              {/* Edit Button */}
+                              <button
+                                onClick={() => {
+                                  setEditingService({
+                                    ...item,
+                                    is_active: Boolean(item.is_active),
+                                  });
+                                  setServiceImageFile(null);
+                                  setRemoveServiceImage(false);
+                                  setServiceImageError(undefined);
+                                  setIsModalOpen(true);
+                                }}
+                                title="Edit Service"
+                                className="p-1.5 bg-slate-800 hover:bg-slate-700 text-amber-400 hover:text-amber-300 rounded-lg border border-slate-700 transition cursor-pointer shadow-sm"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                              </button>
+
+                              {/* Delete Button */}
+                              <button
+                                onClick={() => handleDelete(item.id)}
+                                disabled={isDeleting}
+                                title="Delete Service"
+                                className="p-1.5 bg-red-950/60 hover:bg-red-900/80 text-red-400 border border-red-900/50 rounded-lg transition cursor-pointer disabled:opacity-50 shadow-sm"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+
+              {/* Pagination Controls */}
+              {filteredServices.length > 0 && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border-t border-slate-800/80 bg-slate-950/40 text-xs text-slate-400">
+                  <div>
+                    Showing <span className="text-white font-semibold">{startIndex + 1}</span> to{" "}
+                    <span className="text-white font-semibold">
+                      {Math.min(startIndex + ITEMS_PER_PAGE, filteredServices.length)}
+                    </span>{" "}
+                    of <span className="text-white font-semibold">{filteredServices.length}</span> services
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                      disabled={currentPage === 1}
+                      className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed border border-slate-800 rounded-lg text-slate-300 transition cursor-pointer"
+                    >
+                      ‹ Prev
+                    </button>
+
+                    {Array.from({ length: totalPages }, (_, i) => i + 1)
+                      .filter((page) => {
+                        return (
+                          page === 1 ||
+                          page === totalPages ||
+                          Math.abs(page - currentPage) <= 1
+                        );
+                      })
+                      .map((page, idx, arr) => {
+                        const prev = arr[idx - 1];
+                        const showEllipsis = prev && page - prev > 1;
+
+                        return (
+                          <React.Fragment key={page}>
+                            {showEllipsis && <span className="px-1 text-slate-600">...</span>}
+                            <button
+                              onClick={() => setCurrentPage(page)}
+                              className={`w-8 h-8 rounded-lg font-semibold transition text-xs cursor-pointer ${
+                                currentPage === page
+                                  ? "bg-amber-600 text-white shadow-md shadow-amber-950/50"
+                                  : "bg-slate-900 hover:bg-slate-800 text-slate-400 border border-slate-800"
+                              }`}
+                            >
+                              {page}
+                            </button>
+                          </React.Fragment>
+                        );
+                      })}
+
+                    <button
+                      onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                      className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed border border-slate-800 rounded-lg text-slate-300 transition cursor-pointer"
+                    >
+                      Next ›
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* View Service Details Modal */}
+          {viewingService && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xs">
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                  <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                    <span>Service Details</span>
+                    <span className="text-xs font-mono font-normal text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                      #{viewingService.order}
+                    </span>
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => setViewingService(null)}
+                    className="text-slate-400 hover:text-white cursor-pointer"
                   >
-                    <div>
-                      {/* Top Badges */}
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 font-bold flex items-center justify-center text-xs">
-                          #{item.order}
-                        </span>
-                        <span
-                          className={`px-2 py-0.5 text-[10px] font-bold rounded-full border uppercase tracking-wider ${
-                            isActive
-                              ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
-                              : "bg-slate-800 text-slate-500 border-slate-700"
-                          }`}
-                        >
-                          {isActive ? "Active" : "Hidden"}
-                        </span>
-                      </div>
+                    ✕
+                  </button>
+                </div>
 
-                      {/* Image Preview */}
-                      {imageUrl && (
-                        <div className="mb-4 w-full h-36 relative bg-slate-950 rounded-xl overflow-hidden border border-slate-800">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={imageUrl}
-                            alt={item.title}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      )}
-
-                      <h3 className="text-lg font-bold text-white mb-1">{item.title}</h3>
-                      {item.slogan && (
-                        <p className="text-amber-300/80 text-xs font-medium mb-2">{item.slogan}</p>
-                      )}
-                      <p className="text-slate-400 text-xs leading-relaxed line-clamp-4">
-                        {item.description}
-                      </p>
+                <div className="space-y-4 text-xs">
+                  {viewingService.image && (
+                    <div className="w-full h-48 relative bg-slate-950 rounded-xl overflow-hidden border border-slate-800">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={getImageUrl(viewingService.image)}
+                        alt={viewingService.title}
+                        className="w-full h-full object-cover"
+                      />
                     </div>
+                  )}
 
-                    {/* Actions Footer */}
-                    <div className="flex items-center justify-end gap-2 mt-6 pt-4 border-t border-slate-800">
-                      <button
-                        onClick={() => {
-                          setEditingService({
-                            ...item,
-                            is_active: Boolean(item.is_active),
-                          });
-                          setServiceImageFile(null);
-                          setRemoveServiceImage(false);
-                          setServiceImageError(undefined);
-                          setIsModalOpen(true);
-                        }}
-                        title="Edit Service"
-                        className="p-2 bg-slate-800 hover:bg-slate-700 text-amber-400 hover:text-amber-300 rounded-lg border border-slate-700 transition cursor-pointer shadow-sm"
+                  <div>
+                    <span className="text-slate-500 uppercase tracking-wider text-[10px] font-bold block mb-0.5">Title</span>
+                    <p className="text-base font-bold text-white">{viewingService.title}</p>
+                  </div>
+
+                  {viewingService.slogan && (
+                    <div>
+                      <span className="text-slate-500 uppercase tracking-wider text-[10px] font-bold block mb-0.5">Tagline / Slogan</span>
+                      <p className="text-amber-400/90 font-medium">{viewingService.slogan}</p>
+                    </div>
+                  )}
+
+                  <div>
+                    <span className="text-slate-500 uppercase tracking-wider text-[10px] font-bold block mb-0.5">Description</span>
+                    <p className="text-slate-300 leading-relaxed whitespace-pre-line">{viewingService.description}</p>
+                  </div>
+
+                  <div className="flex items-center gap-6 pt-2 border-t border-slate-800 text-xs">
+                    <div>
+                      <span className="text-slate-500 block text-[10px] font-bold">Display Order</span>
+                      <span className="text-white font-mono font-bold">#{viewingService.order}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block text-[10px] font-bold">Status</span>
+                      <span
+                        className={`inline-block px-2 py-0.5 text-[10px] font-bold rounded-full border uppercase tracking-wider mt-0.5 ${
+                          viewingService.is_active
+                            ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
+                            : "bg-slate-800 text-slate-500 border-slate-700"
+                        }`}
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
-                      </button>
-                      <button
-                        onClick={() => handleDelete(item.id)}
-                        disabled={isDeleting}
-                        title="Delete Service"
-                        className="p-2 bg-red-950/60 hover:bg-red-900/80 text-red-400 border border-red-900/50 rounded-lg transition cursor-pointer disabled:opacity-50 shadow-sm"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
+                        {viewingService.is_active ? "Active" : "Hidden"}
+                      </span>
                     </div>
                   </div>
-                );
-              })}
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setViewingService(null)}
+                    className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-semibold hover:bg-slate-700 cursor-pointer"
+                  >
+                    Close
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const toEdit = viewingService;
+                      setViewingService(null);
+                      setEditingService({
+                        ...toEdit,
+                        is_active: Boolean(toEdit.is_active),
+                      });
+                      setServiceImageFile(null);
+                      setRemoveServiceImage(false);
+                      setServiceImageError(undefined);
+                      setIsModalOpen(true);
+                    }}
+                    className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-semibold shadow-lg transition cursor-pointer"
+                  >
+                    Edit Service
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 
