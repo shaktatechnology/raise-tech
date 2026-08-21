@@ -63,6 +63,9 @@ export default function AdminServicesPage() {
   const [isOptimizingServiceImage, setIsOptimizingServiceImage] = useState(false);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
+  type ServicesTab = "banner" | "services";
+  const [activeTab, setActiveTab] = useState<ServicesTab>("banner");
+
   const loadServices = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -256,36 +259,52 @@ export default function AdminServicesPage() {
             <div className="flex items-center gap-3">
               <button
                 onClick={loadServices}
-                className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-xs text-slate-300 font-semibold transition"
+                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-200 rounded-xl text-xs font-semibold transition"
               >
                 Refresh
-              </button>
-              <button
-                onClick={() => {
-                  setEditingService({
-                    title: "",
-                    slogan: "",
-                    description: "",
-                    order: services.length + 1,
-                    is_active: true,
-                  });
-                  setServiceImageFile(null);
-                  setRemoveServiceImage(false);
-                  setServiceImageError(undefined);
-                  setIsModalOpen(true);
-                }}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-amber-950/40 transition cursor-pointer"
-              >
-                + Add New Service
               </button>
             </div>
           </div>
 
+          {/* Tab Navigation Buttons */}
+          <div className="flex items-center gap-2 border-b border-slate-800 pb-4 overflow-x-auto">
+            <button
+              type="button"
+              onClick={() => setActiveTab("banner")}
+              className={`px-5 py-3 font-bold text-xs sm:text-sm rounded-xl transition-all cursor-pointer flex items-center gap-2.5 shrink-0 ${
+                activeTab === "banner"
+                  ? "bg-blue-500 text-white shadow-lg shadow-amber-900/40 ring-2 ring-amber-400/50"
+                  : "bg-slate-900/90 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800"
+              }`}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <span>Banner</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab("services")}
+              className={`px-5 py-3 font-bold text-xs sm:text-sm rounded-xl transition-all cursor-pointer flex items-center gap-2.5 shrink-0 ${
+                activeTab === "services"
+                  ? "bg-blue-500 text-white shadow-lg shadow-amber-900/40 ring-2 ring-amber-400/50"
+                  : "bg-slate-900/90 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800"
+              }`}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+              </svg>
+              <span>Services ({services.length})</span>
+            </button>
+          </div>
+
           {/* Service Page Header Settings Banner */}
-          <form
-            onSubmit={handleSaveHeader}
-            className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4"
-          >
+          {activeTab === "banner" && (
+            <form
+              onSubmit={handleSaveHeader}
+              className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4 animate-in fade-in duration-200"
+            >
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold text-amber-400 uppercase tracking-wider">
                 Services Page Banner Header Settings
@@ -353,9 +372,34 @@ export default function AdminServicesPage() {
               </button>
             </div>
           </form>
+          )}
 
-          {/* Search Controls */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
+          {/* Services Tab Content */}
+          {activeTab === "services" && (
+            <div className="space-y-6 animate-in fade-in duration-200">
+              <div className="flex justify-end">
+                <button
+                  onClick={() => {
+                    setEditingService({
+                      title: "",
+                      slogan: "",
+                      description: "",
+                      order: services.length + 1,
+                      is_active: true,
+                    });
+                    setServiceImageFile(null);
+                    setRemoveServiceImage(false);
+                    setServiceImageError(undefined);
+                    setIsModalOpen(true);
+                  }}
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-400 text-white rounded-xl text-xs font-semibold shadow-lg shadow-blue-950/40 transition cursor-pointer"
+                >
+                  + Add New Service
+                </button>
+              </div>
+
+              {/* Search Controls */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
             <div className="relative w-full sm:w-80">
               <input
                 type="text"
@@ -578,6 +622,8 @@ export default function AdminServicesPage() {
                 </div>
               )}
             </div>
+          )}
+          </div>
           )}
 
           {/* View Service Details Modal */}

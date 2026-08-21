@@ -73,6 +73,9 @@ export default function AdminPortfolioPage() {
   const [isOptimizingItemImage, setIsOptimizingItemImage] = useState(false);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
+  type PortfolioTab = "banner" | "portfolio";
+  const [activeTab, setActiveTab] = useState<PortfolioTab>("banner");
+
   const loadPortfolioData = useCallback(async () => {
     setLoading(true);
     try {
@@ -262,19 +265,44 @@ export default function AdminPortfolioPage() {
               Manage the public portfolio hero banner and project case study showcase.
             </p>
           </div>
+        </div>
+
+        {/* Tab Navigation Buttons */}
+        <div className="flex items-center gap-2 border-b border-slate-800 pb-4 overflow-x-auto">
           <button
-            onClick={handleOpenCreate}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-sm rounded-xl transition shadow-sm cursor-pointer"
+            type="button"
+            onClick={() => setActiveTab("banner")}
+            className={`px-5 py-3 font-bold text-xs sm:text-sm rounded-xl transition-all cursor-pointer flex items-center gap-2.5 shrink-0 ${
+              activeTab === "banner"
+                ? "bg-cyan-600 text-white shadow-lg shadow-cyan-900/40 ring-2 ring-cyan-400/50"
+                : "bg-slate-900/90 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800"
+            }`}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
-            Add New Project
+            <span>Banner</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("portfolio")}
+            className={`px-5 py-3 font-bold text-xs sm:text-sm rounded-xl transition-all cursor-pointer flex items-center gap-2.5 shrink-0 ${
+              activeTab === "portfolio"
+                ? "bg-cyan-600 text-white shadow-lg shadow-cyan-900/40 ring-2 ring-cyan-400/50"
+                : "bg-slate-900/90 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800"
+            }`}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+            </svg>
+            <span>Portfolio ({portfolioItems.length})</span>
           </button>
         </div>
 
         {/* Section 1: Portfolio Hero Banner */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-sm">
+        {activeTab === "banner" && (
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-sm animate-in fade-in duration-200">
           <h2 className="text-lg font-bold text-white mb-1 flex items-center gap-2">
             🖼️ Portfolio Page Hero Banner
           </h2>
@@ -346,9 +374,11 @@ export default function AdminPortfolioPage() {
             </div>
           </form>
         </div>
+        )}
 
         {/* Section 2: Portfolio Case Studies */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+        {activeTab === "portfolio" && (
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-sm space-y-4 animate-in fade-in duration-200">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h2 className="text-lg font-bold text-white flex items-center gap-2">
@@ -563,6 +593,7 @@ export default function AdminPortfolioPage() {
             </div>
           )}
         </div>
+        )}
 
         {/* View Project Details Modal */}
         {viewingItem && (

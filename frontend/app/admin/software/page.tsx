@@ -55,6 +55,9 @@ export default function AdminSoftwarePage() {
   const [softwareImageError, setSoftwareImageError] = useState<string>();
   const [isOptimizingSoftwareImage, setIsOptimizingSoftwareImage] = useState(false);
 
+  type SoftwareTab = "banner" | "software";
+  const [activeTab, setActiveTab] = useState<SoftwareTab>("banner");
+
   const resetHeroImageDraft = () => {
     setHeroImageFile(null);
     setRemoveHeroImage(false);
@@ -248,34 +251,50 @@ export default function AdminSoftwarePage() {
                 type="button"
                 onClick={() => void loadSoftwareData()}
                 disabled={loading}
-                className="rounded-xl border border-slate-800 bg-slate-900 px-3.5 py-2 text-xs font-semibold text-slate-300 transition hover:bg-slate-800 disabled:opacity-50"
+                className="rounded-xl border border-slate-800 bg-slate-900 px-4 py-2 text-xs font-semibold text-slate-200 transition hover:bg-slate-800 disabled:opacity-50"
               >
                 Refresh
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setEditingItem({
-                    title: "",
-                    slogan: "",
-                    description: "",
-                    is_active: true,
-                  });
-                  setSoftwareImageFile(null);
-                  setRemoveSoftwareImage(false);
-                  setSoftwareImageError(undefined);
-                  setIsModalOpen(true);
-                }}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-purple-600 px-4 py-2 text-xs font-semibold text-white shadow-lg shadow-purple-950/40 transition hover:bg-purple-500"
-              >
-                + Add Software Product
               </button>
             </div>
           </div>
 
+          {/* Tab Navigation Buttons */}
+          <div className="flex items-center gap-2 border-b border-slate-800 pb-4 overflow-x-auto">
+            <button
+              type="button"
+              onClick={() => setActiveTab("banner")}
+              className={`px-5 py-3 font-bold text-xs sm:text-sm rounded-xl transition-all cursor-pointer flex items-center gap-2.5 shrink-0 ${
+                activeTab === "banner"
+                  ? "bg-purple-600 text-white shadow-lg shadow-purple-900/40 ring-2 ring-purple-400/50"
+                  : "bg-slate-900/90 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800"
+              }`}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <span>Banner</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab("software")}
+              className={`px-5 py-3 font-bold text-xs sm:text-sm rounded-xl transition-all cursor-pointer flex items-center gap-2.5 shrink-0 ${
+                activeTab === "software"
+                  ? "bg-purple-600 text-white shadow-lg shadow-purple-900/40 ring-2 ring-purple-400/50"
+                  : "bg-slate-900/90 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800"
+              }`}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+              </svg>
+              <span>Software ({softwareList.length})</span>
+            </button>
+          </div>
+
+          {activeTab === "banner" && (
           <form
             onSubmit={handleUpdateHeroImage}
-            className="space-y-5 rounded-2xl border border-slate-800 bg-slate-900 p-6"
+            className="space-y-5 rounded-2xl border border-slate-800 bg-slate-900 p-6 animate-in fade-in duration-200"
           >
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-sm font-bold uppercase tracking-wider text-purple-400">
@@ -322,6 +341,30 @@ export default function AdminSoftwarePage() {
               </button>
             </div>
           </form>
+          )}
+
+          {activeTab === "software" && (
+            <div className="space-y-6 animate-in fade-in duration-200">
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingItem({
+                      title: "",
+                      slogan: "",
+                      description: "",
+                      is_active: true,
+                    });
+                    setSoftwareImageFile(null);
+                    setRemoveSoftwareImage(false);
+                    setSoftwareImageError(undefined);
+                    setIsModalOpen(true);
+                  }}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-purple-600 px-4 py-2 text-xs font-semibold text-white shadow-lg shadow-purple-950/40 transition hover:bg-purple-500"
+                >
+                  + Add Software Product
+                </button>
+              </div>
 
           {/* Search Controls */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
@@ -535,6 +578,8 @@ export default function AdminSoftwarePage() {
                 </div>
               )}
             </div>
+          )}
+          </div>
           )}
 
           {/* View Software Details Modal */}

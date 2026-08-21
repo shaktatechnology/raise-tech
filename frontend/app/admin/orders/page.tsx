@@ -21,6 +21,9 @@ export default function AdminOrdersPage() {
   const [isUpdatingStatus, setIsUpdatingStatus] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const itemsPerPage = 10;
+
   const { toast } = useToast();
   const { confirmDelete } = useDeleteConfirmation();
 
@@ -130,6 +133,13 @@ export default function AdminOrdersPage() {
         setSelectedOrder(null);
       }
 
+      // Calculate total pages for current state, if deletion empties a page, go back a page
+      const currentFiltered = orders.filter((o) => o.id !== orderId);
+      const newTotalPages = Math.ceil(currentFiltered.length / itemsPerPage);
+      if (currentPage > newTotalPages && newTotalPages > 0) {
+        setCurrentPage(newTotalPages);
+      }
+
       toast.success(successMsg);
     } catch (err: unknown) {
       toast.error(getErrorMessage(err, "Failed to delete order"));
@@ -150,6 +160,12 @@ export default function AdminOrdersPage() {
       o.shipping_address?.province.toLowerCase().includes(query)
     );
   });
+
+  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+  const paginatedOrders = filteredOrders.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   const getStatusBadge = (status: Order["status"]) => {
     switch (status) {
@@ -187,7 +203,10 @@ export default function AdminOrdersPage() {
               </p>
             </div>
             <button
-              onClick={() => loadOrders(filter)}
+              onClick={() => {
+                loadOrders(filter);
+                setCurrentPage(1);
+              }}
               className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-medium border border-slate-700 transition flex items-center gap-2 self-start sm:self-auto"
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -233,7 +252,10 @@ export default function AdminOrdersPage() {
                 type="text"
                 placeholder="Search by Order ID, customer, email..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
                 className="w-full pl-10 pr-4 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
               />
               <svg
@@ -255,7 +277,10 @@ export default function AdminOrdersPage() {
               <span className="sr-only">Filter orders by status</span>
               <select
                 value={filter}
-                onChange={(event) => setFilter(event.target.value)}
+                onChange={(event) => {
+                  setFilter(event.target.value);
+                  setCurrentPage(1);
+                }}
                 className="w-full cursor-pointer rounded-xl border border-slate-800 bg-slate-950 px-4 py-2.5 text-xs font-semibold capitalize text-slate-200 outline-none transition focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
               >
                 <option value="all">All orders</option>
@@ -294,14 +319,14 @@ export default function AdminOrdersPage() {
                         </div>
                       </td>
                     </tr>
-                  ) : filteredOrders.length === 0 ? (
+                  ) : paginatedOrders.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="py-12 text-center text-slate-500">
                         No orders matching criteria.
                       </td>
                     </tr>
                   ) : (
-                    filteredOrders.map((order) => (
+                    paginatedOrders.map((order) => (
                       <tr key={order.id} className="hover:bg-slate-800/40 transition-colors">
                         <td className="py-3.5 px-4 font-mono text-cyan-400 font-bold">
                           #{order.id}
@@ -386,6 +411,48 @@ export default function AdminOrdersPage() {
               </table>
             </div>
           </div>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-xl mt-4">
+              <span className="text-xs text-slate-400">
+                Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
+                {Math.min(currentPage * itemsPerPage, filteredOrders.length)} of{" "}
+                {filteredOrders.length} entries
+              </span>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1.5 bg-slate-800 text-slate-300 rounded-lg text-xs font-semibold disabled:opacity-50 hover:bg-slate-700 transition cursor-pointer"
+                >
+                  Previous
+                </button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs font-bold transition cursor-pointer ${
+                        currentPage === page
+                          ? "bg-cyan-500 text-slate-950"
+                          : "bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1.5 bg-slate-800 text-slate-300 rounded-lg text-xs font-semibold disabled:opacity-50 hover:bg-slate-700 transition cursor-pointer"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Modal View Details */}
           {selectedOrder && (
