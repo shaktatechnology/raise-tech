@@ -74,12 +74,12 @@ export default function PortfolioSection({ portfolio }: PortfolioSectionProps) {
 
                       {/* Hover Overlay — "View Case Study" */}
                       <div className="absolute inset-0 bg-slate-950/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center pointer-events-none gap-1.5">
-                        <div className="w-9 h-9 rounded-full bg-white/95 text-emerald-600 flex items-center justify-center shadow-lg transform scale-75 group-hover:scale-100 transition-transform duration-300">
+                        {/* <div className="w-9 h-9 rounded-full bg-white/95 text-emerald-600 flex items-center justify-center shadow-lg transform scale-75 group-hover:scale-100 transition-transform duration-300">
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                           </svg>
                         </div>
-                        <span className="text-white text-[10px] font-bold tracking-wide">View Project</span>
+                        <span className="text-white text-[10px] font-bold tracking-wide">View Project</span> */}
                       </div>
                     </motion.div>
                   </Link>
