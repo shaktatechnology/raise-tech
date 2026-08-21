@@ -53,6 +53,19 @@ body {
   }
 }
 
+@keyframes shine {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-shine {
+  animation: shine 1.2s ease-in-out;
+}
+
 @keyframes scaleUpFade {
   from {
     opacity: 0;

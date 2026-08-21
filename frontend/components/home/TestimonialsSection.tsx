@@ -19,6 +19,53 @@ function getInitials(name: string) {
     .join('');
 }
 
+const starsContainerVariants = {
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: 0.05,
+      delayChildren: 0.08,
+    },
+  },
+};
+
+const starVariants = {
+  hidden: { opacity: 0, scale: 0.4, rotate: -15 },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    rotate: 0,
+    transition: {
+      type: "spring",
+      stiffness: 300,
+      damping: 15,
+    },
+  },
+};
+
+const avatarsContainerVariants = {
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: 0.06,
+      delayChildren: 0.15,
+    },
+  },
+};
+
+const avatarVariants = {
+  hidden: { scale: 0, opacity: 0 },
+  visible: {
+    scale: 1,
+    opacity: 1,
+    transition: {
+      type: "spring",
+      stiffness: 300,
+      damping: 18,
+    },
+  },
+};
+
 export default function TestimonialsSection({ testimonials }: TestimonialsSectionProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const current = testimonials[activeIndex];
@@ -58,38 +105,64 @@ export default function TestimonialsSection({ testimonials }: TestimonialsSectio
             />
 
             {/* Trusted Clients Bottom Overlay */}
-            <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-white/80 shadow-md flex items-center gap-3">
+            <motion.div 
+              initial={{ opacity: 0, y: 15 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2, duration: 0.5 }}
+              className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-white/80 shadow-md flex items-center gap-3 select-none z-20"
+            >
               <span className="text-xs font-semibold text-gray-800 whitespace-nowrap">
                 Trusted Clients
               </span>
-              <div className="flex items-center -space-x-2">
-                <div className="w-7 h-7 rounded-full overflow-hidden border-2 border-white relative shrink-0">
+              <motion.div 
+                variants={avatarsContainerVariants}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
+                className="flex items-center -space-x-2"
+              >
+                <motion.div variants={avatarVariants} whileHover={{ y: -3, scale: 1.1, zIndex: 10 }} className="w-7 h-7 rounded-full overflow-hidden border-2 border-white relative shrink-0 cursor-pointer transition-transform duration-200">
                   <Image src="/images/home/avatar-1.png" alt="Client 1" fill className="object-cover" />
-                </div>
-                <div className="w-7 h-7 rounded-full overflow-hidden border-2 border-white relative shrink-0">
+                </motion.div>
+                <motion.div variants={avatarVariants} whileHover={{ y: -3, scale: 1.1, zIndex: 10 }} className="w-7 h-7 rounded-full overflow-hidden border-2 border-white relative shrink-0 cursor-pointer transition-transform duration-200">
                   <Image src="/images/home/avatar-2.png" alt="Client 2" fill className="object-cover" />
-                </div>
-                <div className="w-7 h-7 rounded-full overflow-hidden border-2 border-white relative shrink-0">
+                </motion.div>
+                <motion.div variants={avatarVariants} whileHover={{ y: -3, scale: 1.1, zIndex: 10 }} className="w-7 h-7 rounded-full overflow-hidden border-2 border-white relative shrink-0 cursor-pointer transition-transform duration-200">
                   <Image src="/images/home/avatar-3.png" alt="Client 3" fill className="object-cover" />
-                </div>
-                <div className="w-7 h-7 rounded-full bg-[#01A7E5] border-2 border-white flex items-center justify-center text-white text-xs font-bold shrink-0">
+                </motion.div>
+                <motion.div variants={avatarVariants} className="w-7 h-7 rounded-full bg-[#01A7E5] border-2 border-white flex items-center justify-center text-white text-xs font-bold shrink-0">
                   +
-                </div>
-              </div>
-            </div>
+                </motion.div>
+              </motion.div>
+            </motion.div>
           </Reveal>
-
+ 
           {/* Right Column: Cyan Testimonial Card */}
           <Reveal variant="slideRight" className="lg:col-span-7 flex flex-col justify-between">
-            <div className="bg-[#01A7E5] text-white p-8 sm:p-10 rounded-3xl shadow-xl relative min-h-[300px] flex flex-col justify-between overflow-hidden">
+            <motion.div 
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={0.15}
+              onDragEnd={(event, info) => {
+                if (info.offset.x < -60) {
+                  goToNext();
+                } else if (info.offset.x > 60) {
+                  goToPrev();
+                }
+              }}
+              whileHover={{ cursor: "grab" }}
+              whileTap={{ cursor: "grabbing" }}
+              className="bg-[#01A7E5] text-white p-8 sm:p-10 rounded-3xl shadow-xl relative min-h-[300px] flex flex-col justify-between overflow-hidden select-none active:cursor-grabbing"
+            >
               <AnimatePresence mode="wait">
                 <motion.div
                   key={activeIndex}
-                  initial={{ opacity: 0, x: 16 }}
+                  initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -16 }}
+                  exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-                  className="flex flex-col justify-between h-full space-y-6"
+                  className="flex flex-col justify-between h-full space-y-6 pointer-events-none"
                 >
                   <div>
                     {/* Header: Quote Icon & Stars */}
@@ -100,29 +173,35 @@ export default function TestimonialsSection({ testimonials }: TestimonialsSectio
                           <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
                         </svg>
                       </div>
-
+ 
                       {/* Star Rating (dynamic, from testimonial.rating) */}
-                      <div className="flex items-center gap-1 text-white">
+                      <motion.div 
+                        variants={starsContainerVariants}
+                        initial="hidden"
+                        animate="visible"
+                        className="flex items-center gap-1 text-white"
+                      >
                         {[...Array(5)].map((_, i) => (
-                          <svg
+                          <motion.svg
                             key={i}
+                            variants={starVariants}
                             className={`w-5 h-5 fill-current ${
                               i < current.rating ? 'opacity-100' : 'opacity-30'
                             }`}
                             viewBox="0 0 20 20"
                           >
                             <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                          </svg>
+                          </motion.svg>
                         ))}
-                      </div>
+                      </motion.div>
                     </div>
-
+ 
                     {/* Testimonial Quote */}
                     <blockquote className="text-white text-sm sm:text-base font-normal leading-relaxed">
                       {current.description}
                     </blockquote>
                   </div>
-
+ 
                   {/* Author Info */}
                   <div className="flex items-center gap-4 pt-4 border-t border-white/20">
                     <div className="w-12 h-12 rounded-full bg-white/20 border-2 border-white flex items-center justify-center font-bold text-white text-base shrink-0">
@@ -137,7 +216,7 @@ export default function TestimonialsSection({ testimonials }: TestimonialsSectio
                   </div>
                 </motion.div>
               </AnimatePresence>
-            </div>
+            </motion.div>
 
             {/* Swipe Navigation (only when there's more than one testimonial) */}
             {testimonials.length > 1 && (

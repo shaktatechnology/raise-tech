@@ -6,6 +6,7 @@ import type { HomeService } from '@/lib/types/home';
 import Reveal from '@/components/motion/Reveal';
 import StaggerGroup from '@/components/motion/StaggerGroup';
 import StaggerItem from '@/components/motion/StaggerItem';
+import { motion } from 'motion/react';
 
 const SERVICE_ICONS = [
   '/images/home/service-1.png',
@@ -44,11 +45,41 @@ export default function ServicesSection({ services }: ServicesSectionProps) {
 
               return (
                 <StaggerItem key={service.id}>
-                  <div
-                    className={`group relative block h-full p-6 sm:p-7 rounded-2xl transition-all duration-300 transform hover:-translate-y-1.5 hover:shadow-xl ${
+                  <motion.div
+                    whileHover={isActive ? {
+                      y: -8,
+                      scale: 1.025,
+                      boxShadow: "0 24px 38px -8px rgba(1, 167, 229, 0.45), 0 10px 15px -8px rgba(1, 167, 229, 0.3)"
+                    } : {
+                      y: -8,
+                      scale: 1.025,
+                      boxShadow: "0 24px 30px -10px rgba(1, 167, 229, 0.15), 0 10px 15px -8px rgba(0, 0, 0, 0.05)",
+                      borderColor: "rgba(1, 167, 229, 0.25)"
+                    }}
+                    animate={isActive ? {
+                      boxShadow: [
+                        "0 4px 6px -1px rgba(1, 167, 229, 0.15), 0 2px 4px -1px rgba(1, 167, 229, 0.1)",
+                        "0 12px 24px -4px rgba(1, 167, 229, 0.35), 0 6px 12px -4px rgba(1, 167, 229, 0.2)",
+                        "0 4px 6px -1px rgba(1, 167, 229, 0.15), 0 2px 4px -1px rgba(1, 167, 229, 0.1)"
+                      ]
+                    } : undefined}
+                    transition={isActive ? {
+                      boxShadow: {
+                        duration: 3,
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                      },
+                      y: { type: "spring", stiffness: 350, damping: 20 },
+                      scale: { type: "spring", stiffness: 350, damping: 20 }
+                    } : {
+                      type: "spring",
+                      stiffness: 350,
+                      damping: 20
+                    }}
+                    className={`group relative block h-full p-6 sm:p-7 rounded-2xl border ${
                       isActive
-                        ? 'bg-[#01A7E5] text-white shadow-md'
-                        : 'bg-white text-[#404040] border border-cyan-50 shadow-xs hover:border-[#01A7E5]/30'
+                        ? 'bg-[#01A7E5] text-white border-transparent'
+                        : 'bg-white text-[#404040] border-cyan-50 shadow-xs'
                     }`}
                   >
                     {/* Circular Icon Container with Micro-scale on Hover */}
@@ -71,7 +102,7 @@ export default function ServicesSection({ services }: ServicesSectionProps) {
 
                     {/* Service Title */}
                     <h3
-                      className={`text-lg font-bold mb-3 transition-colors ${
+                      className={`text-lg font-bold mb-3 transition-colors duration-200 ${
                         isActive ? 'text-white' : 'text-[#404040] group-hover:text-[#01A7E5]'
                       }`}
                     >
@@ -85,7 +116,7 @@ export default function ServicesSection({ services }: ServicesSectionProps) {
                       }`}
                       dangerouslySetInnerHTML={{ __html: service.description }}
                     />
-                  </div>
+                  </motion.div>
                 </StaggerItem>
               );
             })}
