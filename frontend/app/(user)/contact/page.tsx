@@ -195,7 +195,7 @@ export default function ContactPage() {
                     <div>
                       <h3 className="text-lg font-bold text-gray-900">Headquarters</h3>
                       <p className="text-gray-600 text-sm mt-1">{CONTACT_INFO.companyName}</p>
-                      <p className="text-gray-500 text-sm mt-0.5">{CONTACT_INFO.address}</p>
+                      <p className="text-gray-500 text-sm mt-0.5">{settings?.location || CONTACT_INFO.address}</p>
                     </div>
                   </div>
                 </div>
@@ -212,18 +212,36 @@ export default function ContactPage() {
                     </div>
                     <div>
                       <h3 className="text-lg font-bold text-gray-900">Email & Phone</h3>
-                      <p className="text-gray-600 text-sm mt-1">
-                        <span className="font-medium text-gray-900">Email: </span>
-                        <a href={`mailto:${CONTACT_INFO.email}`} className="text-[#01A7E5] hover:underline">
-                          {CONTACT_INFO.email}
-                        </a>
-                      </p>
-                      <p className="text-gray-600 text-sm mt-0.5">
-                        <span className="font-medium text-gray-900">Phone: </span>
-                        <a href={`tel:${CONTACT_INFO.phone}`} className="text-gray-700 hover:text-[#01A7E5]">
-                          {CONTACT_INFO.phone}
-                        </a>
-                      </p>
+                      <div className="text-gray-600 text-sm mt-1 flex flex-col gap-1">
+                        <div>
+                          <span className="font-medium text-gray-900">Email: </span>
+                          <a href={`mailto:${settings?.email1 || CONTACT_INFO.email}`} className="text-[#01A7E5] hover:underline">
+                            {settings?.email1 || CONTACT_INFO.email}
+                          </a>
+                          {settings?.email2 && (
+                            <>
+                              <span className="mx-2">|</span>
+                              <a href={`mailto:${settings.email2}`} className="text-[#01A7E5] hover:underline">
+                                {settings.email2}
+                              </a>
+                            </>
+                          )}
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-900">Phone: </span>
+                          <a href={`tel:${settings?.phone1 || CONTACT_INFO.phone}`} className="text-gray-700 hover:text-[#01A7E5]">
+                            {settings?.phone1 || CONTACT_INFO.phone}
+                          </a>
+                          {settings?.phone2 && (
+                            <>
+                              <span className="mx-2">|</span>
+                              <a href={`tel:${settings.phone2}`} className="text-gray-700 hover:text-[#01A7E5]">
+                                {settings.phone2}
+                              </a>
+                            </>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -382,7 +400,7 @@ export default function ContactPage() {
         <Reveal variant="fadeUp" className="mt-8 bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
           <div className="p-6 sm:p-8 pb-4">
             <h3 className="text-lg font-bold text-gray-900">Find Us on the Map</h3>
-            <p className="text-gray-500 text-sm mt-1">{CONTACT_INFO.address}</p>
+            <p className="text-gray-500 text-sm mt-1">{settings?.location || CONTACT_INFO.address}</p>
           </div>
 
           <div className="w-full h-72 sm:h-96 bg-gray-100">
