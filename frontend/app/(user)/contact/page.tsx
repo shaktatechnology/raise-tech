@@ -453,7 +453,7 @@ export default function ContactPage() {
             {CONTACT_FAQS.map((faq, idx) => (
               <div key={idx} className="p-5 bg-gray-50 rounded-xl border border-gray-100 transition-all duration-300 hover:shadow-md hover:border-[#01A7E5]/30">
                 <h4 className="font-semibold text-gray-900 text-sm mb-2">{faq.question}</h4>
-                <p className="text-gray-600 text-xs leading-relaxed">{faq.answer}</p>
+                <p className="text-gray-600 text-xs leading-relaxed text-justify">{faq.answer}</p>
               </div>
             ))}
           </div>

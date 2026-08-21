@@ -125,7 +125,7 @@ export default function SoftwareProductsGrid() {
 
                       {item.description && (
                         <div
-                          className="text-sm text-gray-600 leading-relaxed mb-6 line-clamp-4 [&_p]:m-0 [&_p]:inline"
+                          className="text-sm text-gray-600 leading-relaxed mb-6 line-clamp-4 text-justify [&_p]:m-0 [&_p]:inline"
                           dangerouslySetInnerHTML={{ __html: item.description }}
                         />
                       )}

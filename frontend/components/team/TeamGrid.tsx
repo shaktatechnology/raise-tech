@@ -96,7 +96,7 @@ export default function TeamGrid() {
                       <p className="text-sm font-normal italic text-gray-700 mt-1 mb-3">
                         {member.position}
                       </p>
-                      <p className="text-sm font-normal italic text-[#3c3c3c] leading-relaxed">
+                      <p className="text-sm font-normal italic text-[#3c3c3c] leading-relaxed text-justify">
                         {member.description || ""}
                       </p>
                     </div>

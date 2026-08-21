@@ -105,7 +105,7 @@ export default function WhyChooseUsSection({ items }: WhyChooseUsSectionProps) {
                     </h3>
 
                     <div
-                      className={`text-sm leading-relaxed italic [&_p]:m-0 [&_p]:inline ${
+                      className={`text-sm leading-relaxed italic text-justify [&_p]:m-0 [&_p]:inline ${
                         isBlue ? 'text-cyan-50' : 'text-gray-600'
                       }`}
                       dangerouslySetInnerHTML={{ __html: card.description }}

@@ -142,7 +142,7 @@ export default function Footer() {
               </motion.div>
             </Link>
 
-            <p className="text-xs leading-relaxed text-gray-500 max-w-xs">
+            <p className="text-xs leading-relaxed text-gray-500 max-w-xs text-justify">
               {settings?.short_description ||
                 "We provide comprehensive IT solutions including AI, Robotics, Automation, Web and App development, Digital Marketing, and more. With a focus on innovation and quality, we help businesses embrace the future of technology with confidence."}
             </p>
@@ -164,9 +164,8 @@ export default function Footer() {
                 <li key={item.href}>
                   <Link
                     href={item.href}
-                    className="group inline-flex items-center gap-2 hover:text-[#01A7E5] hover:translate-x-1.5 transition-all duration-200"
+                    className="group inline-flex items-center hover:text-[#01A7E5] hover:translate-x-1.5 transition-all duration-200"
                   >
-                    <span className="w-1.5 h-1.5 rounded-full bg-gray-300 group-hover:bg-[#01A7E5] group-hover:scale-125 transition-all duration-200" />
                     <span className="multicolor-text-hover">{item.label}</span>
                   </Link>
                 </li>
