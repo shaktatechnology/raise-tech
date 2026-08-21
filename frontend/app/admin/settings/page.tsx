@@ -61,6 +61,8 @@ export default function AdminSettingsPage() {
     tiktok_url: "",
     whatsapp_url: "",
     is_cod_enabled: true,
+    is_standard_delivery_enabled: true,
+    is_express_delivery_enabled: true,
     standard_delivery_charge: "100",
     express_delivery_charge: "250",
   });
@@ -106,6 +108,8 @@ export default function AdminSettingsPage() {
           tiktok_url: res.setting.tiktok_url || "",
           whatsapp_url: res.setting.whatsapp_url || "",
           is_cod_enabled: res.setting.is_cod_enabled ?? true,
+          is_standard_delivery_enabled: res.setting.is_standard_delivery_enabled ?? true,
+          is_express_delivery_enabled: res.setting.is_express_delivery_enabled ?? true,
           standard_delivery_charge: res.setting.standard_delivery_charge != null ? String(res.setting.standard_delivery_charge) : "100",
           express_delivery_charge: res.setting.express_delivery_charge != null ? String(res.setting.express_delivery_charge) : "250",
         });
@@ -154,6 +158,8 @@ export default function AdminSettingsPage() {
       formData.append("tiktok_url", settings.tiktok_url || "");
       formData.append("whatsapp_url", settings.whatsapp_url || "");
       formData.append("is_cod_enabled", settings.is_cod_enabled ? "1" : "0");
+      formData.append("is_standard_delivery_enabled", settings.is_standard_delivery_enabled ? "1" : "0");
+      formData.append("is_express_delivery_enabled", settings.is_express_delivery_enabled ? "1" : "0");
       formData.append(
         "standard_delivery_charge",
         settings.standard_delivery_charge !== undefined && settings.standard_delivery_charge !== null && settings.standard_delivery_charge !== ""
@@ -526,38 +532,79 @@ export default function AdminSettingsPage() {
                     </div>
                   </div>
 
-                  <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
-                    <h3 className="text-sm font-bold text-emerald-400 uppercase tracking-wider">
-                      E-Commerce Delivery Parameters
-                    </h3>
+                  <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-5">
+                    <div>
+                      <h3 className="text-sm font-bold text-emerald-400 uppercase tracking-wider">
+                        E-Commerce Delivery Options & Charges
+                      </h3>
+                      <p className="text-xs text-slate-400 mt-1">
+                        Select which delivery methods are available for customer orders. If both options are unchecked, the delivery method step will not appear at checkout and delivery will be free.
+                      </p>
+                    </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs pt-1">
-                      <div>
-                        <label className="block text-slate-400 mb-1">Standard Delivery Charge (NPR)</label>
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={settings.standard_delivery_charge ?? ""}
-                          onChange={(e) => setSettings({ ...settings, standard_delivery_charge: e.target.value })}
-                          className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
-                          placeholder="100"
-                        />
-                        <p className="text-[11px] text-slate-500 mt-1">Default fee applied when standard delivery is selected at checkout.</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-1">
+                      {/* Standard Delivery Card */}
+                      <div className={`p-4 rounded-xl border transition-all ${
+                        settings.is_standard_delivery_enabled
+                          ? "bg-slate-950/80 border-slate-700 shadow-xs"
+                          : "bg-slate-950/30 border-slate-800/60 opacity-60"
+                      }`}>
+                        <label className="flex items-center gap-3 cursor-pointer text-xs font-semibold text-white mb-3 select-none">
+                          <input
+                            type="checkbox"
+                            checked={settings.is_standard_delivery_enabled ?? true}
+                            onChange={(e) => setSettings({ ...settings, is_standard_delivery_enabled: e.target.checked })}
+                            className="w-4 h-4 rounded text-emerald-500 focus:ring-emerald-500"
+                          />
+                          <span>Enable Standard Delivery</span>
+                        </label>
+
+                        <div>
+                          <label className="block text-slate-400 text-xs mb-1">Standard Delivery Charge (NPR)</label>
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            disabled={!settings.is_standard_delivery_enabled}
+                            value={settings.standard_delivery_charge ?? "100"}
+                            onChange={(e) => setSettings({ ...settings, standard_delivery_charge: e.target.value })}
+                            className="w-full p-2.5 bg-slate-900 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-xs"
+                            placeholder="100"
+                          />
+                          <p className="text-[11px] text-slate-500 mt-1">Fee applied when standard delivery is selected.</p>
+                        </div>
                       </div>
 
-                      <div>
-                        <label className="block text-slate-400 mb-1">Express Delivery Charge (NPR)</label>
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={settings.express_delivery_charge ?? ""}
-                          onChange={(e) => setSettings({ ...settings, express_delivery_charge: e.target.value })}
-                          className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
-                          placeholder="250"
-                        />
-                        <p className="text-[11px] text-slate-500 mt-1">Fee applied when express delivery is selected at checkout.</p>
+                      {/* Express Delivery Card */}
+                      <div className={`p-4 rounded-xl border transition-all ${
+                        settings.is_express_delivery_enabled
+                          ? "bg-slate-950/80 border-slate-700 shadow-xs"
+                          : "bg-slate-950/30 border-slate-800/60 opacity-60"
+                      }`}>
+                        <label className="flex items-center gap-3 cursor-pointer text-xs font-semibold text-white mb-3 select-none">
+                          <input
+                            type="checkbox"
+                            checked={settings.is_express_delivery_enabled ?? true}
+                            onChange={(e) => setSettings({ ...settings, is_express_delivery_enabled: e.target.checked })}
+                            className="w-4 h-4 rounded text-emerald-500 focus:ring-emerald-500"
+                          />
+                          <span>Enable Express Priority Delivery</span>
+                        </label>
+
+                        <div>
+                          <label className="block text-slate-400 text-xs mb-1">Express Delivery Charge (NPR)</label>
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            disabled={!settings.is_express_delivery_enabled}
+                            value={settings.express_delivery_charge ?? "250"}
+                            onChange={(e) => setSettings({ ...settings, express_delivery_charge: e.target.value })}
+                            className="w-full p-2.5 bg-slate-900 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-xs"
+                            placeholder="250"
+                          />
+                          <p className="text-[11px] text-slate-500 mt-1">Fee applied when express delivery is selected.</p>
+                        </div>
                       </div>
                     </div>
                   </div>

@@ -13,6 +13,8 @@ class SettingController extends Controller
     public function index()
     {
         $setting = Setting::first() ?? Setting::create([
+            'is_standard_delivery_enabled' => true,
+            'is_express_delivery_enabled' => true,
             'standard_delivery_charge' => 100.00,
             'express_delivery_charge' => 250.00,
         ]);
@@ -27,6 +29,8 @@ class SettingController extends Controller
     public function update(UpdateSettingsRequest $request, ManagedImageStorage $images)
     {
         $setting = Setting::first() ?? Setting::create([
+            'is_standard_delivery_enabled' => true,
+            'is_express_delivery_enabled' => true,
             'standard_delivery_charge' => 100.00,
             'express_delivery_charge' => 250.00,
         ]);

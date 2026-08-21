@@ -23,6 +23,8 @@ class UpdateSettingsRequest extends FormRequest
             'location' => ['nullable', 'string', 'max:500'],
             'map_url' => ['nullable', 'url'],
             'is_cod_enabled' => ['sometimes', 'boolean'],
+            'is_standard_delivery_enabled' => ['sometimes', 'boolean'],
+            'is_express_delivery_enabled' => ['sometimes', 'boolean'],
             'standard_delivery_charge' => ['nullable', 'numeric', 'min:0'],
             'express_delivery_charge' => ['nullable', 'numeric', 'min:0'],
             'logo' => ['nullable', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],

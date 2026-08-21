@@ -26,6 +26,8 @@ class Setting extends Model
         'location',
         'map_url',
         'is_cod_enabled',
+        'is_standard_delivery_enabled',
+        'is_express_delivery_enabled',
         'standard_delivery_charge',
         'express_delivery_charge',
         'payment_methods',
@@ -35,6 +37,8 @@ class Setting extends Model
     {
         return [
             'is_cod_enabled' => 'boolean',
+            'is_standard_delivery_enabled' => 'boolean',
+            'is_express_delivery_enabled' => 'boolean',
             'standard_delivery_charge' => 'decimal:2',
             'express_delivery_charge' => 'decimal:2',
             'payment_methods' => 'array',
