@@ -149,6 +149,7 @@ export interface SiteSettings {
   whatsapp_url?: string;
   phone1?: string;
   phone2?: string;
+  phone3?: string;
   email1?: string;
   email2?: string;
   location?: string;

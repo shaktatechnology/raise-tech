@@ -22,18 +22,35 @@ import { useToast } from "@/context/ToastContext";
 export function toEmbeddableMapUrl(url?: string | null): string | null {
   if (!url) return null;
 
-  // Already a proper embed URL - use as-is.
-  if (url.includes("/maps/embed")) return url;
+  // Extract src if full iframe tag was pasted
+  const iframeMatch = url.match(/<iframe[^>]+src=["']([^"']+)["']/i);
+  if (iframeMatch && iframeMatch[1]) {
+    return iframeMatch[1];
+  }
 
-  // Shortened links can't be converted client-side.
+  // Proper embed URL with /maps/embed or pb= parameter
+  if (url.includes("/maps/embed") || url.includes("pb=")) return url;
+
+  // Shortened links cannot be embedded directly in an iframe
   if (url.includes("goo.gl")) return null;
 
-  // Standard Google Maps URLs can usually be embedded by adding output=embed.
+  // Convert /maps/place/Place+Name/... URLs into an embeddable query map URL
+  if (url.includes("/maps/place/")) {
+    const placeMatch = url.match(/\/maps\/place\/([^/@?]+)/);
+    if (placeMatch && placeMatch[1]) {
+      const placeName = decodeURIComponent(placeMatch[1].replace(/\+/g, " "));
+      return `https://maps.google.com/maps?q=${encodeURIComponent(placeName)}&output=embed`;
+    }
+  }
+
+  // Standard Google Maps URLs with search query parameters (q= or ll=)
   if (url.includes("google.com/maps") || url.includes("maps.google.com")) {
     try {
       const u = new URL(url);
-      u.searchParams.set("output", "embed");
-      return u.toString();
+      if (u.searchParams.has("q") || u.searchParams.has("ll")) {
+        u.searchParams.set("output", "embed");
+        return u.toString();
+      }
     } catch {
       return null;
     }
@@ -50,6 +67,7 @@ export default function AdminSettingsPage() {
     favicon: null,
     phone1: "",
     phone2: "",
+    phone3: "",
     email1: "",
     email2: "",
     location: "",
@@ -97,6 +115,7 @@ export default function AdminSettingsPage() {
           favicon: res.setting.favicon || null,
           phone1: res.setting.phone1 || "",
           phone2: res.setting.phone2 || "",
+          phone3: res.setting.phone3 || "",
           email1: res.setting.email1 || "",
           email2: res.setting.email2 || "",
           location: res.setting.location || "",
@@ -147,6 +166,7 @@ export default function AdminSettingsPage() {
       formData.append("short_description", settings.short_description || "");
       formData.append("phone1", settings.phone1 || "");
       formData.append("phone2", settings.phone2 || "");
+      formData.append("phone3", settings.phone3 || "");
       formData.append("email1", settings.email1 || "");
       formData.append("email2", settings.email2 || "");
       formData.append("location", settings.location || "");
@@ -370,29 +390,42 @@ export default function AdminSettingsPage() {
                   <h3 className="text-sm font-bold text-emerald-400 uppercase tracking-wider">
                     Contact & Address Details
                   </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
                     <div>
                       <label className="block text-slate-400 mb-1">Primary Phone</label>
                       <input
                         type="text"
-                        maxLength={15}
+                        maxLength={25}
                         value={settings.phone1 || ""}
                         onChange={(e) => setSettings({ ...settings, phone1: e.target.value })}
                         className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
-                        placeholder="+977 9800000000"
+                        placeholder="+977 9844702762"
                       />
                     </div>
                     <div>
                       <label className="block text-slate-400 mb-1">Secondary Phone</label>
                       <input
                         type="text"
-                        maxLength={15}
+                        maxLength={25}
                         value={settings.phone2 || ""}
                         onChange={(e) => setSettings({ ...settings, phone2: e.target.value })}
                         className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
-                        placeholder="+977 01 4000000"
+                        placeholder="015705475"
                       />
                     </div>
+                    <div>
+                      <label className="block text-slate-400 mb-1">Third Phone (Optional)</label>
+                      <input
+                        type="text"
+                        maxLength={25}
+                        value={settings.phone3 || ""}
+                        onChange={(e) => setSettings({ ...settings, phone3: e.target.value })}
+                        className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
+                        placeholder="+977 9800000000"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                     <div>
                       <label className="block text-slate-400 mb-1">Primary Email</label>
                       <input

@@ -200,9 +200,9 @@ export default function Footer() {
                   </svg>
                 </motion.div>
                 <span className="group-hover:text-slate-900 transition-colors">
-                  {[settings?.phone1, settings?.phone2]
+                  {[settings?.phone1, settings?.phone2, settings?.phone3]
                     .filter(Boolean)
-                    .join(", ") || "+977 9844702762, 015705475"}
+                    .join(", ") || "+977 9844702792, 015705475"}
                 </span>
               </li>
 
@@ -227,7 +227,9 @@ export default function Footer() {
                   </svg>
                 </motion.div>
                 <span className="group-hover:text-slate-900 transition-colors">
-                  {settings?.email1 || "info@raisetech.com.np"}
+                  {[settings?.email1, settings?.email2]
+                    .filter(Boolean)
+                    .join(", ") || "info@raisetech.com.np"}
                 </span>
               </li>
 

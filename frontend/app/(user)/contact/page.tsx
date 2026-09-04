@@ -14,20 +14,35 @@ const MAP_EMBED_CACHE_PREFIX = "map_embed_cache:";
 function toEmbeddableMapUrl(url?: string | null): string | null {
   if (!url) return null;
 
-  // If the user pastes an entire iframe tag, extract the src
+  // Extract src if full iframe tag was pasted
   const iframeMatch = url.match(/<iframe[^>]+src=["']([^"']+)["']/i);
   if (iframeMatch && iframeMatch[1]) {
     return iframeMatch[1];
   }
 
+  // Proper embed URL with /maps/embed or pb= parameter
   if (url.includes("/maps/embed") || url.includes("pb=")) return url;
+
+  // Shortened links cannot be embedded directly in an iframe
   if (url.includes("goo.gl")) return null;
 
+  // Convert /maps/place/Place+Name/... URLs into an embeddable query map URL
+  if (url.includes("/maps/place/")) {
+    const placeMatch = url.match(/\/maps\/place\/([^/@?]+)/);
+    if (placeMatch && placeMatch[1]) {
+      const placeName = decodeURIComponent(placeMatch[1].replace(/\+/g, " "));
+      return `https://maps.google.com/maps?q=${encodeURIComponent(placeName)}&output=embed`;
+    }
+  }
+
+  // Standard Google Maps URLs with search query parameters (q= or ll=)
   if (url.includes("google.com/maps") || url.includes("maps.google.com")) {
     try {
       const u = new URL(url);
-      u.searchParams.set("output", "embed");
-      return u.toString();
+      if (u.searchParams.has("q") || u.searchParams.has("ll")) {
+        u.searchParams.set("output", "embed");
+        return u.toString();
+      }
     } catch {
       return null;
     }
@@ -212,34 +227,37 @@ export default function ContactPage() {
                     </div>
                     <div>
                       <h3 className="text-lg font-bold text-gray-900">Email & Phone</h3>
-                      <div className="text-gray-600 text-sm mt-1 flex flex-col gap-1">
-                        <div>
-                          <span className="font-medium text-gray-900">Email: </span>
-                          <a href={`mailto:${settings?.email1 || CONTACT_INFO.email}`} className="text-[#01A7E5] hover:underline">
+                      <div className="text-gray-600 text-sm mt-2 flex flex-col gap-2">
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                          <span className="font-semibold text-gray-900">Email:</span>
+                          <a href={`mailto:${settings?.email1 || CONTACT_INFO.email}`} className="text-[#01A7E5] font-medium hover:underline">
                             {settings?.email1 || CONTACT_INFO.email}
                           </a>
-                          {settings?.email2 && (
+                          {(settings?.email2 || CONTACT_INFO.supportEmail) && (
                             <>
-                              <span className="mx-2">|</span>
-                              <a href={`mailto:${settings.email2}`} className="text-[#01A7E5] hover:underline">
-                                {settings.email2}
+                              <span className="text-gray-300">|</span>
+                              <a href={`mailto:${settings?.email2 || CONTACT_INFO.supportEmail}`} className="text-[#01A7E5] font-medium hover:underline">
+                                {settings?.email2 || CONTACT_INFO.supportEmail}
                               </a>
                             </>
                           )}
                         </div>
-                        <div>
-                          <span className="font-medium text-gray-900">Phone: </span>
-                          <a href={`tel:${settings?.phone1 || CONTACT_INFO.phone}`} className="text-gray-700 hover:text-[#01A7E5]">
-                            {settings?.phone1 || CONTACT_INFO.phone}
-                          </a>
-                          {settings?.phone2 && (
-                            <>
-                              <span className="mx-2">|</span>
-                              <a href={`tel:${settings.phone2}`} className="text-gray-700 hover:text-[#01A7E5]">
-                                {settings.phone2}
-                              </a>
-                            </>
-                          )}
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                          <span className="font-semibold text-gray-900">Phone:</span>
+                          {[
+                            settings?.phone1 || CONTACT_INFO.phone,
+                            settings?.phone2 || CONTACT_INFO.phone2,
+                            settings?.phone3 || CONTACT_INFO.phone3,
+                          ]
+                            .filter((p): p is string => Boolean(p && p.trim()))
+                            .map((phoneNum, idx, arr) => (
+                              <React.Fragment key={idx}>
+                                <a href={`tel:${phoneNum}`} className="text-gray-700 font-medium hover:text-[#01A7E5]">
+                                  {phoneNum}
+                                </a>
+                                {idx < arr.length - 1 && <span className="text-gray-300">|</span>}
+                              </React.Fragment>
+                            ))}
                         </div>
                       </div>
                     </div>
