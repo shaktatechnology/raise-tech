@@ -21,6 +21,7 @@ class Setting extends Model
         'whatsapp_url',
         'phone1',
         'phone2',
+        'phone3',
         'email1',
         'email2',
         'location',

@@ -18,6 +18,7 @@ class UpdateSettingsRequest extends FormRequest
             'whatsapp_url' => ['nullable', 'url'],
             'phone1' => ['nullable', 'string', 'max:25'],
             'phone2' => ['nullable', 'string', 'max:25'],
+            'phone3' => ['nullable', 'string', 'max:25'],
             'email1' => ['nullable', 'email', 'max:255'],
             'email2' => ['nullable', 'email', 'max:255'],
             'location' => ['nullable', 'string', 'max:500'],
