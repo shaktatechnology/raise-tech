@@ -416,10 +416,6 @@ export default function ContactPage() {
 
         {/* Map Section */}
         <Reveal variant="fadeUp" className="mt-8 bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
-          <div className="p-6 sm:p-8 pb-4">
-            <h3 className="text-lg font-bold text-gray-900">Find Us on the Map</h3>
-            <p className="text-gray-500 text-sm mt-1">{settings?.location || CONTACT_INFO.address}</p>
-          </div>
 
           <div className="w-full h-72 sm:h-96 bg-gray-100">
             {embedUrl ? (

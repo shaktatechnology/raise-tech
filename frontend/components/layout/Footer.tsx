@@ -259,9 +259,6 @@ export default function Footer() {
                     />
                   </svg>
                 </motion.div>
-                <span className="group-hover:text-slate-900 transition-colors">
-                  {settings?.location || "Bhakti Thapa Sadak, Kathmandu"}
-                </span>
               </li>
             </ul>
           </motion.div>
