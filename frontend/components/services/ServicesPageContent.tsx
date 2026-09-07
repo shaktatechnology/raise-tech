@@ -80,6 +80,19 @@ export default function ServicesPageContent() {
       {/* Services List Content */}
       <section className="py-16 sm:py-24 bg-[#f8fdff]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+          {/* Section Heading — reveals on scroll */}
+          {!loading && !error && services.length > 0 && (
+            <Reveal variant="fadeUp" amount={0.3} className="text-center mb-14">
+              <p className="font-carattere text-5xl sm:text-6xl text-[#01A7E5] drop-shadow-xs mb-3">
+                Our Services
+              </p>
+              <p className="text-gray-500 text-sm sm:text-base max-w-2xl mx-auto">
+                Explore our full range of technology and supply solutions, each crafted with precision and built to scale.
+              </p>
+            </Reveal>
+          )}
+
           {loading ? (
             <div className="py-20 text-center text-gray-500">
               <div className="w-8 h-8 border-3 border-[#01A7E5] border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
@@ -97,24 +110,35 @@ export default function ServicesPageContent() {
               <p className="text-sm text-gray-500">Check back later for updated IT and supply offerings.</p>
             </div>
           ) : (
-            <div className="space-y-16">
+            <div className="space-y-20">
               {services
                 .sort((a, b) => a.order - b.order)
                 .map((service, idx) => {
                   const imageUrl = getImageUrl(service.image);
                   const isEven = idx % 2 === 0;
 
+                  // Image slides in from the outer edge; content from the inner side
+                  const imageVariant = isEven ? "slideLeft" : "slideRight";
+                  const contentVariant = isEven ? "slideRight" : "slideLeft";
+
                   return (
+                    /* Card wrapper fades up as a whole when it enters the viewport */
                     <Reveal
                       key={service.id}
                       variant="fadeUp"
+                      amount={0.08}
                       className={`flex flex-col lg:flex-row items-center gap-10 lg:gap-16 bg-white rounded-3xl p-8 sm:p-12 shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-300 ${
                         isEven ? "" : "lg:flex-row-reverse"
                       }`}
                     >
-                      {/* Image Column */}
+                      {/* ── Image Column ── slides in from the layout's outer edge */}
                       {imageUrl && (
-                        <div className="w-full lg:w-1/2 flex items-center justify-center p-2 shrink-0 overflow-hidden">
+                        <Reveal
+                          variant={imageVariant}
+                          delay={0.1}
+                          amount={0.08}
+                          className="w-full lg:w-1/2 flex items-center justify-center p-2 shrink-0 overflow-hidden"
+                        >
                           <Image
                             src={imageUrl}
                             alt={service.title}
@@ -123,40 +147,60 @@ export default function ServicesPageContent() {
                             unoptimized
                             className="w-full h-auto max-h-[480px] object-contain transition-transform duration-500 hover:scale-[1.03]"
                           />
-                        </div>
+                        </Reveal>
                       )}
 
-                      {/* Content Column */}
-                      <div className="flex-1 space-y-4">
-                        <div className="inline-block px-3 py-1 bg-cyan-50 text-[#01A7E5] text-xs font-bold uppercase tracking-wider rounded-md">
-                          Service #{service.order}
-                        </div>
+                      {/* ── Content Column ── inner elements stagger in sequentially */}
+                      <Reveal
+                        variant={contentVariant}
+                        delay={0.15}
+                        amount={0.08}
+                        className="flex-1 space-y-4"
+                      >
+                        {/* Service badge
+                        <Reveal variant="fadeUp" delay={0.22} amount={0.08}>
+                          <div className="inline-block px-3 py-1 bg-cyan-50 text-[#01A7E5] text-xs font-bold uppercase tracking-wider rounded-md">
+                            Service #{service.order}
+                          </div>
+                        </Reveal> */}
 
-                        <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 leading-tight">
-                          {service.title}
-                        </h2>
+                        {/* Title */}
+                        <Reveal variant="fadeUp" delay={0.28} amount={0.08}>
+                          <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 leading-tight">
+                            {service.title}
+                          </h2>
+                        </Reveal>
 
+                        {/* Slogan */}
                         {service.slogan && (
-                          <p className="text-sm font-semibold text-[#01A7E5]">
-                            {service.slogan}
-                          </p>
+                          <Reveal variant="fadeUp" delay={0.33} amount={0.08}>
+                            <p className="text-sm font-semibold text-[#01A7E5]">
+                              {service.slogan}
+                            </p>
+                          </Reveal>
                         )}
 
-                        <div
-                          className="text-sm sm:text-base text-gray-600 leading-relaxed text-justify [&_p]:text-justify [&_p]:mb-2 [&_p:last-child]:mb-0"
-                          dangerouslySetInnerHTML={{ __html: service.description }}
-                        />
+                        {/* Description */}
+                        <Reveal variant="fadeUp" delay={0.38} amount={0.08}>
+                          <div
+                            className="text-sm sm:text-base text-gray-600 leading-relaxed text-justify [&_p]:text-justify [&_p]:mb-2 [&_p:last-child]:mb-0"
+                            dangerouslySetInnerHTML={{ __html: service.description }}
+                          />
+                        </Reveal>
 
-                        <div className="pt-4">
-                          <Link
-                            href={`/contact?subject=Inquiry%20about%20${encodeURIComponent(service.title)}`}
-                            className="inline-flex items-center gap-2 px-6 py-3 bg-[#01A7E5] hover:bg-[#018bc0] text-white font-bold text-sm rounded-xl shadow-xs transition-all duration-200 hover:shadow-md transform hover:-translate-y-0.5"
-                          >
-                            <span>Get Technical Consultation</span>
-                            <span>→</span>
-                          </Link>
-                        </div>
-                      </div>
+                        {/* CTA Button */}
+                        <Reveal variant="scaleUp" delay={0.45} amount={0.08}>
+                          <div className="pt-4">
+                            <Link
+                              href={`/contact?subject=Inquiry%20about%20${encodeURIComponent(service.title)}`}
+                              className="inline-flex items-center gap-2 px-6 py-3 bg-[#01A7E5] hover:bg-[#018bc0] text-white font-bold text-sm rounded-xl shadow-xs transition-all duration-200 hover:shadow-md transform hover:-translate-y-0.5"
+                            >
+                              <span>Get Technical Consultation</span>
+                              <span>→</span>
+                            </Link>
+                          </div>
+                        </Reveal>
+                      </Reveal>
                     </Reveal>
                   );
                 })}
