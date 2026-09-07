@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\UpdateBannerRequest;
+use App\Http\Requests\UpdateHomeTestimonialImageRequest;
 use App\Http\Requests\UpsertPortfolioRequest;
+use App\Http\Requests\UpsertTestimonialRequest;
 use App\Models\Banner;
 use App\Models\HomeService;
 use App\Models\Portfolio;
@@ -31,6 +33,7 @@ class HomeController extends Controller
                 'services' => $services,
                 'portfolio' => $portfolio,
                 'testimonials' => $testimonials,
+                'testimonial_image' => $banner?->testimonial_image,
             ],
         ]);
     }
@@ -169,19 +172,48 @@ class HomeController extends Controller
     }
 
     /**
+     * Admin: replace or remove the large image beside the testimonials carousel.
+     */
+    #[ApiResponse(403, 'Administrator authorization is required.')]
+    public function updateTestimonialImage(
+        UpdateHomeTestimonialImageRequest $request,
+        ManagedImageStorage $images,
+    ) {
+        $banner = Banner::first() ?? new Banner;
+        $images->save(
+            $banner,
+            'testimonial_image',
+            $request->file('image'),
+            $request->boolean('remove_image'),
+            'homepage-testimonials',
+        );
+        $banner->refresh();
+
+        return response()->json([
+            'message' => 'Testimonial section image updated successfully',
+            'data' => [
+                'testimonial_image' => $banner->testimonial_image,
+            ],
+        ]);
+    }
+
+    /**
      * Admin: add a new Testimonial.
      */
-    public function storeTestimonial(Request $request)
-    {
-        $validated = $request->validate([
-            'rating' => 'required|integer|min:1|max:5',
-            'name' => 'required|string|max:255',
-            'role' => 'nullable|string|max:255',
-            'company_name' => 'nullable|string|max:255',
-            'description' => 'required|string',
-        ]);
-
-        $testimonial = Testimonial::create($validated);
+    public function storeTestimonial(
+        UpsertTestimonialRequest $request,
+        ManagedImageStorage $images,
+    ) {
+        $testimonial = new Testimonial;
+        $testimonial->fill($request->safe()->except(['image', 'remove_image']));
+        $images->save(
+            $testimonial,
+            'image',
+            $request->file('image'),
+            false,
+            'testimonials',
+        );
+        $testimonial->refresh();
 
         return response()->json([
             'message' => 'Testimonial created successfully',
@@ -192,17 +224,20 @@ class HomeController extends Controller
     /**
      * Admin: update a Testimonial.
      */
-    public function updateTestimonial(Request $request, Testimonial $testimonial)
-    {
-        $validated = $request->validate([
-            'rating' => 'required|integer|min:1|max:5',
-            'name' => 'required|string|max:255',
-            'role' => 'nullable|string|max:255',
-            'company_name' => 'nullable|string|max:255',
-            'description' => 'required|string',
-        ]);
-
-        $testimonial->update($validated);
+    public function updateTestimonial(
+        UpsertTestimonialRequest $request,
+        Testimonial $testimonial,
+        ManagedImageStorage $images,
+    ) {
+        $testimonial->fill($request->safe()->except(['image', 'remove_image']));
+        $images->save(
+            $testimonial,
+            'image',
+            $request->file('image'),
+            $request->boolean('remove_image'),
+            'testimonials',
+        );
+        $testimonial->refresh();
 
         return response()->json([
             'message' => 'Testimonial updated successfully',
@@ -213,9 +248,11 @@ class HomeController extends Controller
     /**
      * Admin: delete a Testimonial.
      */
-    public function destroyTestimonial(Testimonial $testimonial)
+    public function destroyTestimonial(Testimonial $testimonial, ManagedImageStorage $images)
     {
+        $oldImage = $testimonial->image;
         $testimonial->delete();
+        $images->deleteManaged($oldImage, 'testimonials', $testimonial, 'image');
 
         return response()->json([
             'message' => 'Testimonial deleted successfully',

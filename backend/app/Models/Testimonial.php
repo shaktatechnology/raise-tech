@@ -15,6 +15,7 @@ class Testimonial extends Model
         'role',
         'company_name',
         'description',
+        'image',
     ];
 
     protected function casts(): array

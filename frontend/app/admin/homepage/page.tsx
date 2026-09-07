@@ -46,13 +46,30 @@ export interface TestimonialData {
   role: string | null;
   company_name: string | null;
   description: string;
+  image: string | null;
   created_at?: string | null;
   updated_at?: string | null;
 }
 
+export interface TestimonialFormData {
+  rating: number;
+  name: string;
+  role: string;
+  company_name: string;
+  description: string;
+  image: string;
+}
+
 const emptyService = { title: "", description: "" };
 const emptyPortfolio = { title: "", image: "", description: "" };
-const emptyTestimonial = { rating: 5, name: "", role: "", company_name: "", description: "" };
+const emptyTestimonial: TestimonialFormData = {
+  rating: 5,
+  name: "",
+  role: "",
+  company_name: "",
+  description: "",
+  image: "",
+};
 
 export type HomepageTab = "banner" | "services" | "portfolio" | "testimonials";
 
@@ -67,6 +84,12 @@ export default function AdminHomePage() {
   const [services, setServices] = useState<HomeServiceData[]>([]);
   const [portfolioItems, setPortfolioItems] = useState<PortfolioData[]>([]);
   const [testimonials, setTestimonials] = useState<TestimonialData[]>([]);
+  const [testimonialSectionImage, setTestimonialSectionImage] = useState<string | null>(null);
+  const [testimonialSectionImageFile, setTestimonialSectionImageFile] = useState<File | null>(null);
+  const [removeTestimonialSectionImage, setRemoveTestimonialSectionImage] = useState(false);
+  const [testimonialSectionImageError, setTestimonialSectionImageError] = useState<string>();
+  const [isSavingTestimonialSectionImage, setIsSavingTestimonialSectionImage] = useState(false);
+  const [isOptimizingTestimonialSectionImage, setIsOptimizingTestimonialSectionImage] = useState(false);
 
   const [loading, setLoading] = useState<boolean>(true);
   const [isSavingBanner, setIsSavingBanner] = useState<boolean>(false);
@@ -91,8 +114,12 @@ export default function AdminHomePage() {
   // Testimonial modal (add/edit)
   const [isTestimonialModalOpen, setIsTestimonialModalOpen] = useState(false);
   const [editingTestimonialId, setEditingTestimonialId] = useState<number | null>(null);
-  const [testimonialForm, setTestimonialForm] = useState(emptyTestimonial);
+  const [testimonialForm, setTestimonialForm] = useState<TestimonialFormData>(emptyTestimonial);
+  const [testimonialImageFile, setTestimonialImageFile] = useState<File | null>(null);
+  const [removeTestimonialImage, setRemoveTestimonialImage] = useState(false);
+  const [testimonialImageError, setTestimonialImageError] = useState<string>();
   const [isSavingTestimonial, setIsSavingTestimonial] = useState(false);
+  const [isOptimizingTestimonialImage, setIsOptimizingTestimonialImage] = useState(false);
 
   // Pagination & Search & View Modal States
   const ITEMS_PER_PAGE = 10;
@@ -123,6 +150,7 @@ export default function AdminHomePage() {
           services: HomeServiceData[];
           portfolio: PortfolioData[];
           testimonials: TestimonialData[];
+          testimonial_image: string | null;
         };
       }>("/home");
 
@@ -142,6 +170,10 @@ export default function AdminHomePage() {
         setServices(res.data.services || []);
         setPortfolioItems(res.data.portfolio || []);
         setTestimonials(res.data.testimonials || []);
+        setTestimonialSectionImage(res.data.testimonial_image || null);
+        setTestimonialSectionImageFile(null);
+        setRemoveTestimonialSectionImage(false);
+        setTestimonialSectionImageError(undefined);
       }
     } catch (err: unknown) {
       console.error("Failed to load Home data:", err);
@@ -272,6 +304,40 @@ export default function AdminHomePage() {
       toast.error(getApiErrorMessage(err, "Error updating Banner."));
     } finally {
       setIsSavingBanner(false);
+    }
+  };
+
+  const handleSaveTestimonialSectionImage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isSavingTestimonialSectionImage || isOptimizingTestimonialSectionImage) return;
+
+    setIsSavingTestimonialSectionImage(true);
+    setTestimonialSectionImageError(undefined);
+    try {
+      const formData = new FormData();
+      if (testimonialSectionImageFile) {
+        formData.append("image", testimonialSectionImageFile);
+      }
+      formData.append("remove_image", removeTestimonialSectionImage ? "1" : "0");
+
+      const res = await fetchApi<{
+        message: string;
+        data: { testimonial_image: string | null };
+      }>("/home/testimonials/image", {
+        method: "POST",
+        body: formData,
+      });
+
+      setTestimonialSectionImage(res.data.testimonial_image || null);
+      setTestimonialSectionImageFile(null);
+      setRemoveTestimonialSectionImage(false);
+      toast.success(res.message || "Testimonial section image updated successfully");
+    } catch (err: unknown) {
+      console.error("Failed to update testimonial section image:", err);
+      setTestimonialSectionImageError(getValidationError(err, "image"));
+      toast.error(getApiErrorMessage(err, "Failed to update testimonial section image."));
+    } finally {
+      setIsSavingTestimonialSectionImage(false);
     }
   };
 
@@ -426,9 +492,21 @@ export default function AdminHomePage() {
   };
 
   // ---------- Testimonials ----------
+  const closeTestimonialModal = () => {
+    setIsTestimonialModalOpen(false);
+    setEditingTestimonialId(null);
+    setTestimonialForm(emptyTestimonial);
+    setTestimonialImageFile(null);
+    setRemoveTestimonialImage(false);
+    setTestimonialImageError(undefined);
+  };
+
   const openAddTestimonial = () => {
     setEditingTestimonialId(null);
     setTestimonialForm(emptyTestimonial);
+    setTestimonialImageFile(null);
+    setRemoveTestimonialImage(false);
+    setTestimonialImageError(undefined);
     setIsTestimonialModalOpen(true);
   };
 
@@ -440,7 +518,11 @@ export default function AdminHomePage() {
       role: item.role || "",
       company_name: item.company_name || "",
       description: item.description,
+      image: item.image || "",
     });
+    setTestimonialImageFile(null);
+    setRemoveTestimonialImage(false);
+    setTestimonialImageError(undefined);
     setIsTestimonialModalOpen(true);
   };
 
@@ -451,20 +533,24 @@ export default function AdminHomePage() {
       return;
     }
 
+    if (isSavingTestimonial || isOptimizingTestimonialImage) return;
+
     setIsSavingTestimonial(true);
+    setTestimonialImageError(undefined);
     try {
-      const payload = {
-        rating: testimonialForm.rating,
-        name: testimonialForm.name.trim(),
-        role: testimonialForm.role.trim() || null,
-        company_name: testimonialForm.company_name.trim() || null,
-        description: testimonialForm.description.trim(),
-      };
+      const formData = new FormData();
+      formData.append("rating", String(testimonialForm.rating));
+      formData.append("name", testimonialForm.name.trim());
+      formData.append("role", testimonialForm.role.trim());
+      formData.append("company_name", testimonialForm.company_name.trim());
+      formData.append("description", testimonialForm.description.trim());
+      if (testimonialImageFile) formData.append("image", testimonialImageFile);
+      formData.append("remove_image", removeTestimonialImage ? "1" : "0");
 
       if (editingTestimonialId) {
         const res = await fetchApi<{ message: string; data: TestimonialData }>(
           `/home/testimonials/${editingTestimonialId}`,
-          { method: "POST", body: JSON.stringify(payload) }
+          { method: "POST", body: formData }
         );
         setTestimonials((prev) =>
           prev.map((t) => (t.id === editingTestimonialId ? res.data : t))
@@ -473,17 +559,16 @@ export default function AdminHomePage() {
       } else {
         const res = await fetchApi<{ message: string; data: TestimonialData }>(
           "/home/testimonials/store",
-          { method: "POST", body: JSON.stringify(payload) }
+          { method: "POST", body: formData }
         );
         setTestimonials((prev) => [...prev, res.data]);
         toast.success(res.message || "Testimonial created successfully");
       }
 
-      setIsTestimonialModalOpen(false);
-      setTestimonialForm(emptyTestimonial);
-      setEditingTestimonialId(null);
+      closeTestimonialModal();
     } catch (err: unknown) {
       console.error("Failed to save testimonial:", err);
+      setTestimonialImageError(getValidationError(err, "image"));
       toast.error(getApiErrorMessage(err, "Failed to save Testimonial."));
     } finally {
       setIsSavingTestimonial(false);
@@ -514,7 +599,7 @@ export default function AdminHomePage() {
               <div className="flex items-center gap-3">
                 <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
                   Homepage Management
-                </h1>                
+                </h1>
               </div>
               <p className="text-slate-400 text-sm mt-1">
                 Manage the homepage banner, services, portfolio, and testimonials.
@@ -534,11 +619,10 @@ export default function AdminHomePage() {
             <button
               type="button"
               onClick={() => setActiveTab("banner")}
-              className={`px-5 py-3 font-bold text-xs sm:text-sm rounded-xl transition-all cursor-pointer flex items-center gap-2.5 shrink-0 ${
-                activeTab === "banner"
+              className={`px-5 py-3 font-bold text-xs sm:text-sm rounded-xl transition-all cursor-pointer flex items-center gap-2.5 shrink-0 ${activeTab === "banner"
                   ? "bg-cyan-600 text-white shadow-lg shadow-cyan-900/40 ring-2 ring-cyan-400/50"
                   : "bg-slate-900/90 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800"
-              }`}
+                }`}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -549,11 +633,10 @@ export default function AdminHomePage() {
             <button
               type="button"
               onClick={() => setActiveTab("services")}
-              className={`px-5 py-3 font-bold text-xs sm:text-sm rounded-xl transition-all cursor-pointer flex items-center gap-2.5 shrink-0 ${
-                activeTab === "services"
+              className={`px-5 py-3 font-bold text-xs sm:text-sm rounded-xl transition-all cursor-pointer flex items-center gap-2.5 shrink-0 ${activeTab === "services"
                   ? "bg-cyan-600 text-white shadow-lg shadow-cyan-900/40 ring-2 ring-cyan-400/50"
                   : "bg-slate-900/90 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800"
-              }`}
+                }`}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
@@ -564,11 +647,10 @@ export default function AdminHomePage() {
             <button
               type="button"
               onClick={() => setActiveTab("portfolio")}
-              className={`px-5 py-3 font-bold text-xs sm:text-sm rounded-xl transition-all cursor-pointer flex items-center gap-2.5 shrink-0 ${
-                activeTab === "portfolio"
+              className={`px-5 py-3 font-bold text-xs sm:text-sm rounded-xl transition-all cursor-pointer flex items-center gap-2.5 shrink-0 ${activeTab === "portfolio"
                   ? "bg-cyan-600 text-white shadow-lg shadow-cyan-900/40 ring-2 ring-cyan-400/50"
                   : "bg-slate-900/90 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800"
-              }`}
+                }`}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
@@ -579,11 +661,10 @@ export default function AdminHomePage() {
             <button
               type="button"
               onClick={() => setActiveTab("testimonials")}
-              className={`px-5 py-3 font-bold text-xs sm:text-sm rounded-xl transition-all cursor-pointer flex items-center gap-2.5 shrink-0 ${
-                activeTab === "testimonials"
+              className={`px-5 py-3 font-bold text-xs sm:text-sm rounded-xl transition-all cursor-pointer flex items-center gap-2.5 shrink-0 ${activeTab === "testimonials"
                   ? "bg-cyan-600 text-white shadow-lg shadow-cyan-900/40 ring-2 ring-cyan-400/50"
                   : "bg-slate-900/90 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800"
-              }`}
+                }`}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
@@ -668,8 +749,8 @@ export default function AdminHomePage() {
                           setBanner({ ...banner, description: html })
                         }
                         placeholder="Banner description..."
-                        minHeight="80px"                
-                        />
+                        minHeight="80px"
+                      />
                     </div>
                   </div>
                 </form>
@@ -839,11 +920,10 @@ export default function AdminHomePage() {
                                   <button
                                     type="button"
                                     onClick={() => setServicesCurrentPage(page)}
-                                    className={`w-8 h-8 rounded-lg font-semibold transition text-xs cursor-pointer ${
-                                      servicesCurrentPage === page
+                                    className={`w-8 h-8 rounded-lg font-semibold transition text-xs cursor-pointer ${servicesCurrentPage === page
                                         ? "bg-cyan-600 text-white shadow-md shadow-cyan-950/50"
                                         : "bg-slate-900 hover:bg-slate-800 text-slate-400 border border-slate-800"
-                                    }`}
+                                      }`}
                                   >
                                     {page}
                                   </button>
@@ -1047,11 +1127,10 @@ export default function AdminHomePage() {
                                   <button
                                     type="button"
                                     onClick={() => setPortfolioCurrentPage(page)}
-                                    className={`w-8 h-8 rounded-lg font-semibold transition text-xs cursor-pointer ${
-                                      portfolioCurrentPage === page
+                                    className={`w-8 h-8 rounded-lg font-semibold transition text-xs cursor-pointer ${portfolioCurrentPage === page
                                         ? "bg-cyan-600 text-white shadow-md shadow-cyan-950/50"
                                         : "bg-slate-900 hover:bg-slate-800 text-slate-400 border border-slate-800"
-                                    }`}
+                                      }`}
                                   >
                                     {page}
                                   </button>
@@ -1093,6 +1172,61 @@ export default function AdminHomePage() {
                       + Add Testimonial
                     </button>
                   </div>
+
+                  <form
+                    onSubmit={handleSaveTestimonialSectionImage}
+                    className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4 sm:p-5 space-y-4"
+                  >
+                    <div>
+                      <h3 className="text-sm font-bold text-white">Homepage testimonial image</h3>
+                      <p className="text-[11px] text-slate-500 mt-1">
+                        This is the large image displayed beside the testimonial card. The built-in
+                        image is used when no custom image is saved.
+                      </p>
+                    </div>
+
+                    <AdminImageField
+                      label="Section image"
+                      existingImageUrl={getImageUrl(testimonialSectionImage)}
+                      existingImageFilename={getImageFilename(testimonialSectionImage)}
+                      existingImageAlt="Current homepage testimonial section image"
+                      selectedFile={testimonialSectionImageFile}
+                      onSelectFile={(file) => {
+                        setTestimonialSectionImageFile(file);
+                        setRemoveTestimonialSectionImage(false);
+                        setTestimonialSectionImageError(undefined);
+                      }}
+                      onClearSelection={() => setTestimonialSectionImageFile(null)}
+                      onProcessingChange={setIsOptimizingTestimonialSectionImage}
+                      onRemoveExisting={() => setRemoveTestimonialSectionImage(true)}
+                      onUndoRemoval={() => setRemoveTestimonialSectionImage(false)}
+                      isExistingMarkedForRemoval={removeTestimonialSectionImage}
+                      disabled={
+                        isSavingTestimonialSectionImage || isOptimizingTestimonialSectionImage
+                      }
+                      error={testimonialSectionImageError}
+                      aspectRatioGuidance="Use a landscape JPEG, PNG, or WebP image."
+                      objectFit="cover"
+                    />
+
+                    <div className="flex justify-end">
+                      <button
+                        type="submit"
+                        disabled={
+                          isSavingTestimonialSectionImage ||
+                          isOptimizingTestimonialSectionImage ||
+                          (!testimonialSectionImageFile && !removeTestimonialSectionImage)
+                        }
+                        className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-semibold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isOptimizingTestimonialSectionImage
+                          ? "Optimizing imageâ€¦"
+                          : isSavingTestimonialSectionImage
+                            ? "Saving..."
+                            : "Save Section Image"}
+                      </button>
+                    </div>
+                  </form>
 
                   {/* Search Controls */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-950/60 p-4 rounded-xl border border-slate-800">
@@ -1144,15 +1278,31 @@ export default function AdminHomePage() {
                                   {serialNumber}
                                 </td>
                                 <td className="py-3 px-3 min-w-0">
-                                  <div className="min-w-0 flex-1">
-                                    <div className="font-bold text-white text-sm truncate" title={item.name}>
-                                      {item.name}
-                                    </div>
-                                    <div className="text-[11px] text-slate-500 truncate" title={[item.role, item.company_name].filter(Boolean).join(" · ")}>
-                                      {[item.role, item.company_name].filter(Boolean).join(" · ") || "Client"}
-                                    </div>
-                                    <div className="text-[11px] text-slate-400 line-clamp-1 mt-0.5" title={item.description}>
-                                      {item.description}
+                                  <div className="flex items-center gap-3 min-w-0">
+                                    {item.image ? (
+                                      <div className="w-10 h-10 rounded-full overflow-hidden border border-slate-700 bg-slate-900 shrink-0">
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img
+                                          src={getImageUrl(item.image)}
+                                          alt={`${item.name} profile`}
+                                          className="w-full h-full object-cover"
+                                        />
+                                      </div>
+                                    ) : (
+                                      <div className="w-10 h-10 rounded-full border border-slate-700 bg-slate-900 text-cyan-400 flex items-center justify-center font-bold shrink-0">
+                                        {item.name.trim().charAt(0).toUpperCase() || "?"}
+                                      </div>
+                                    )}
+                                    <div className="min-w-0 flex-1">
+                                      <div className="font-bold text-white text-sm truncate" title={item.name}>
+                                        {item.name}
+                                      </div>
+                                      <div className="text-[11px] text-slate-500 truncate" title={[item.role, item.company_name].filter(Boolean).join(" · ")}>
+                                        {[item.role, item.company_name].filter(Boolean).join(" · ") || "Client"}
+                                      </div>
+                                      <div className="text-[11px] text-slate-400 line-clamp-1 mt-0.5" title={item.description}>
+                                        {item.description}
+                                      </div>
                                     </div>
                                   </div>
                                 </td>
@@ -1248,11 +1398,10 @@ export default function AdminHomePage() {
                                   <button
                                     type="button"
                                     onClick={() => setTestimonialsCurrentPage(page)}
-                                    className={`w-8 h-8 rounded-lg font-semibold transition text-xs cursor-pointer ${
-                                      testimonialsCurrentPage === page
+                                    className={`w-8 h-8 rounded-lg font-semibold transition text-xs cursor-pointer ${testimonialsCurrentPage === page
                                         ? "bg-cyan-600 text-white shadow-md shadow-cyan-950/50"
                                         : "bg-slate-900 hover:bg-slate-800 text-slate-400 border border-slate-800"
-                                    }`}
+                                      }`}
                                   >
                                     {page}
                                   </button>
@@ -1341,8 +1490,8 @@ export default function AdminHomePage() {
                     {isSavingService
                       ? "Saving..."
                       : editingServiceId
-                      ? "Save Changes"
-                      : "Create Service"}
+                        ? "Save Changes"
+                        : "Create Service"}
                   </button>
                 </div>
               </form>
@@ -1394,9 +1543,8 @@ export default function AdminHomePage() {
                     label="Portfolio image"
                     existingImageUrl={getImageUrl(portfolioForm.image)}
                     existingImageFilename={getImageFilename(portfolioForm.image)}
-                    existingImageAlt={`Current saved image for ${
-                      portfolioForm.title || "this portfolio item"
-                    }`}
+                    existingImageAlt={`Current saved image for ${portfolioForm.title || "this portfolio item"
+                      }`}
                     selectedFile={portfolioImageFile}
                     onSelectFile={(file) => {
                       setPortfolioImageFile(file);
@@ -1450,10 +1598,10 @@ export default function AdminHomePage() {
                     {isOptimizingPortfolioImage
                       ? "Optimizing image…"
                       : isSavingPortfolio
-                      ? "Saving..."
-                      : editingPortfolioId
-                      ? "Save Changes"
-                      : "Create Item"}
+                        ? "Saving..."
+                        : editingPortfolioId
+                          ? "Save Changes"
+                          : "Create Item"}
                   </button>
                 </div>
               </form>
@@ -1465,7 +1613,7 @@ export default function AdminHomePage() {
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xs">
               <form
                 onSubmit={handleSaveTestimonial}
-                className="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-4"
+                className="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto"
               >
                 <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                   <h3 className="text-lg font-bold text-white">
@@ -1473,7 +1621,8 @@ export default function AdminHomePage() {
                   </h3>
                   <button
                     type="button"
-                    onClick={() => setIsTestimonialModalOpen(false)}
+                    disabled={isSavingTestimonial || isOptimizingTestimonialImage}
+                    onClick={closeTestimonialModal}
                     className="text-slate-400 hover:text-white"
                   >
                     ✕
@@ -1547,6 +1696,30 @@ export default function AdminHomePage() {
                     />
                   </div>
 
+                  <AdminImageField
+                    label="Client profile image (optional)"
+                    existingImageUrl={getImageUrl(testimonialForm.image)}
+                    existingImageFilename={getImageFilename(testimonialForm.image)}
+                    existingImageAlt={`Current profile image for ${testimonialForm.name || "this client"
+                      }`}
+                    selectedFile={testimonialImageFile}
+                    onSelectFile={(file) => {
+                      setTestimonialImageFile(file);
+                      setRemoveTestimonialImage(false);
+                      setTestimonialImageError(undefined);
+                    }}
+                    onClearSelection={() => setTestimonialImageFile(null)}
+                    onProcessingChange={setIsOptimizingTestimonialImage}
+                    onRemoveExisting={() => setRemoveTestimonialImage(true)}
+                    onUndoRemoval={() => setRemoveTestimonialImage(false)}
+                    isExistingMarkedForRemoval={removeTestimonialImage}
+                    disabled={isSavingTestimonial || isOptimizingTestimonialImage}
+                    error={testimonialImageError}
+                    aspectRatioGuidance="Use a square portrait for the best circular profile crop."
+                    previewMaxWidth="max-w-xs"
+                    objectFit="cover"
+                  />
+
                   <div>
                     <label className="block text-slate-400 mb-1">Description *</label>
                     <textarea
@@ -1568,21 +1741,24 @@ export default function AdminHomePage() {
                 <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
                   <button
                     type="button"
-                    onClick={() => setIsTestimonialModalOpen(false)}
+                    disabled={isSavingTestimonial || isOptimizingTestimonialImage}
+                    onClick={closeTestimonialModal}
                     className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-semibold"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    disabled={isSavingTestimonial}
+                    disabled={isSavingTestimonial || isOptimizingTestimonialImage}
                     className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-semibold shadow-lg disabled:opacity-50"
                   >
-                    {isSavingTestimonial
-                      ? "Saving..."
-                      : editingTestimonialId
-                      ? "Save Changes"
-                      : "Create Testimonial"}
+                    {isOptimizingTestimonialImage
+                      ? "Optimizing imageâ€¦"
+                      : isSavingTestimonial
+                        ? "Saving..."
+                        : editingTestimonialId
+                          ? "Save Changes"
+                          : "Create Testimonial"}
                   </button>
                 </div>
               </form>
@@ -1722,6 +1898,17 @@ export default function AdminHomePage() {
                 </div>
 
                 <div className="space-y-4 text-xs">
+                  {viewingTestimonial.image && (
+                    <div className="mx-auto w-24 h-24 rounded-full overflow-hidden border-2 border-cyan-500/60 bg-slate-950">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={getImageUrl(viewingTestimonial.image)}
+                        alt={`${viewingTestimonial.name} profile`}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+
                   <div>
                     <span className="text-slate-500 uppercase tracking-wider text-[10px] font-bold block mb-0.5">Client Name</span>
                     <p className="text-base font-bold text-white">{viewingTestimonial.name}</p>

@@ -15,9 +15,20 @@ import { SoftwareItem } from "@/lib/types";
 import { useDeleteConfirmation } from "@/components/admin/DeleteConfirmation";
 
 interface SoftwareSectionData {
-  id: number;
+  id?: number;
   hero_image: string | null;
+  eyebrow: string;
+  title: string;
+  description: string;
 }
+
+const DEFAULT_SOFTWARE_SECTION: SoftwareSectionData = {
+  hero_image: null,
+  eyebrow: "Custom Business Applications",
+  title: "Tailored Enterprise Software Engineered for High Growth",
+  description:
+    "Explore ready-to-deploy POS systems, billing platforms, GPS tracking, ERP, and custom business management tools.",
+};
 
 interface SoftwareIndexResponse {
   status: string;
@@ -30,7 +41,7 @@ interface SoftwareIndexResponse {
 export default function AdminSoftwarePage() {
   const { toast } = useToast();
   const { confirmDelete } = useDeleteConfirmation();
-  const [section, setSection] = useState<SoftwareSectionData | null>(null);
+  const [section, setSection] = useState<SoftwareSectionData>(DEFAULT_SOFTWARE_SECTION);
   const [softwareList, setSoftwareList] = useState<SoftwareItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -79,7 +90,13 @@ export default function AdminSoftwarePage() {
 
     try {
       const res = await fetchApi<SoftwareIndexResponse>("/software");
-      setSection(res.data?.section || null);
+      setSection({
+        ...DEFAULT_SOFTWARE_SECTION,
+        ...(res.data?.section || {}),
+        eyebrow: res.data?.section?.eyebrow || DEFAULT_SOFTWARE_SECTION.eyebrow,
+        title: res.data?.section?.title || DEFAULT_SOFTWARE_SECTION.title,
+        description: res.data?.section?.description || DEFAULT_SOFTWARE_SECTION.description,
+      });
       setSoftwareList(res.data?.items || []);
       setHeroImageFile(null);
       setRemoveHeroImage(false);
@@ -126,11 +143,11 @@ export default function AdminSoftwarePage() {
     }
   }, [currentPage, totalPages]);
 
-  const handleUpdateHeroImage = async (event: React.FormEvent) => {
+  const handleUpdateSection = async (event: React.FormEvent) => {
     event.preventDefault();
     if (uploadingHero || isOptimizingHeroImage) return;
-    if (!heroImageFile && !removeHeroImage) {
-      toast.info("Choose a new hero image or mark the saved image for removal.");
+    if (!section.eyebrow.trim() || !section.title.trim() || !section.description.trim()) {
+      toast.error("Eyebrow, heading, and description are required.");
       return;
     }
 
@@ -139,6 +156,9 @@ export default function AdminSoftwarePage() {
 
     try {
       const formData = new FormData();
+      formData.append("eyebrow", section.eyebrow.trim());
+      formData.append("title", section.title.trim());
+      formData.append("description", section.description.trim());
       if (heroImageFile) formData.append("hero_image", heroImageFile);
       formData.append("remove_hero_image", removeHeroImage ? "1" : "0");
 
@@ -152,10 +172,10 @@ export default function AdminSoftwarePage() {
 
       setSection(response.data);
       resetHeroImageDraft();
-      toast.success(response.message || "Software hero image updated successfully.");
+      toast.success(response.message || "Software page section updated successfully.");
     } catch (err: unknown) {
       setHeroImageError(getValidationError(err, "hero_image"));
-      toast.error(getApiErrorMessage(err, "Error updating the software hero image."));
+      toast.error(getApiErrorMessage(err, "Error updating the software page section."));
     } finally {
       setUploadingHero(false);
     }
@@ -242,7 +262,7 @@ export default function AdminSoftwarePage() {
                 Software Products Catalog
               </h1>
               <p className="mt-1 text-sm text-slate-400">
-                Manage pre-built software suites, POS platforms, and the software page hero banner.
+                Manage the software page header, introduction, and product catalog.
               </p>
             </div>
 
@@ -272,7 +292,7 @@ export default function AdminSoftwarePage() {
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
-              <span>Banner</span>
+              <span>Page Header</span>
             </button>
 
             <button
@@ -292,55 +312,113 @@ export default function AdminSoftwarePage() {
           </div>
 
           {activeTab === "banner" && (
-          <form
-            onSubmit={handleUpdateHeroImage}
-            className="space-y-5 rounded-2xl border border-slate-800 bg-slate-900 p-6 animate-in fade-in duration-200"
-          >
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-purple-400">
-                Software Page Hero Image Section
-              </h2>
-              {section?.hero_image && (
-                <span className="text-xs text-slate-400">Current hero image set</span>
-              )}
-            </div>
+            <form
+              onSubmit={handleUpdateSection}
+              className="space-y-5 rounded-2xl border border-slate-800 bg-slate-900 p-6 animate-in fade-in duration-200"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h2 className="text-sm font-bold uppercase tracking-wider text-purple-400">
+                  Software Page Hero and Introduction
+                </h2>
+                {section.hero_image && (
+                  <span className="text-xs text-slate-400">Current hero image set</span>
+                )}
+              </div>
 
-            <AdminImageField
-              label="Software hero image"
-              existingImageUrl={getImageUrl(section?.hero_image)}
-              existingImageFilename={getImageFilename(section?.hero_image)}
-              existingImageAlt="Current software page hero"
-              selectedFile={heroImageFile}
-              onSelectFile={setHeroImageFile}
-              onClearSelection={() => setHeroImageFile(null)}
-              onProcessingChange={setIsOptimizingHeroImage}
-              onRemoveExisting={() => setRemoveHeroImage(true)}
-              onUndoRemoval={() => setRemoveHeroImage(false)}
-              isExistingMarkedForRemoval={removeHeroImage}
-              disabled={uploadingHero}
-              error={heroImageError}
-              aspectRatioGuidance="Recommended: a wide JPEG, PNG, or WebP banner. Files up to 10 MB are optimized before upload."
-              accent="purple"
-            />
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-slate-300">
+                    Eyebrow text *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    maxLength={255}
+                    value={section.eyebrow}
+                    onChange={(event) =>
+                      setSection((current) => ({
+                        ...current,
+                        eyebrow: event.target.value,
+                      }))
+                    }
+                    placeholder="e.g. Custom Business Applications"
+                    className="w-full rounded-xl border border-slate-800 bg-slate-950 p-2.5 text-sm text-white focus:border-purple-500 focus:outline-none"
+                  />
+                </div>
 
-            <div className="flex justify-end">
-              <button
-                type="submit"
-                disabled={
-                  uploadingHero ||
-                  isOptimizingHeroImage ||
-                  (!heroImageFile && !removeHeroImage)
-                }
-                className="rounded-xl bg-purple-600 px-5 py-2.5 text-xs font-semibold text-white shadow-lg shadow-purple-950/40 transition hover:bg-purple-500 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {isOptimizingHeroImage
-                  ? "Optimizing Image..."
-                  : uploadingHero
-                    ? "Saving Hero Image..."
-                    : "Save Hero Image"}
-              </button>
-            </div>
-          </form>
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-slate-300">
+                    Main heading *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    maxLength={255}
+                    value={section.title}
+                    onChange={(event) =>
+                      setSection((current) => ({
+                        ...current,
+                        title: event.target.value,
+                      }))
+                    }
+                    placeholder="e.g. Enterprise Software Built for Growth"
+                    className="w-full rounded-xl border border-slate-800 bg-slate-950 p-2.5 text-sm text-white focus:border-purple-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-slate-300">
+                    Description *
+                  </label>
+                  <textarea
+                    required
+                    rows={4}
+                    maxLength={2000}
+                    value={section.description}
+                    onChange={(event) =>
+                      setSection((current) => ({
+                        ...current,
+                        description: event.target.value,
+                      }))
+                    }
+                    placeholder="Describe the software solutions shown on this page."
+                    className="w-full resize-y rounded-xl border border-slate-800 bg-slate-950 p-2.5 text-sm text-white focus:border-purple-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <AdminImageField
+                label="Software hero image"
+                existingImageUrl={getImageUrl(section.hero_image)}
+                existingImageFilename={getImageFilename(section.hero_image)}
+                existingImageAlt="Current software page hero"
+                selectedFile={heroImageFile}
+                onSelectFile={setHeroImageFile}
+                onClearSelection={() => setHeroImageFile(null)}
+                onProcessingChange={setIsOptimizingHeroImage}
+                onRemoveExisting={() => setRemoveHeroImage(true)}
+                onUndoRemoval={() => setRemoveHeroImage(false)}
+                isExistingMarkedForRemoval={removeHeroImage}
+                disabled={uploadingHero}
+                error={heroImageError}
+                aspectRatioGuidance="Recommended: a wide JPEG, PNG, or WebP banner. Files up to 10 MB are optimized before upload."
+                accent="purple"
+              />
+
+              <div className="flex justify-end">
+                <button
+                  type="submit"
+                  disabled={uploadingHero || isOptimizingHeroImage}
+                  className="rounded-xl bg-purple-600 px-5 py-2.5 text-xs font-semibold text-white shadow-lg shadow-purple-950/40 transition hover:bg-purple-500 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isOptimizingHeroImage
+                    ? "Optimizing Image..."
+                    : uploadingHero
+                      ? "Saving Page Header..."
+                      : "Save Page Header"}
+                </button>
+              </div>
+            </form>
           )}
 
           {activeTab === "software" && (

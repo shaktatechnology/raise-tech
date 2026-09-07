@@ -64,7 +64,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/inquiries', [ContactController::class, 'index']);
     Route::delete('/inquiries/{contact}', [ContactController::class, 'destroy']);
     Route::post('/inquiries/{contact}/read', [ContactController::class, 'markAsRead']);
+    Route::post('/inquiries/{contact}/unread', [ContactController::class, 'markAsUnread']);
+    Route::post('/inquiries/{contact}/toggle-status', [ContactController::class, 'toggleStatus']);
     Route::get('/inquiries/unread', [ContactController::class, 'unreadCount']);
+    Route::get('/inquiries/notification-settings', [ContactController::class, 'getNotificationSettings']);
+    Route::post('/inquiries/notification-settings', [ContactController::class, 'updateNotificationSettings'])->middleware('admin');
+    Route::post('/inquiries/test-notification', [ContactController::class, 'sendTestNotification'])->middleware('admin');
 
     // Services administration
     Route::middleware('admin')->group(function () {
@@ -122,6 +127,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/home/portfolio/{portfolio}', [HomeController::class, 'updatePortfolio']);
         Route::delete('/home/portfolio/{portfolio}', [HomeController::class, 'destroyPortfolio']);
 
+        Route::post('/home/testimonials/image', [HomeController::class, 'updateTestimonialImage']);
         Route::post('/home/testimonials/store', [HomeController::class, 'storeTestimonial']);
         Route::post('/home/testimonials/{testimonial}', [HomeController::class, 'updateTestimonial']);
         Route::delete('/home/testimonials/{testimonial}', [HomeController::class, 'destroyTestimonial']);

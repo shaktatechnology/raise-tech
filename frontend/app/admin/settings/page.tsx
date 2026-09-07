@@ -78,6 +78,12 @@ export default function AdminSettingsPage() {
     linkedin_url: "",
     tiktok_url: "",
     whatsapp_url: "",
+    company_name: "",
+    contact_eyebrow: "",
+    contact_title: "",
+    contact_description: "",
+    operating_hours: "",
+    operating_hours_note: "",
     is_cod_enabled: true,
     is_standard_delivery_enabled: true,
     is_express_delivery_enabled: true,
@@ -126,6 +132,12 @@ export default function AdminSettingsPage() {
           linkedin_url: res.setting.linkedin_url || "",
           tiktok_url: res.setting.tiktok_url || "",
           whatsapp_url: res.setting.whatsapp_url || "",
+          company_name: res.setting.company_name || "",
+          contact_eyebrow: res.setting.contact_eyebrow || "",
+          contact_title: res.setting.contact_title || "",
+          contact_description: res.setting.contact_description || "",
+          operating_hours: res.setting.operating_hours || "",
+          operating_hours_note: res.setting.operating_hours_note || "",
           is_cod_enabled: res.setting.is_cod_enabled ?? true,
           is_standard_delivery_enabled: res.setting.is_standard_delivery_enabled ?? true,
           is_express_delivery_enabled: res.setting.is_express_delivery_enabled ?? true,
@@ -171,6 +183,12 @@ export default function AdminSettingsPage() {
       formData.append("email2", settings.email2 || "");
       formData.append("location", settings.location || "");
       formData.append("map_url", settings.map_url || "");
+      formData.append("company_name", settings.company_name || "");
+      formData.append("contact_eyebrow", settings.contact_eyebrow || "");
+      formData.append("contact_title", settings.contact_title || "");
+      formData.append("contact_description", settings.contact_description || "");
+      formData.append("operating_hours", settings.operating_hours || "");
+      formData.append("operating_hours_note", settings.operating_hours_note || "");
       formData.append("facebook_url", settings.facebook_url || "");
       formData.append("twitter_url", settings.twitter_url || "");
       formData.append("instagram_url", settings.instagram_url || "");
@@ -390,6 +408,92 @@ export default function AdminSettingsPage() {
                   <h3 className="text-sm font-bold text-emerald-400 uppercase tracking-wider">
                     Contact & Address Details
                   </h3>
+
+                  {/* Contact Page Hero Content */}
+                  <div className="border border-slate-800/80 rounded-xl p-4 bg-slate-950/40 space-y-3">
+                    <span className="text-xs font-semibold text-cyan-400 uppercase tracking-wider">
+                      Contact Page Hero Banner
+                    </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <label className="block text-slate-400 mb-1">Eyebrow Badge</label>
+                        <input
+                          type="text"
+                          maxLength={255}
+                          value={settings.contact_eyebrow || ""}
+                          onChange={(e) => setSettings({ ...settings, contact_eyebrow: e.target.value })}
+                          className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
+                          placeholder="e.g. Contact Raise Tech"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-400 mb-1">Hero Main Title</label>
+                        <input
+                          type="text"
+                          maxLength={255}
+                          value={settings.contact_title || ""}
+                          onChange={(e) => setSettings({ ...settings, contact_title: e.target.value })}
+                          className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
+                          placeholder="e.g. Let's Build Something Exceptional Together"
+                        />
+                      </div>
+                      <div className="sm:col-span-2">
+                        <label className="block text-slate-400 mb-1">Hero Subtitle / Description</label>
+                        <textarea
+                          rows={2}
+                          maxLength={2000}
+                          value={settings.contact_description || ""}
+                          onChange={(e) => setSettings({ ...settings, contact_description: e.target.value })}
+                          className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
+                          placeholder="e.g. Have a project in mind, need technical assistance, or want to discuss enterprise solutions?..."
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Headquarters & Operating Hours */}
+                  <div className="border border-slate-800/80 rounded-xl p-4 bg-slate-950/40 space-y-3">
+                    <span className="text-xs font-semibold text-cyan-400 uppercase tracking-wider">
+                      Headquarters & Operating Hours
+                    </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <label className="block text-slate-400 mb-1">Company / Headquarters Name</label>
+                        <input
+                          type="text"
+                          maxLength={255}
+                          value={settings.company_name || ""}
+                          onChange={(e) => setSettings({ ...settings, company_name: e.target.value })}
+                          className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
+                          placeholder="e.g. Raise Tech Pvt. Ltd."
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-400 mb-1">Operating Hours</label>
+                        <input
+                          type="text"
+                          maxLength={255}
+                          value={settings.operating_hours || ""}
+                          onChange={(e) => setSettings({ ...settings, operating_hours: e.target.value })}
+                          className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
+                          placeholder="e.g. Sun - Fri: 9:00 AM - 6:00 PM (NPT)"
+                        />
+                      </div>
+                      <div className="sm:col-span-2">
+                        <label className="block text-slate-400 mb-1">Operating Hours Secondary Note</label>
+                        <input
+                          type="text"
+                          maxLength={255}
+                          value={settings.operating_hours_note || ""}
+                          onChange={(e) => setSettings({ ...settings, operating_hours_note: e.target.value })}
+                          className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
+                          placeholder="e.g. 24/7 client portal access for critical issues."
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Direct Contact Channels */}
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
                     <div>
                       <label className="block text-slate-400 mb-1">Primary Phone</label>

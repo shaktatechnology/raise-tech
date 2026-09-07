@@ -9,8 +9,22 @@ import Reveal from '@/components/motion/Reveal';
 import StaggerGroup from '@/components/motion/StaggerGroup';
 import StaggerItem from '@/components/motion/StaggerItem';
 
+interface SoftwareSectionContent {
+  eyebrow?: string | null;
+  title?: string | null;
+  description?: string | null;
+}
+
+const DEFAULT_SECTION_CONTENT = {
+  eyebrow: 'Custom Business Applications',
+  title: 'Tailored Enterprise Software Engineered for High Growth',
+  description:
+    'Explore ready-to-deploy POS systems, billing platforms, GPS tracking, ERP, and custom business management tools.',
+};
+
 export default function SoftwareProductsGrid() {
   const [softwareList, setSoftwareList] = useState<SoftwareItem[]>([]);
+  const [sectionContent, setSectionContent] = useState<SoftwareSectionContent | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -22,12 +36,13 @@ export default function SoftwareProductsGrid() {
         const res = await fetchApi<{
           status: string;
           data: {
-            section: unknown;
+            section: SoftwareSectionContent | null;
             items: SoftwareItem[];
           };
         }>("/software");
 
         if (res.data) {
+          setSectionContent(res.data.section || null);
           setSoftwareList(res.data.items || []);
         }
       } catch (err: unknown) {
@@ -39,19 +54,24 @@ export default function SoftwareProductsGrid() {
     loadSoftware();
   }, []);
 
+  const eyebrow = sectionContent?.eyebrow?.trim() || DEFAULT_SECTION_CONTENT.eyebrow;
+  const title = sectionContent?.title?.trim() || DEFAULT_SECTION_CONTENT.title;
+  const description =
+    sectionContent?.description?.trim() || DEFAULT_SECTION_CONTENT.description;
+
   return (
     <section className="w-full py-14 sm:py-20 bg-[#f2fcff] overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Heading */}
         <Reveal variant="fadeUp" className="text-center max-w-3xl mx-auto mb-12 sm:mb-16">
           <span className="text-sm font-bold uppercase tracking-wider text-[#01A7E5]">
-            Custom Business Applications
+            {eyebrow}
           </span>
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-[#404040] tracking-tight mt-2">
-            Tailored Enterprise Software Engineered for High Growth
+            {title}
           </h2>
           <p className="text-sm sm:text-base text-gray-600 mt-3">
-            Explore ready-to-deploy POS systems, billing platforms, GPS tracking, ERP, and custom business management tools.
+            {description}
           </p>
         </Reveal>
 

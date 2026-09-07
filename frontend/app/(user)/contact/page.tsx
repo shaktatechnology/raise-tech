@@ -170,7 +170,7 @@ export default function ContactPage() {
             transition={{ duration: 0.4 }}
             className="inline-block text-[#01A7E5] font-semibold text-xs sm:text-sm tracking-widest uppercase mb-3 px-3 py-1 bg-cyan-950/60 border border-cyan-500/20 rounded-full"
           >
-            Contact Raise Tech
+            {settings?.contact_eyebrow || "Contact Raise Tech"}
           </motion.span>
           <motion.h1
             initial={{ opacity: 0, y: 15 }}
@@ -178,7 +178,7 @@ export default function ContactPage() {
             transition={{ duration: 0.5, delay: 0.1 }}
             className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight"
           >
-            {CONTACT_INFO.subtitle}
+            {settings?.contact_title || CONTACT_INFO.subtitle}
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 15 }}
@@ -186,7 +186,7 @@ export default function ContactPage() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="mt-4 text-slate-300 max-w-2xl mx-auto text-base sm:text-lg leading-relaxed"
           >
-            {CONTACT_INFO.description}
+            {settings?.contact_description || CONTACT_INFO.description}
           </motion.p>
         </div>
       </section>
@@ -209,7 +209,7 @@ export default function ContactPage() {
                     </div>
                     <div>
                       <h3 className="text-lg font-bold text-gray-900">Headquarters</h3>
-                      <p className="text-gray-600 text-sm mt-1">{CONTACT_INFO.companyName}</p>
+                      <p className="text-gray-600 text-sm mt-1">{settings?.company_name || CONTACT_INFO.companyName}</p>
                       <p className="text-gray-500 text-sm mt-0.5">{settings?.location || CONTACT_INFO.address}</p>
                     </div>
                   </div>
@@ -276,8 +276,8 @@ export default function ContactPage() {
                     </div>
                     <div>
                       <h3 className="text-lg font-bold text-gray-900">Operating Hours</h3>
-                      <p className="text-gray-600 text-sm mt-1">{CONTACT_INFO.hours}</p>
-                      <p className="text-xs text-gray-400 mt-1">24/7 client portal access for critical issues.</p>
+                      <p className="text-gray-600 text-sm mt-1">{settings?.operating_hours || CONTACT_INFO.hours}</p>
+                      <p className="text-xs text-gray-400 mt-1">{settings?.operating_hours_note || "24/7 client portal access for critical issues."}</p>
                     </div>
                   </div>
                 </div>

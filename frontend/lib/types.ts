@@ -44,6 +44,13 @@ export interface ContactInquiry {
   updated_at: string | null;
 }
 
+export interface InquiryNotificationSettings {
+  recipient_email: string;
+  is_enabled: boolean;
+  env_admin_email?: string;
+  mailer?: string;
+}
+
 export interface OrderItem {
   id: number;
   order_id: number;
@@ -154,6 +161,14 @@ export interface SiteSettings {
   email2?: string;
   location?: string;
   map_url?: string;
+  company_name?: string;
+  contact_eyebrow?: string;
+  contact_title?: string;
+  contact_description?: string;
+  operating_hours?: string;
+  operating_hours_note?: string;
+  inquiry_recipient_email?: string;
+  is_inquiry_notification_enabled?: boolean;
   is_cod_enabled?: boolean;
   is_standard_delivery_enabled?: boolean;
   is_express_delivery_enabled?: boolean;

@@ -29,7 +29,7 @@ class SoftwareController extends Controller
     }
 
     /**
-     * Update Software Section (Hero Image)
+     * Update the software page hero image and introduction content.
      */
     #[ApiResponse(403, 'Administrator authorization is required.')]
     public function updateSection(
@@ -37,6 +37,7 @@ class SoftwareController extends Controller
         ManagedImageStorage $images,
     ) {
         $section = SoftwareSection::first() ?? new SoftwareSection;
+        $section->fill($request->safe()->except(['hero_image', 'remove_hero_image']));
         $images->save(
             $section,
             'hero_image',
@@ -47,7 +48,7 @@ class SoftwareController extends Controller
         $section->refresh();
 
         return response()->json([
-            'message' => 'Software section hero image updated successfully.',
+            'message' => 'Software page section updated successfully.',
             'data' => $section,
         ]);
     }
