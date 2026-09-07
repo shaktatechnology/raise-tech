@@ -31,6 +31,7 @@ export interface Testimonial {
   role: string | null;
   company_name: string | null;
   description: string;
+  image: string | null;
   created_at?: string | null;
   updated_at?: string | null;
 }

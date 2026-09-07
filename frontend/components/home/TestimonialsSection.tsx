@@ -5,9 +5,11 @@ import Image from 'next/image';
 import { motion, AnimatePresence } from 'motion/react';
 import type { Testimonial } from '@/lib/types/home';
 import Reveal from '@/components/motion/Reveal';
+import { getImageUrl } from '@/lib/api';
 
 interface TestimonialsSectionProps {
   testimonials: Testimonial[];
+  sectionImage?: string | null;
 }
 
 function getInitials(name: string) {
@@ -21,9 +23,22 @@ function getInitials(name: string) {
 
 
 
-export default function TestimonialsSection({ testimonials }: TestimonialsSectionProps) {
+export default function TestimonialsSection({
+  testimonials,
+  sectionImage,
+}: TestimonialsSectionProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const current = testimonials[activeIndex];
+  const sectionImageUrl = getImageUrl(sectionImage) || '/images/home/testimonial-main.png';
+  const clientImageUrl = getImageUrl(current?.image);
+  const trustedClients = testimonials
+    .map((testimonial) => ({
+      id: testimonial.id,
+      name: testimonial.name,
+      imageUrl: getImageUrl(testimonial.image),
+    }))
+    .filter((testimonial) => Boolean(testimonial.imageUrl))
+    .slice(0, 4);
 
   const goToPrev = () => {
     setActiveIndex((i) => (i - 1 + testimonials.length) % testimonials.length);
@@ -49,19 +64,53 @@ export default function TestimonialsSection({ testimonials }: TestimonialsSectio
         </Reveal>
 
         {/* Testimonials Split Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-stretch">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-x-8 lg:gap-x-10 gap-y-6 items-stretch">
           {/* Left Column: Wall Graphic */}
-          <Reveal variant="slideLeft" className="lg:col-span-5 relative h-72 sm:h-80 lg:h-auto min-h-[320px] rounded-3xl overflow-hidden shadow-lg border border-cyan-100/60">
-            <Image
-              src="/images/home/testimonial-main.png"
-              alt="Testimonials Visual"
-              fill
-              className="object-cover object-center"
-            />
+          <Reveal variant="slideLeft" className="lg:col-span-5 relative h-72 sm:h-80 lg:h-auto min-h-[320px] lg:min-h-[420px]">
+            <div className="absolute inset-0 rounded-3xl overflow-hidden shadow-lg border border-cyan-100/60">
+              <Image
+                src={sectionImageUrl}
+                alt="Testimonials Visual"
+                fill
+                unoptimized
+                className="object-cover object-center"
+              />
+            </div>
+
+            {trustedClients.length > 0 && (
+              <div className="absolute -bottom-5 left-1/2 z-10 flex -translate-x-1/2 items-center gap-4 whitespace-nowrap rounded-full bg-white py-2 pl-5 pr-2 shadow-lg ring-1 ring-black/5 sm:left-auto sm:right-6 sm:translate-x-0">
+                <span className="text-sm font-semibold text-gray-900">Trusted Clients</span>
+
+                <div className="flex items-center -space-x-3">
+                  {trustedClients.map((client) => (
+                    <div
+                      key={client.id}
+                      className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full border-2 border-white bg-slate-100 shadow-sm"
+                      title={client.name}
+                    >
+                      <Image
+                        src={client.imageUrl}
+                        alt={`${client.name} profile`}
+                        fill
+                        unoptimized
+                        className="object-cover"
+                      />
+                    </div>
+                  ))}
+
+                  <div
+                    aria-hidden="true"
+                    className="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-white bg-[#01A7E5] text-xl font-medium text-white shadow-sm"
+                  >
+                    +
+                  </div>
+                </div>
+              </div>
+            )}
           </Reveal>
  
           {/* Right Column: Cyan Testimonial Card */}
-          <Reveal variant="slideRight" className="lg:col-span-7 flex flex-col justify-between">
+          <Reveal variant="slideRight" className="lg:col-span-7 flex flex-col">
             <motion.div 
               drag="x"
               dragConstraints={{ left: 0, right: 0 }}
@@ -75,7 +124,7 @@ export default function TestimonialsSection({ testimonials }: TestimonialsSectio
               }}
               whileHover={{ cursor: "grab" }}
               whileTap={{ cursor: "grabbing" }}
-              className="bg-[#01A7E5] text-white p-8 sm:p-10 rounded-3xl shadow-xl relative min-h-[300px] flex flex-col justify-between overflow-hidden select-none active:cursor-grabbing"
+              className="bg-[#01A7E5] text-white p-8 sm:p-10 rounded-3xl shadow-xl relative min-h-[300px] lg:min-h-[420px] h-full flex flex-col justify-between overflow-hidden select-none active:cursor-grabbing"
             >
               <AnimatePresence mode="wait">
                 <motion.div
@@ -120,8 +169,18 @@ export default function TestimonialsSection({ testimonials }: TestimonialsSectio
  
                   {/* Author Info */}
                   <div className="flex items-center gap-4 pt-4 border-t border-white/20">
-                    <div className="w-12 h-12 rounded-full bg-white/20 border-2 border-white flex items-center justify-center font-bold text-white text-base shrink-0">
-                      {getInitials(current.name)}
+                    <div className="relative w-12 h-12 rounded-full bg-white/20 border-2 border-white flex items-center justify-center font-bold text-white text-base shrink-0 overflow-hidden">
+                      {clientImageUrl ? (
+                        <Image
+                          src={clientImageUrl}
+                          alt={`${current.name} profile`}
+                          fill
+                          unoptimized
+                          className="object-cover"
+                        />
+                      ) : (
+                        getInitials(current.name)
+                      )}
                     </div>
                     <div>
                       <h4 className="font-bold text-white text-base leading-snug">{current.name}</h4>
@@ -134,51 +193,25 @@ export default function TestimonialsSection({ testimonials }: TestimonialsSectio
               </AnimatePresence>
             </motion.div>
 
-            {/* Swipe Navigation (only when there's more than one testimonial) */}
-            {testimonials.length > 1 && (
-              <div className="flex items-center justify-between mt-6">
-                <motion.button
-                  type="button"
-                  onClick={goToPrev}
-                  whileHover={{ scale: 1.08 }}
-                  whileTap={{ scale: 0.92 }}
-                  aria-label="Previous testimonial"
-                  className="w-10 h-10 rounded-full bg-white border border-cyan-100 shadow-sm flex items-center justify-center text-[#01A7E5] hover:bg-[#01A7E5] hover:text-white transition-colors duration-200 cursor-pointer"
-                >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                </motion.button>
-
-                {/* Pagination Indicators */}
-                <div className="flex items-center gap-2">
-                  {testimonials.map((_, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => setActiveIndex(idx)}
-                      className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
-                        activeIndex === idx ? 'w-8 bg-[#01A7E5]' : 'w-2 bg-cyan-200 hover:bg-cyan-300'
-                      }`}
-                      aria-label={`Go to testimonial ${idx + 1}`}
-                    />
-                  ))}
-                </div>
-
-                <motion.button
-                  type="button"
-                  onClick={goToNext}
-                  whileHover={{ scale: 1.08 }}
-                  whileTap={{ scale: 0.92 }}
-                  aria-label="Next testimonial"
-                  className="w-10 h-10 rounded-full bg-white border border-cyan-100 shadow-sm flex items-center justify-center text-[#01A7E5] hover:bg-[#01A7E5] hover:text-white transition-colors duration-200 cursor-pointer"
-                >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </motion.button>
-              </div>
-            )}
           </Reveal>
+
+          {/* Pagination indicators (only when there's more than one testimonial) */}
+          {testimonials.length > 1 && (
+            <div className="lg:col-start-6 lg:col-span-7 flex items-center justify-center">
+              <div className="flex items-center gap-2">
+                {testimonials.map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setActiveIndex(idx)}
+                    className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
+                      activeIndex === idx ? 'w-8 bg-[#01A7E5]' : 'w-2 bg-cyan-200 hover:bg-cyan-300'
+                    }`}
+                    aria-label={`Go to testimonial ${idx + 1}`}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </section>

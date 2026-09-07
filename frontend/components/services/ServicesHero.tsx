@@ -3,7 +3,7 @@ import Image from 'next/image';
 
 export default function ServicesHero() {
   return (
-    <section className="relative w-full h-[320px] sm:h-[420px] md:h-[500px] lg:h-[560px] overflow-hidden bg-[#022c43]">
+    <section className="relative w-full h-[320px] sm:h-[420px] md:h-[500px] lg:h-[590px] overflow-hidden bg-[#022c43]">
       {/* Background Image */}
       <Image
         src="/images/services/services-hero.png"

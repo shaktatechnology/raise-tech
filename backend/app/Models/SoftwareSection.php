@@ -11,6 +11,9 @@ class SoftwareSection extends Model
 
     protected $fillable = [
         'hero_image',
+        'eyebrow',
+        'title',
+        'description',
     ];
 
     public function softwares()

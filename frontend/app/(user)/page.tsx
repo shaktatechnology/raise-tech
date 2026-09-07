@@ -17,6 +17,7 @@ interface HomeApiResponse {
     services: HomeService[];
     portfolio: Portfolio[];
     testimonials: Testimonial[];
+    testimonial_image: string | null;
   };
 }
 
@@ -44,19 +45,23 @@ async function getHomeData() {
       services: [] as HomeService[],
       portfolio: [] as Portfolio[],
       testimonials: [] as Testimonial[],
+      testimonial_image: null,
     };
   }
 }
 
 export default async function HomePage() {
-  const { banner, services, portfolio, testimonials } = await getHomeData();
+  const { banner, services, portfolio, testimonials, testimonial_image } = await getHomeData();
 
   return (
     <>
       <HeroSection banner={banner} />
       <ServicesSection services={services} />
       <PortfolioSection portfolio={portfolio} />
-      <TestimonialsSection testimonials={testimonials} />
+      <TestimonialsSection
+        testimonials={testimonials}
+        sectionImage={testimonial_image}
+      />
     </>
   );
 }

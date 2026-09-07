@@ -12,6 +12,8 @@ class SettingController extends Controller
     // get settings public
     public function index()
     {
+        $this->ensureContactColumnsExist();
+
         $setting = Setting::first() ?? Setting::create([
             'is_standard_delivery_enabled' => true,
             'is_express_delivery_enabled' => true,
@@ -60,5 +62,44 @@ class SettingController extends Controller
             'message' => 'Settings updated successfully.',
             'setting' => $setting,
         ]);
+    }
+
+    private function ensureContactColumnsExist(): void
+    {
+        try {
+            $cols = [
+                'company_name' => 'string',
+                'contact_eyebrow' => 'string',
+                'contact_title' => 'string',
+                'contact_description' => 'text',
+                'operating_hours' => 'string',
+                'operating_hours_note' => 'string',
+                'inquiry_recipient_email' => 'string',
+                'is_inquiry_notification_enabled' => 'boolean',
+            ];
+
+            $missing = [];
+            foreach ($cols as $name => $type) {
+                if (!\Illuminate\Support\Facades\Schema::hasColumn('settings', $name)) {
+                    $missing[$name] = $type;
+                }
+            }
+
+            if (!empty($missing)) {
+                \Illuminate\Support\Facades\Schema::table('settings', function ($table) use ($missing) {
+                    foreach ($missing as $col => $type) {
+                        if ($type === 'text') {
+                            $table->text($col)->nullable();
+                        } elseif ($type === 'boolean') {
+                            $table->boolean($col)->default(true);
+                        } else {
+                            $table->string($col)->nullable();
+                        }
+                    }
+                });
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Settings column check: ' . $e->getMessage());
+        }
     }
 }
