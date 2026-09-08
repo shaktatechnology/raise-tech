@@ -35,7 +35,8 @@ export default function UserSignupForm({
 
   const [googleLoaded, setGoogleLoaded] = useState(false);
 
-  const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+  const isGoogleEnabled = settings?.is_google_login_enabled ?? true;
+  const googleClientId = settings?.google_client_id || process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
   const handlePostLoginRedirect = (user: User) => {
     if (onClose) onClose();
@@ -110,7 +111,7 @@ export default function UserSignupForm({
 
   const handleCustomGoogleClick = () => {
     if (!googleClientId) {
-      toast.error("Google Client ID is missing. Add NEXT_PUBLIC_GOOGLE_CLIENT_ID to your frontend .env file.");
+      toast.error("Google Client ID is missing. Please configure it in Admin Settings or .env.");
       return;
     }
     if (window.google?.accounts?.id) {
@@ -130,7 +131,7 @@ export default function UserSignupForm({
         strategy="afterInteractive"
       />
 
-      <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-xl p-8 shadow-2xl relative">
+      <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl relative">
         {/* Close Button for Modal */}
         {isModal && onClose && (
           <button
@@ -143,7 +144,6 @@ export default function UserSignupForm({
             </svg>
           </button>
         )}
-
         <div className="text-center mb-8">
           {settings?.logo && (
             <div className="flex justify-center mb-4">
@@ -162,38 +162,44 @@ export default function UserSignupForm({
         </div>
 
         {/* Google Sign-Up */}
-        <div className="flex flex-col items-center justify-center">
-          <div id={btnContainerId} className="w-full flex justify-center min-h-[40px]" />
+        {isGoogleEnabled ? (
+          <div className="flex flex-col items-center justify-center">
+            <div id={btnContainerId} className="w-full flex justify-center min-h-[40px]" />
 
-          {/* Custom fallback button if GSI container is not rendered */}
-          {(!googleClientId || !googleLoaded) && (
-            <button
-              type="button"
-              onClick={handleCustomGoogleClick}
-              className="w-full flex items-center justify-center space-x-3 px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium rounded-lg border border-slate-700 transition cursor-pointer"
-            >
-              <svg className="w-5 h-5" viewBox="0 0 24 24">
-                <path
-                  fill="#4285F4"
-                  d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.29v3.15C3.26 21.3 7.31 24 12 24z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.29C.47 8.21 0 10.05 0 12s.47 3.79 1.29 5.42l3.99-3.15z"
-                />
-                <path
-                  fill="#EA4335"
-                  d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.58l3.99 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
-                />
-              </svg>
-              <span>Sign up with Google</span>
-            </button>
-          )}
-        </div>
+            {/* Custom fallback button if GSI container is not rendered */}
+            {(!googleClientId || !googleLoaded) && (
+              <button
+                type="button"
+                onClick={handleCustomGoogleClick}
+                className="w-full flex items-center justify-center space-x-3 px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium rounded-lg border border-slate-700 transition cursor-pointer"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24">
+                  <path
+                    fill="#4285F4"
+                    d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"
+                  />
+                  <path
+                    fill="#34A853"
+                    d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.29v3.15C3.26 21.3 7.31 24 12 24z"
+                  />
+                  <path
+                    fill="#FBBC05"
+                    d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.29C.47 8.21 0 10.05 0 12s.47 3.79 1.29 5.42l3.99-3.15z"
+                  />
+                  <path
+                    fill="#EA4335"
+                    d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.58l3.99 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
+                  />
+                </svg>
+                <span>Sign up with Google</span>
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="p-4 rounded-xl bg-amber-950/20 border border-amber-800/30 text-center text-xs text-amber-300">
+            Google Sign-In is currently disabled by administrator.
+          </div>
+        )}
 
         <p className="text-center text-xs text-slate-400 mt-8">
           Already have an account?{" "}

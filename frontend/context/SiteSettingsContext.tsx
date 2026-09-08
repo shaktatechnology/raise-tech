@@ -37,7 +37,7 @@ export function SiteSettingsProvider({ children }: { children: React.ReactNode }
     if (!settings?.favicon) return;
     const faviconUrl = getImageUrl(settings.favicon);
     
-    let links = document.querySelectorAll<HTMLLinkElement>("link[rel*='icon']");
+    const links = document.querySelectorAll<HTMLLinkElement>("link[rel*='icon']");
     if (links.length === 0) {
       const link = document.createElement("link");
       link.rel = "icon";

@@ -26,6 +26,16 @@ class Setting extends Model
         'email2',
         'inquiry_recipient_email',
         'is_inquiry_notification_enabled',
+        'reply_to_email',
+        'sender_name',
+        'mail_mailer',
+        'mail_host',
+        'mail_port',
+        'mail_username',
+        'mail_password',
+        'mail_encryption',
+        'mail_from_address',
+        'mail_from_name',
         'company_name',
         'contact_eyebrow',
         'contact_title',
@@ -40,15 +50,40 @@ class Setting extends Model
         'standard_delivery_charge',
         'express_delivery_charge',
         'payment_methods',
-    ];  
+        'google_client_id',
+        'google_client_secret',
+        'is_google_login_enabled',
+    ];
+
+    protected $hidden = [
+        'mail_password',
+        'google_client_secret',
+    ];
+
+    protected $appends = [
+        'has_mail_password',
+        'has_google_client_secret',
+    ];
+
+    public function getHasMailPasswordAttribute(): bool
+    {
+        return !empty($this->mail_password);
+    }
+
+    public function getHasGoogleClientSecretAttribute(): bool
+    {
+        return !empty($this->google_client_secret);
+    }
 
     protected function casts(): array
     {
         return [
+            'mail_port' => 'integer',
             'is_cod_enabled' => 'boolean',
             'is_standard_delivery_enabled' => 'boolean',
             'is_express_delivery_enabled' => 'boolean',
             'is_inquiry_notification_enabled' => 'boolean',
+            'is_google_login_enabled' => 'boolean',
             'standard_delivery_charge' => 'decimal:2',
             'express_delivery_charge' => 'decimal:2',
             'payment_methods' => 'array',

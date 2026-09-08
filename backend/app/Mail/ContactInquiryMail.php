@@ -3,6 +3,7 @@
 namespace App\Mail;
 
 use App\Models\Contact;
+use App\Models\Setting;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Address;
@@ -29,13 +30,37 @@ class ContactInquiryMail extends Mailable
      */
     public function envelope(): Envelope
     {
-        $fullName = trim($this->contact->first_name . ' ' . $this->contact->last_name);
+        $fullName = trim(($this->contact->first_name ?? '') . ' ' . ($this->contact->last_name ?? ''));
+        // Prevent email-header injection by stripping CR and LF
+        $safeName = trim(str_replace(["\r", "\n", "%0a", "%0d"], '', $fullName));
+        $safeEmail = trim(str_replace(["\r", "\n", "%0a", "%0d"], '', $this->contact->email));
+
+        $setting = Setting::first();
+
+        // From address: must be verified MAIL_FROM_ADDRESS; from name can use Settings sender_name
+        $fromAddress = config('mail.from.address', 'hello@example.com');
+        $rawFromName = $setting?->sender_name ?: config('mail.from.name', config('app.name', 'Raise Tech'));
+        $safeFromName = trim(str_replace(["\r", "\n", "%0a", "%0d"], '', $rawFromName));
+
+        // Reply-To: visitor's email and name
+        $replyToAddress = $safeEmail ?: ($setting?->reply_to_email ?: $fromAddress);
+        $replyToName = $safeName ?: null;
+
+        // Subject: visitor's subject or clear default
+        if (!empty($this->contact->subject)) {
+            $rawSubject = trim(str_replace(["\r", "\n", "%0a", "%0d"], '', $this->contact->subject));
+            $subject = $rawSubject ?: "New Website Inquiry from {$safeName} - " . config('app.name', 'Raise Tech');
+        } else {
+            $senderLabel = $safeName ?: 'Website Visitor';
+            $subject = "New Website Inquiry from {$senderLabel} - " . config('app.name', 'Raise Tech');
+        }
 
         return new Envelope(
-            subject: "New Website Inquiry from {$fullName} - " . config('app.name'),
+            from: new Address($fromAddress, $safeFromName),
             replyTo: [
-                new Address($this->contact->email, $fullName),
+                new Address($replyToAddress, $replyToName),
             ],
+            subject: $subject,
         );
     }
 

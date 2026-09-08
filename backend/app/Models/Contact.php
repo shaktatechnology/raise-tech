@@ -14,7 +14,15 @@ class Contact extends Model
         'last_name',
         'email',
         'contact_no',
+        'subject',
         'message',
         'is_read',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'is_read' => 'boolean',
+        ];
+    }
 }

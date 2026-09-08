@@ -84,6 +84,25 @@ export default function AdminSettingsPage() {
     contact_description: "",
     operating_hours: "",
     operating_hours_note: "",
+    inquiry_recipient_email: "",
+    is_inquiry_notification_enabled: true,
+    reply_to_email: "",
+    sender_name: "",
+    mail_mailer: "smtp",
+    mail_host: "",
+    mail_port: "",
+    mail_username: "",
+    mail_password: "",
+    mail_encryption: "tls",
+    mail_from_address: "",
+    mail_from_name: "",
+    has_mail_password: false,
+    remove_mail_password: false,
+    google_client_id: "",
+    google_client_secret: "",
+    has_google_client_secret: false,
+    remove_google_client_secret: false,
+    is_google_login_enabled: true,
     is_cod_enabled: true,
     is_standard_delivery_enabled: true,
     is_express_delivery_enabled: true,
@@ -96,8 +115,17 @@ export default function AdminSettingsPage() {
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  type SettingsTab = "branding" | "contact" | "social" | "general-checkout";
+  type SettingsTab = "branding" | "contact" | "email-notifications" | "google-auth" | "social" | "general-checkout";
   const [activeTab, setActiveTab] = useState<SettingsTab>("branding");
+
+  // Test Email State
+  const [testEmailRecipient, setTestEmailRecipient] = useState<string>("");
+  const [sendingTestEmail, setSendingTestEmail] = useState<boolean>(false);
+  const [testEmailResult, setTestEmailResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [showSmtpPassword, setShowSmtpPassword] = useState<boolean>(false);
+
+  // Google OAuth State
+  const [showGoogleSecret, setShowGoogleSecret] = useState<boolean>(false);
 
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [faviconFile, setFaviconFile] = useState<File | null>(null);
@@ -138,12 +166,34 @@ export default function AdminSettingsPage() {
           contact_description: res.setting.contact_description || "",
           operating_hours: res.setting.operating_hours || "",
           operating_hours_note: res.setting.operating_hours_note || "",
+          inquiry_recipient_email: res.setting.inquiry_recipient_email || "",
+          is_inquiry_notification_enabled: res.setting.is_inquiry_notification_enabled ?? true,
+          reply_to_email: res.setting.reply_to_email || "",
+          sender_name: res.setting.sender_name || "",
+          mail_mailer: res.setting.mail_mailer || "smtp",
+          mail_host: res.setting.mail_host || "",
+          mail_port: res.setting.mail_port != null ? String(res.setting.mail_port) : "",
+          mail_username: res.setting.mail_username || "",
+          mail_password: "",
+          mail_encryption: res.setting.mail_encryption || "tls",
+          mail_from_address: res.setting.mail_from_address || "",
+          mail_from_name: res.setting.mail_from_name || "",
+          has_mail_password: Boolean(res.setting.has_mail_password),
+          remove_mail_password: false,
+          google_client_id: res.setting.google_client_id || "",
+          google_client_secret: "",
+          has_google_client_secret: Boolean(res.setting.has_google_client_secret),
+          remove_google_client_secret: false,
+          is_google_login_enabled: res.setting.is_google_login_enabled ?? true,
           is_cod_enabled: res.setting.is_cod_enabled ?? true,
           is_standard_delivery_enabled: res.setting.is_standard_delivery_enabled ?? true,
           is_express_delivery_enabled: res.setting.is_express_delivery_enabled ?? true,
           standard_delivery_charge: res.setting.standard_delivery_charge != null ? String(res.setting.standard_delivery_charge) : "100",
           express_delivery_charge: res.setting.express_delivery_charge != null ? String(res.setting.express_delivery_charge) : "250",
         });
+        if (res.setting.inquiry_recipient_email) {
+          setTestEmailRecipient(res.setting.inquiry_recipient_email);
+        }
         setLogoFile(null);
         setFaviconFile(null);
         setRemoveLogo(false);
@@ -164,6 +214,35 @@ export default function AdminSettingsPage() {
     const timeoutId = window.setTimeout(() => void loadSettings(), 0);
     return () => window.clearTimeout(timeoutId);
   }, [loadSettings]);
+
+  const handleSendTestEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (sendingTestEmail) return;
+    const recipient = testEmailRecipient.trim() || settings.inquiry_recipient_email?.trim() || "";
+    if (!recipient) {
+      const msg = "Please enter or configure a recipient email address first.";
+      setTestEmailResult({ success: false, message: msg });
+      showToast(msg, "error");
+      return;
+    }
+
+    setSendingTestEmail(true);
+    setTestEmailResult(null);
+    try {
+      const res = await fetchApi<{ message: string }>("/settings/test-email", {
+        method: "POST",
+        body: JSON.stringify({ recipient_email: recipient }),
+      });
+      setTestEmailResult({ success: true, message: res.message || "Test email sent successfully!" });
+      showToast(res.message || "Test email sent successfully!", "success");
+    } catch (err: unknown) {
+      const message = getApiErrorMessage(err, "Failed to send test email.");
+      setTestEmailResult({ success: false, message });
+      showToast(message, "error");
+    } finally {
+      setSendingTestEmail(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -189,6 +268,31 @@ export default function AdminSettingsPage() {
       formData.append("contact_description", settings.contact_description || "");
       formData.append("operating_hours", settings.operating_hours || "");
       formData.append("operating_hours_note", settings.operating_hours_note || "");
+      formData.append("inquiry_recipient_email", settings.inquiry_recipient_email || "");
+      formData.append("is_inquiry_notification_enabled", settings.is_inquiry_notification_enabled ? "1" : "0");
+      formData.append("reply_to_email", settings.reply_to_email || "");
+      formData.append("sender_name", settings.sender_name || "");
+      formData.append("mail_mailer", settings.mail_mailer || "smtp");
+      formData.append("mail_host", settings.mail_host || "");
+      formData.append("mail_port", settings.mail_port ? String(settings.mail_port) : "");
+      formData.append("mail_username", settings.mail_username || "");
+      if (settings.mail_password) {
+        formData.append("mail_password", settings.mail_password);
+      }
+      if (settings.remove_mail_password) {
+        formData.append("remove_mail_password", "1");
+      }
+      formData.append("mail_encryption", settings.mail_encryption || "tls");
+      formData.append("mail_from_address", settings.mail_from_address || "");
+      formData.append("mail_from_name", settings.mail_from_name || "");
+      formData.append("google_client_id", settings.google_client_id || "");
+      if (settings.google_client_secret) {
+        formData.append("google_client_secret", settings.google_client_secret);
+      }
+      if (settings.remove_google_client_secret) {
+        formData.append("remove_google_client_secret", "1");
+      }
+      formData.append("is_google_login_enabled", settings.is_google_login_enabled ? "1" : "0");
       formData.append("facebook_url", settings.facebook_url || "");
       formData.append("twitter_url", settings.twitter_url || "");
       formData.append("instagram_url", settings.instagram_url || "");
@@ -307,6 +411,36 @@ export default function AdminSettingsPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
               <span>Contact & Location</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab("email-notifications")}
+              className={`px-5 py-3 font-bold text-xs sm:text-sm rounded-xl transition-all cursor-pointer flex items-center gap-2.5 shrink-0 ${
+                activeTab === "email-notifications"
+                  ? "bg-emerald-600 text-white shadow-lg shadow-emerald-900/40 ring-2 ring-emerald-400/50"
+                  : "bg-slate-900/90 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800"
+              }`}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+              <span>Email & Notifications</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab("google-auth")}
+              className={`px-5 py-3 font-bold text-xs sm:text-sm rounded-xl transition-all cursor-pointer flex items-center gap-2.5 shrink-0 ${
+                activeTab === "google-auth"
+                  ? "bg-emerald-600 text-white shadow-lg shadow-emerald-900/40 ring-2 ring-emerald-400/50"
+                  : "bg-slate-900/90 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800"
+              }`}
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z" />
+              </svg>
+              <span>Google & Auth</span>
             </button>
 
             <button
@@ -572,6 +706,505 @@ export default function AdminSettingsPage() {
                         className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
                         placeholder="https://www.google.com/maps/embed?pb=..."
                       />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Email & Notifications */}
+              {activeTab === "email-notifications" && (
+                <div className="space-y-6 animate-in fade-in duration-200">
+                  {/* Card 1: Outgoing Mail Server (SMTP) */}
+                  <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+                      <div>
+                        <div className="flex items-center gap-2.5">
+                          <h3 className="text-sm font-bold text-cyan-400 uppercase tracking-wider">
+                            Outgoing Mail Server (SMTP)
+                          </h3>
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-cyan-950/80 border border-cyan-800/70 text-cyan-300">
+                            Client Configurable
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-400 mt-1">
+                          Configure your sending email address and password. Clients can update this anytime without touching code.
+                        </p>
+                      </div>
+
+                      {/* Quick 1-Click Presets */}
+                      <div className="flex items-center gap-1.5 flex-wrap shrink-0">
+                        <span className="text-[11px] text-slate-500 mr-1">Presets:</span>
+                        <button
+                          type="button"
+                          onClick={() => setSettings({
+                            ...settings,
+                            mail_host: "smtp.gmail.com",
+                            mail_port: "587",
+                            mail_encryption: "tls",
+                          })}
+                          className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-medium rounded-lg transition cursor-pointer"
+                        >
+                          Gmail
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSettings({
+                            ...settings,
+                            mail_host: "sandbox.smtp.mailtrap.io",
+                            mail_port: "2525",
+                            mail_encryption: "tls",
+                          })}
+                          className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-medium rounded-lg transition cursor-pointer"
+                        >
+                          Mailtrap
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSettings({
+                            ...settings,
+                            mail_host: "smtp.office365.com",
+                            mail_port: "587",
+                            mail_encryption: "tls",
+                          })}
+                          className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-medium rounded-lg transition cursor-pointer"
+                        >
+                          Office365
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                      {/* Sending Email */}
+                      <div>
+                        <label className="block text-slate-400 mb-1">
+                          Sending Email Address (SMTP Username)
+                        </label>
+                        <input
+                          type="text"
+                          maxLength={255}
+                          value={settings.mail_username || ""}
+                          onChange={(e) => setSettings({
+                            ...settings,
+                            mail_username: e.target.value,
+                            mail_from_address: e.target.value,
+                          })}
+                          className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-cyan-500"
+                          placeholder="e.g. baniyapradip58@gmail.com or info@raisetech.com.np"
+                        />
+                        <p className="text-[11px] text-slate-500 mt-1">
+                          Account used by the server to send out emails.
+                        </p>
+                      </div>
+
+                      {/* Sender Display Name */}
+                      <div>
+                        <label className="block text-slate-400 mb-1">
+                          Sender / Company Name
+                        </label>
+                        <input
+                          type="text"
+                          maxLength={255}
+                          value={settings.sender_name || ""}
+                          onChange={(e) => setSettings({
+                            ...settings,
+                            sender_name: e.target.value,
+                            mail_from_name: e.target.value,
+                          })}
+                          className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-cyan-500"
+                          placeholder="e.g. Raise Tech"
+                        />
+                        <p className="text-[11px] text-slate-500 mt-1">
+                          Friendly name displayed in the inbox sender header.
+                        </p>
+                      </div>
+
+                      {/* Password */}
+                      <div className="sm:col-span-2">
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="block text-slate-400">
+                            SMTP Password / App Password
+                          </label>
+                          {settings.has_mail_password && !settings.remove_mail_password && (
+                            <span className="text-[11px] text-emerald-400 flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                              Custom password is saved & encrypted
+                            </span>
+                          )}
+                        </div>
+                        <div className="relative">
+                          <input
+                            type={showSmtpPassword ? "text" : "password"}
+                            value={settings.mail_password || ""}
+                            onChange={(e) => setSettings({ ...settings, mail_password: e.target.value, remove_mail_password: false })}
+                            className="w-full p-2.5 pr-24 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-cyan-500"
+                            placeholder={
+                              settings.has_mail_password && !settings.remove_mail_password
+                                ? "•••••••••••• (Leave blank to keep current password)"
+                                : "Enter SMTP password or 16-character Gmail App Password..."
+                            }
+                          />
+                          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setShowSmtpPassword(!showSmtpPassword)}
+                              className="px-2 py-1 text-[11px] text-slate-400 hover:text-white bg-slate-800 rounded-lg transition cursor-pointer"
+                            >
+                              {showSmtpPassword ? "Hide" : "Show"}
+                            </button>
+                            {settings.has_mail_password && !settings.remove_mail_password && (
+                              <button
+                                type="button"
+                                onClick={() => setSettings({ ...settings, remove_mail_password: true, mail_password: "" })}
+                                title="Revert to .env password"
+                                className="px-2 py-1 text-[11px] text-rose-400 hover:text-rose-300 bg-rose-950/40 border border-rose-800/40 rounded-lg transition cursor-pointer"
+                              >
+                                Clear
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        {settings.remove_mail_password ? (
+                          <p className="text-[11px] text-amber-400 mt-1">
+                            Password will be cleared upon saving (reverts to server default).
+                          </p>
+                        ) : (
+                          <p className="text-[11px] text-slate-500 mt-1">
+                            Stored with AES-256 database encryption. For Gmail accounts, use a 16-character Google App Password.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Server Connection Parameters */}
+                    <div className="pt-2 border-t border-slate-800/80">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                        <div>
+                          <label className="block text-slate-400 mb-1">
+                            SMTP Host
+                          </label>
+                          <input
+                            type="text"
+                            maxLength={255}
+                            value={settings.mail_host || ""}
+                            onChange={(e) => setSettings({ ...settings, mail_host: e.target.value })}
+                            className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-cyan-500"
+                            placeholder="e.g. smtp.gmail.com"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-slate-400 mb-1">
+                            SMTP Port
+                          </label>
+                          <input
+                            type="number"
+                            value={settings.mail_port || ""}
+                            onChange={(e) => setSettings({ ...settings, mail_port: e.target.value })}
+                            className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-cyan-500"
+                            placeholder="e.g. 587 or 465"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-slate-400 mb-1">
+                            Encryption Protocol
+                          </label>
+                          <select
+                            value={settings.mail_encryption || "tls"}
+                            onChange={(e) => setSettings({ ...settings, mail_encryption: e.target.value })}
+                            className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-cyan-500 cursor-pointer"
+                          >
+                            <option value="tls">TLS (STARTTLS - 587)</option>
+                            <option value="ssl">SSL (Port 465)</option>
+                            <option value="none">None (Port 25)</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 2: Visitor Inquiries & Live Test */}
+                  <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-5">
+                    <div>
+                      <h3 className="text-sm font-bold text-emerald-400 uppercase tracking-wider">
+                        Inquiry Notifications & Verification
+                      </h3>
+                      <p className="text-xs text-slate-400 mt-1">
+                        Manage where contact form messages from the website arrive and test email delivery live.
+                      </p>
+                    </div>
+
+                    {/* Enable / Disable Notifications Toggle */}
+                    <div className={`p-4 rounded-xl border transition-all ${
+                      settings.is_inquiry_notification_enabled
+                        ? "bg-slate-950/80 border-slate-700 shadow-xs"
+                        : "bg-slate-950/30 border-slate-800/60 opacity-60"
+                    }`}>
+                      <label className="flex items-center gap-3 cursor-pointer text-xs font-semibold text-white select-none">
+                        <input
+                          type="checkbox"
+                          checked={settings.is_inquiry_notification_enabled ?? true}
+                          onChange={(e) => setSettings({ ...settings, is_inquiry_notification_enabled: e.target.checked })}
+                          className="w-4 h-4 rounded text-emerald-500 focus:ring-emerald-500 cursor-pointer"
+                        />
+                        <span>Enable Email Notifications for Visitor Inquiries</span>
+                      </label>
+                      <p className="text-[11px] text-slate-400 mt-1 pl-7">
+                        When enabled, newly submitted contact inquiries will be automatically emailed to the recipient below.
+                      </p>
+                    </div>
+
+                    {/* Recipient Email */}
+                    <div className="text-xs max-w-lg">
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-slate-400 font-medium">
+                          Notification Recipient Email
+                        </label>
+                        {settings.mail_username && settings.inquiry_recipient_email !== settings.mail_username && (
+                          <button
+                            type="button"
+                            onClick={() => setSettings({ ...settings, inquiry_recipient_email: settings.mail_username || "" })}
+                            className="text-[10px] text-cyan-400 hover:text-cyan-300 font-medium transition cursor-pointer"
+                          >
+                            Same as Sending Email
+                          </button>
+                        )}
+                      </div>
+                      <input
+                        type="email"
+                        maxLength={255}
+                        value={settings.inquiry_recipient_email || ""}
+                        onChange={(e) => setSettings({ ...settings, inquiry_recipient_email: e.target.value })}
+                        className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
+                        placeholder="e.g. baniyapradip58@gmail.com"
+                      />
+                      <p className="text-[11px] text-slate-500 mt-1">
+                        Where contact form messages submitted by website visitors will be delivered.
+                      </p>
+                    </div>
+
+                    {/* Live SMTP Verification Tool */}
+                    <div className="pt-4 border-t border-slate-800 space-y-3">
+                      <div>
+                        <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+                          Live Delivery Verification
+                        </h4>
+                        <p className="text-[11px] text-slate-400">
+                          Send a real test email through your configured SMTP server to verify inbox deliverability.
+                        </p>
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row items-center gap-3">
+                        <div className="w-full sm:flex-1">
+                          <input
+                            type="email"
+                            value={testEmailRecipient}
+                            onChange={(e) => setTestEmailRecipient(e.target.value)}
+                            placeholder="Recipient email address for test..."
+                            className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleSendTestEmail}
+                          disabled={sendingTestEmail}
+                          className="w-full sm:w-auto px-5 py-2.5 bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-cyan-900/30 shrink-0"
+                        >
+                          {sendingTestEmail ? (
+                            <>
+                              <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                              <span>Sending Test Email...</span>
+                            </>
+                          ) : (
+                            <>
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                              </svg>
+                              <span>Send Test Email</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+
+                      {testEmailResult && (
+                        <div className={`p-3 rounded-xl border text-xs font-medium flex items-center gap-2.5 animate-in fade-in ${
+                          testEmailResult.success
+                            ? "bg-emerald-950/40 border-emerald-800/60 text-emerald-300"
+                            : "bg-red-950/40 border-red-800/60 text-red-300"
+                        }`}>
+                          <span className="font-bold">{testEmailResult.success ? "✓" : "✕"}</span>
+                          <span>{testEmailResult.message}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Google OAuth & Authentication */}
+              {activeTab === "google-auth" && (
+                <div className="space-y-6 animate-in fade-in duration-200">
+                  {/* Card 1: Google OAuth Credentials */}
+                  <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div>
+                        <h3 className="text-sm font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+                          <svg className="w-4 h-4 text-emerald-400" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z" />
+                          </svg>
+                          Google OAuth & Single Sign-On
+                        </h3>
+                        <p className="text-xs text-slate-400 mt-1">
+                          Configure &ldquo;Sign in with Google&rdquo; so visitors can register and log in seamlessly.
+                        </p>
+                      </div>
+                      <a
+                        href="https://console.cloud.google.com/apis/credentials"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-cyan-400 hover:text-cyan-300 bg-cyan-950/40 border border-cyan-800/40 rounded-xl transition shrink-0"
+                      >
+                        <span>Google Cloud Console</span>
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                      </a>
+                    </div>
+
+                    {/* Enable / Disable Google Login Toggle */}
+                    <div className={`p-4 rounded-xl border transition-all ${
+                      settings.is_google_login_enabled
+                        ? "bg-slate-950/80 border-slate-700 shadow-xs"
+                        : "bg-slate-950/30 border-slate-800/60 opacity-60"
+                    }`}>
+                      <label className="flex items-center gap-3 cursor-pointer text-xs font-semibold text-white select-none">
+                        <input
+                          type="checkbox"
+                          checked={settings.is_google_login_enabled ?? true}
+                          onChange={(e) => setSettings({ ...settings, is_google_login_enabled: e.target.checked })}
+                          className="w-4 h-4 rounded text-emerald-500 focus:ring-emerald-500 cursor-pointer"
+                        />
+                        <span>Enable Google Sign-In on Website</span>
+                      </label>
+                      <p className="text-[11px] text-slate-400 mt-1 pl-7">
+                        When enabled, the &ldquo;Sign in with Google&rdquo; button appears on login and registration pages.
+                      </p>
+                    </div>
+
+                    {/* Google Client ID & Secret Inputs */}
+                    <div className="space-y-4 text-xs">
+                      {/* Client ID */}
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="block text-slate-400 font-medium">
+                            Google Client ID
+                          </label>
+                          <span className="text-[10px] text-slate-500">Public Key</span>
+                        </div>
+                        <input
+                          type="text"
+                          maxLength={500}
+                          value={settings.google_client_id || ""}
+                          onChange={(e) => setSettings({ ...settings, google_client_id: e.target.value })}
+                          className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white font-mono text-xs focus:outline-none focus:border-cyan-500"
+                          placeholder="e.g. 123456789-abcdefg.apps.googleusercontent.com"
+                        />
+                        <p className="text-[11px] text-slate-500 mt-1">
+                          The OAuth 2.0 Web Client ID from Google Cloud Console. Used by the browser login popup.
+                        </p>
+                      </div>
+
+                      {/* Client Secret */}
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="block text-slate-400 font-medium">
+                            Google Client Secret
+                          </label>
+                          {settings.has_google_client_secret && !settings.remove_google_client_secret ? (
+                            <span className="text-[11px] text-emerald-400 flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                              Custom secret is saved & encrypted (AES-256)
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-amber-400/80">Confidential Key</span>
+                          )}
+                        </div>
+                        <div className="relative">
+                          <input
+                            type={showGoogleSecret ? "text" : "password"}
+                            value={settings.google_client_secret || ""}
+                            onChange={(e) => setSettings({ ...settings, google_client_secret: e.target.value, remove_google_client_secret: false })}
+                            className="w-full p-2.5 pr-24 bg-slate-950 border border-slate-800 rounded-xl text-white font-mono text-xs focus:outline-none focus:border-cyan-500"
+                            placeholder={
+                              settings.has_google_client_secret && !settings.remove_google_client_secret
+                                ? "•••••••••••• (Leave blank to keep current secret)"
+                                : "Enter client secret (e.g. GOCSPX-...)"
+                            }
+                          />
+                          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setShowGoogleSecret(!showGoogleSecret)}
+                              className="px-2 py-1 text-[11px] text-slate-400 hover:text-white bg-slate-800 rounded-lg transition cursor-pointer"
+                            >
+                              {showGoogleSecret ? "Hide" : "Show"}
+                            </button>
+                            {settings.has_google_client_secret && !settings.remove_google_client_secret && (
+                              <button
+                                type="button"
+                                onClick={() => setSettings({ ...settings, remove_google_client_secret: true, google_client_secret: "" })}
+                                title="Revert to .env secret"
+                                className="px-2 py-1 text-[11px] text-rose-400 hover:text-rose-300 bg-rose-950/40 border border-rose-800/40 rounded-lg transition cursor-pointer"
+                              >
+                                Clear
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        {settings.remove_google_client_secret ? (
+                          <div className="mt-1 flex items-center gap-2 text-[11px] text-amber-400">
+                            <span>⚠ Secret will be cleared on save (will fall back to .env).</span>
+                            <button
+                              type="button"
+                              onClick={() => setSettings({ ...settings, remove_google_client_secret: false })}
+                              className="underline hover:text-white cursor-pointer"
+                            >
+                              Undo
+                            </button>
+                          </div>
+                        ) : (
+                          <p className="text-[11px] text-slate-500 mt-1">
+                            Kept encrypted in your database and never sent to the browser.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 2: Setup Guidance */}
+                  <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+                    <h3 className="text-sm font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                      <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Quick Setup Instructions for Google Cloud
+                    </h3>
+                    <div className="text-xs text-slate-400 space-y-2.5">
+                      <p>To enable Google Login on your custom domain:</p>
+                      <ol className="list-decimal list-inside space-y-1.5 text-slate-300 pl-1">
+                        <li>Visit <strong className="text-white">Google Cloud Console &rarr; APIs &amp; Services &rarr; Credentials</strong>.</li>
+                        <li>Click <strong className="text-white">Create Credentials &rarr; OAuth Client ID</strong>.</li>
+                        <li>Select Application Type: <strong className="text-white">Web application</strong>.</li>
+                        <li>Under <strong className="text-white">Authorized JavaScript origins</strong>, add:
+                          <div className="mt-1 font-mono bg-slate-950 p-2.5 rounded-lg text-emerald-400 space-y-1 select-all border border-slate-800">
+                            <div>http://localhost:3000</div>
+                            <div>http://194.233.90.79:3002</div>
+                            <div>https://raisetech.com.np (or your final production domain)</div>
+                          </div>
+                          <span className="text-[10px] text-slate-500 block mt-1">Note: Do not add a trailing slash (/) in Google Cloud Console.</span>
+                        </li>
+                        <li>Copy the generated <strong className="text-white">Client ID</strong> and <strong className="text-white">Client Secret</strong> into the fields above and click <strong className="text-white">Save Settings</strong>.</li>
+                      </ol>
                     </div>
                   </div>
                 </div>

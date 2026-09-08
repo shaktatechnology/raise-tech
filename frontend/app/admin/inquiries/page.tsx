@@ -823,10 +823,17 @@ export default function AdminInquiriesPage() {
                   <div>
                     <span className="text-slate-500 block">Contact Phone</span>
                     <a href={`tel:${selectedInquiry.contact_no}`} className="text-slate-200 font-medium">
-                      {selectedInquiry.contact_no}
+                      {selectedInquiry.contact_no || "Not provided"}
                     </a>
                   </div>
                 </div>
+
+                {selectedInquiry.subject && (
+                  <div className="py-2.5 px-3.5 bg-slate-950 rounded-xl border border-slate-800 text-xs">
+                    <span className="text-slate-500 font-medium block">Subject</span>
+                    <span className="text-slate-200 font-semibold text-sm">{selectedInquiry.subject}</span>
+                  </div>
+                )}
 
                 <div>
                   <span className="text-xs text-slate-400 font-medium block mb-1">Message:</span>

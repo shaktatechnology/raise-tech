@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 
 class AuthController extends Controller
 {
@@ -104,8 +106,15 @@ class AuthController extends Controller
                 'token' => 'required|string',
             ]);
 
+            $setting = Setting::first();
+            if ($setting && $setting->is_google_login_enabled === false) {
+                return response()->json([
+                    'message' => 'Google login is currently disabled by administrator.',
+                ], 403);
+            }
+
             // Verify Google token via Google OAuth2 tokeninfo endpoint
-            $response = \Illuminate\Support\Facades\Http::get('https://oauth2.googleapis.com/tokeninfo', [
+            $response = Http::get('https://oauth2.googleapis.com/tokeninfo', [
                 'id_token' => $validated['token'],
             ]);
 
@@ -123,6 +132,14 @@ class AuthController extends Controller
                 return response()->json([
                     'message' => 'Unable to retrieve email from Google token.',
                 ], 422);
+            }
+
+            // Verify audience if configured and returned in token
+            $configuredClientId = $setting?->google_client_id ?: env('GOOGLE_CLIENT_ID');
+            if (!empty($configuredClientId) && !empty($googleUser['aud']) && $googleUser['aud'] !== trim($configuredClientId)) {
+                return response()->json([
+                    'message' => 'Google token was issued for an unauthorized client application.',
+                ], 401);
             }
 
             // Find existing user or register new customer

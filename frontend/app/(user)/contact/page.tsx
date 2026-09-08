@@ -111,12 +111,23 @@ export default function ContactPage() {
     last_name: "",
     email: "",
     contact_no: "",
+    subject: "",
     message: "",
+    website_url: "", // Honeypot field
   });
 
   const [loading, setLoading] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setInterval(() => {
+      setCooldown((prev) => Math.max(0, prev - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [cooldown]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -126,6 +137,7 @@ export default function ContactPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading || cooldown > 0) return;
     setLoading(true);
     setSuccessMsg(null);
     setErrorMsg(null);
@@ -140,12 +152,15 @@ export default function ContactPage() {
         res.message ||
           "Thank you for reaching out! Your message has been sent successfully."
       );
+      setCooldown(30); // 30-second cooldown after sending
       setFormData({
         first_name: "",
         last_name: "",
         email: "",
         contact_no: "",
+        subject: "",
         message: "",
+        website_url: "",
       });
     } catch (err: unknown) {
       const message =
@@ -361,18 +376,31 @@ export default function ContactPage() {
 
                   <div>
                     <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
-                      Contact No <span className="text-red-500">*</span>
+                      Contact No <span className="text-gray-400 font-normal lowercase">(optional)</span>
                     </label>
                     <input
                       type="tel"
                       name="contact_no"
-                      required
                       value={formData.contact_no}
                       onChange={handleChange}
                       placeholder="+977-9800000000"
                       className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm focus:outline-none focus:border-[#01A7E5] focus:bg-white transition"
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
+                    Subject
+                  </label>
+                  <input
+                    type="text"
+                    name="subject"
+                    value={formData.subject}
+                    onChange={handleChange}
+                    placeholder="e.g. Inquiry regarding Web & Mobile Solutions"
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm focus:outline-none focus:border-[#01A7E5] focus:bg-white transition"
+                  />
                 </div>
 
                 <div>
@@ -390,15 +418,34 @@ export default function ContactPage() {
                   />
                 </div>
 
+                {/* Invisible honeypot field to trap automated spambots */}
+                <input
+                  type="text"
+                  name="website_url"
+                  value={formData.website_url || ""}
+                  onChange={handleChange}
+                  tabIndex={-1}
+                  autoComplete="off"
+                  className="opacity-0 absolute -left-[9999px] w-0 h-0 pointer-events-none"
+                  aria-hidden="true"
+                />
+
                 <button
                   type="submit"
-                  disabled={loading}
-                  className="w-full py-3.5 bg-[#01A7E5] hover:bg-[#0190c7] text-white font-bold text-sm rounded-xl transition-all shadow-md hover:shadow-lg disabled:opacity-60 flex items-center justify-center gap-2 cursor-pointer transform hover:-translate-y-0.5 active:translate-y-0"
+                  disabled={loading || cooldown > 0}
+                  className="w-full py-3.5 bg-[#01A7E5] hover:bg-[#0190c7] text-white font-bold text-sm rounded-xl transition-all shadow-md hover:shadow-lg disabled:opacity-60 flex items-center justify-center gap-2 cursor-pointer transform hover:-translate-y-0.5 active:translate-y-0 disabled:cursor-not-allowed"
                 >
                   {loading ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                       <span>Sending Inquiry...</span>
+                    </>
+                  ) : cooldown > 0 ? (
+                    <>
+                      <svg className="w-4 h-4 text-emerald-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>Message Sent! Please wait {cooldown}s</span>
                     </>
                   ) : (
                     <>
