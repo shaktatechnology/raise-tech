@@ -6,6 +6,11 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateSettingsRequest extends FormRequest
 {
+    public function authorize(): bool
+    {
+        return $this->user()?->isAdmin() ?? false;
+    }
+
     public function rules(): array
     {
         return [
@@ -23,6 +28,21 @@ class UpdateSettingsRequest extends FormRequest
             'email2' => ['nullable', 'email', 'max:255'],
             'inquiry_recipient_email' => ['nullable', 'email', 'max:255'],
             'is_inquiry_notification_enabled' => ['sometimes', 'boolean'],
+            'reply_to_email' => ['nullable', 'email', 'max:255'],
+            'sender_name' => ['nullable', 'string', 'max:255'],
+            'mail_mailer' => ['nullable', 'string', 'max:50'],
+            'mail_host' => ['nullable', 'string', 'max:255'],
+            'mail_port' => ['nullable', 'integer', 'min:1', 'max:65535'],
+            'mail_username' => ['nullable', 'string', 'max:255'],
+            'mail_password' => ['nullable', 'string', 'max:500'],
+            'remove_mail_password' => ['sometimes', 'boolean'],
+            'mail_encryption' => ['nullable', 'string', 'max:50'],
+            'mail_from_address' => ['nullable', 'email', 'max:255'],
+            'mail_from_name' => ['nullable', 'string', 'max:255'],
+            'google_client_id' => ['nullable', 'string', 'max:500'],
+            'google_client_secret' => ['nullable', 'string', 'max:500'],
+            'is_google_login_enabled' => ['sometimes', 'boolean'],
+            'remove_google_client_secret' => ['sometimes', 'boolean'],
             'company_name' => ['nullable', 'string', 'max:255'],
             'contact_eyebrow' => ['nullable', 'string', 'max:255'],
             'contact_title' => ['nullable', 'string', 'max:255'],

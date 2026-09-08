@@ -38,6 +38,7 @@ export interface ContactInquiry {
   last_name: string | null;
   email: string;
   contact_no: string;
+  subject?: string | null;
   message: string | null;
   is_read: number;
   created_at: string | null;
@@ -47,6 +48,8 @@ export interface ContactInquiry {
 export interface InquiryNotificationSettings {
   recipient_email: string;
   is_enabled: boolean;
+  reply_to_email?: string;
+  sender_name?: string;
   env_admin_email?: string;
   mailer?: string;
 }
@@ -169,9 +172,26 @@ export interface SiteSettings {
   operating_hours_note?: string;
   inquiry_recipient_email?: string;
   is_inquiry_notification_enabled?: boolean;
+  reply_to_email?: string;
+  sender_name?: string;
+  mail_mailer?: string;
+  mail_host?: string;
+  mail_port?: number | string | null;
+  mail_username?: string;
+  mail_password?: string;
+  mail_encryption?: string;
+  mail_from_address?: string;
+  mail_from_name?: string;
+  has_mail_password?: boolean;
+  remove_mail_password?: boolean;
   is_cod_enabled?: boolean;
   is_standard_delivery_enabled?: boolean;
   is_express_delivery_enabled?: boolean;
   standard_delivery_charge?: number | string | null;
   express_delivery_charge?: number | string | null;
+  google_client_id?: string;
+  google_client_secret?: string;
+  has_google_client_secret?: boolean;
+  remove_google_client_secret?: boolean;
+  is_google_login_enabled?: boolean;
 }

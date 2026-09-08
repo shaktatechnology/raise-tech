@@ -20,7 +20,7 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/google-login', [AuthController::class, 'googleLogin']);
 Route::get('/settings', [SettingController::class, 'index']);
-Route::post('/inquiry', [ContactController::class, 'store']);
+Route::post('/inquiry', [ContactController::class, 'store'])->middleware('throttle:contact-inquiry');
 Route::get('/services', [ServiceController::class, 'index']);
 Route::get('/about', [AboutController::class, 'index']);
 Route::get('/team', [TeamController::class, 'index']);
@@ -58,18 +58,19 @@ Route::middleware('auth:sanctum')->group(function () {
     // Settings administration
     Route::middleware('admin')->group(function () {
         Route::post('/settings', [SettingController::class, 'update']);
-    });
+        Route::post('/settings/test-email', [SettingController::class, 'sendTestEmail']);
 
-    // inquiries
-    Route::get('/inquiries', [ContactController::class, 'index']);
-    Route::delete('/inquiries/{contact}', [ContactController::class, 'destroy']);
-    Route::post('/inquiries/{contact}/read', [ContactController::class, 'markAsRead']);
-    Route::post('/inquiries/{contact}/unread', [ContactController::class, 'markAsUnread']);
-    Route::post('/inquiries/{contact}/toggle-status', [ContactController::class, 'toggleStatus']);
-    Route::get('/inquiries/unread', [ContactController::class, 'unreadCount']);
-    Route::get('/inquiries/notification-settings', [ContactController::class, 'getNotificationSettings']);
-    Route::post('/inquiries/notification-settings', [ContactController::class, 'updateNotificationSettings'])->middleware('admin');
-    Route::post('/inquiries/test-notification', [ContactController::class, 'sendTestNotification'])->middleware('admin');
+        // Inquiries administration
+        Route::get('/inquiries', [ContactController::class, 'index']);
+        Route::delete('/inquiries/{contact}', [ContactController::class, 'destroy']);
+        Route::post('/inquiries/{contact}/read', [ContactController::class, 'markAsRead']);
+        Route::post('/inquiries/{contact}/unread', [ContactController::class, 'markAsUnread']);
+        Route::post('/inquiries/{contact}/toggle-status', [ContactController::class, 'toggleStatus']);
+        Route::get('/inquiries/unread', [ContactController::class, 'unreadCount']);
+        Route::get('/inquiries/notification-settings', [ContactController::class, 'getNotificationSettings']);
+        Route::post('/inquiries/notification-settings', [ContactController::class, 'updateNotificationSettings']);
+        Route::post('/inquiries/test-notification', [ContactController::class, 'sendTestNotification']);
+    });
 
     // Services administration
     Route::middleware('admin')->group(function () {

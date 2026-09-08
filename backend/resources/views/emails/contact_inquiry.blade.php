@@ -108,7 +108,7 @@
         <div class="content">
             <div class="field-group">
                 <div class="field-label">Sender Name</div>
-                <div class="field-value">{{ $contact->first_name }} {{ $contact->last_name }}</div>
+                <div class="field-value">{{ trim(($contact->first_name ?? '') . ' ' . ($contact->last_name ?? '')) ?: 'Website Visitor' }}</div>
             </div>
 
             <div class="field-group">
@@ -121,9 +121,20 @@
             <div class="field-group">
                 <div class="field-label">Contact Number</div>
                 <div class="field-value">
-                    <a href="tel:{{ $contact->contact_no }}">{{ $contact->contact_no }}</a>
+                    @if (!empty($contact->contact_no))
+                        <a href="tel:{{ $contact->contact_no }}">{{ $contact->contact_no }}</a>
+                    @else
+                        <span style="color: #9ca3af;">Not provided</span>
+                    @endif
                 </div>
             </div>
+
+            @if (!empty($contact->subject))
+            <div class="field-group">
+                <div class="field-label">Subject</div>
+                <div class="field-value">{{ $contact->subject }}</div>
+            </div>
+            @endif
 
             <div class="field-group">
                 <div class="field-label">Received At</div>
@@ -136,8 +147,8 @@
             </div>
 
             <div class="btn-row">
-                <a href="mailto:{{ $contact->email }}?subject=Re:%20Inquiry%20from%20Raise%20Tech" class="reply-btn">
-                    Reply to {{ $contact->first_name }}
+                <a href="mailto:{{ $contact->email }}?subject={{ rawurlencode('Re: ' . ($contact->subject ?: 'Inquiry from Raise Tech')) }}" class="reply-btn">
+                    Reply to {{ $contact->first_name ?: 'Sender' }}
                 </a>
             </div>
         </div>
