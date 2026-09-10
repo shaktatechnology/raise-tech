@@ -115,8 +115,8 @@ export default function AdminSettingsPage() {
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  type SettingsTab = "branding" | "contact" | "email-notifications" | "google-auth" | "social" | "general-checkout";
-  const [activeTab, setActiveTab] = useState<SettingsTab>("branding");
+  type SettingsTab = "general" | "authorization" | "social" | "checkout";
+  const [activeTab, setActiveTab] = useState<SettingsTab>("general");
 
   // Test Email State
   const [testEmailRecipient, setTestEmailRecipient] = useState<string>("");
@@ -384,40 +384,25 @@ export default function AdminSettingsPage() {
           <div className="flex items-center gap-2 border-b border-slate-800 pb-4 overflow-x-auto">
             <button
               type="button"
-              onClick={() => setActiveTab("branding")}
+              onClick={() => setActiveTab("general")}
               className={`px-5 py-3 font-bold text-xs sm:text-sm rounded-xl transition-all cursor-pointer flex items-center gap-2.5 shrink-0 ${
-                activeTab === "branding"
+                activeTab === "general"
                   ? "bg-emerald-600 text-white shadow-lg shadow-emerald-900/40 ring-2 ring-emerald-400/50"
                   : "bg-slate-900/90 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800"
               }`}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M4 8h16M4 8a2 2 0 012-2h12a2 2 0 012 2M4 8a2 2 0 002 2v6a2 2 0 002 2h8a2 2 0 002-2v-6a2 2 0 002-2" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
-              <span>Branding</span>
+              <span>General</span>
             </button>
 
             <button
               type="button"
-              onClick={() => setActiveTab("contact")}
+              onClick={() => setActiveTab("authorization")}
               className={`px-5 py-3 font-bold text-xs sm:text-sm rounded-xl transition-all cursor-pointer flex items-center gap-2.5 shrink-0 ${
-                activeTab === "contact"
-                  ? "bg-emerald-600 text-white shadow-lg shadow-emerald-900/40 ring-2 ring-emerald-400/50"
-                  : "bg-slate-900/90 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800"
-              }`}
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              <span>Contact & Location</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab("email-notifications")}
-              className={`px-5 py-3 font-bold text-xs sm:text-sm rounded-xl transition-all cursor-pointer flex items-center gap-2.5 shrink-0 ${
-                activeTab === "email-notifications"
+                activeTab === "authorization"
                   ? "bg-emerald-600 text-white shadow-lg shadow-emerald-900/40 ring-2 ring-emerald-400/50"
                   : "bg-slate-900/90 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800"
               }`}
@@ -425,22 +410,7 @@ export default function AdminSettingsPage() {
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
-              <span>Email & Notifications</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab("google-auth")}
-              className={`px-5 py-3 font-bold text-xs sm:text-sm rounded-xl transition-all cursor-pointer flex items-center gap-2.5 shrink-0 ${
-                activeTab === "google-auth"
-                  ? "bg-emerald-600 text-white shadow-lg shadow-emerald-900/40 ring-2 ring-emerald-400/50"
-                  : "bg-slate-900/90 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800"
-              }`}
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z" />
-              </svg>
-              <span>Google & Auth</span>
+              <span>Authorization</span>
             </button>
 
             <button
@@ -460,18 +430,17 @@ export default function AdminSettingsPage() {
 
             <button
               type="button"
-              onClick={() => setActiveTab("general-checkout")}
+              onClick={() => setActiveTab("checkout")}
               className={`px-5 py-3 font-bold text-xs sm:text-sm rounded-xl transition-all cursor-pointer flex items-center gap-2.5 shrink-0 ${
-                activeTab === "general-checkout"
+                activeTab === "checkout"
                   ? "bg-emerald-600 text-white shadow-lg shadow-emerald-900/40 ring-2 ring-emerald-400/50"
                   : "bg-slate-900/90 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800"
               }`}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
-              <span>General & Checkout</span>
+              <span>E-Commerce & Checkout</span>
             </button>
           </div>
 
@@ -482,237 +451,256 @@ export default function AdminSettingsPage() {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-8">
-              {/* Branding */}
-              {activeTab === "branding" && (
-                <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4 animate-in fade-in duration-200">
-                  <h3 className="text-sm font-bold text-emerald-400 uppercase tracking-wider">
-                    Branding
-                  </h3>
-                  <div className="space-y-6">
-                    <AdminImageField
-                      label="Site logo"
-                      existingImageUrl={getImageUrl(settings.logo)}
-                      existingImageFilename={getImageFilename(settings.logo)}
-                      existingImageAlt="Current site logo"
-                      selectedFile={logoFile}
-                      onSelectFile={setLogoFile}
-                      onClearSelection={() => setLogoFile(null)}
-                      onProcessingChange={setIsOptimizingLogo}
-                      onRemoveExisting={() => setRemoveLogo(true)}
-                      onUndoRemoval={() => setRemoveLogo(false)}
-                      isExistingMarkedForRemoval={removeLogo}
-                      disabled={submitting}
-                      error={logoError}
-                      aspectRatioGuidance="JPEG, PNG, or WebP up to 10 MB. Transparent or wide logo artwork works best."
-                      accent="cyan"
-                    />
-
-                    {/* Favicon */}
-                    <div className="space-y-2">
+              {/* General */}
+              {activeTab === "general" && (
+                <div className="space-y-6 animate-in fade-in duration-200">
+                  {/* Branding */}
+                  <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+                    <h3 className="text-sm font-bold text-emerald-400 uppercase tracking-wider">
+                      Branding
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                       <AdminImageField
-                        label="Favicon"
-                        existingImageUrl={getImageUrl(settings.favicon)}
-                        existingImageFilename={getImageFilename(settings.favicon)}
-                        existingImageAlt="Current site favicon"
-                        selectedFile={faviconFile}
-                        onSelectFile={setFaviconFile}
-                        onClearSelection={() => setFaviconFile(null)}
-                        onProcessingChange={setIsOptimizingFavicon}
-                        onRemoveExisting={() => setRemoveFavicon(true)}
-                        onUndoRemoval={() => setRemoveFavicon(false)}
-                        isExistingMarkedForRemoval={removeFavicon}
+                        label="Site logo"
+                        existingImageUrl={getImageUrl(settings.logo)}
+                        // existingImageFilename={getImageFilename(settings.logo)}
+                        existingImageAlt="Current site logo"
+                        selectedFile={logoFile}
+                        onSelectFile={setLogoFile}
+                        onClearSelection={() => setLogoFile(null)}
+                        onProcessingChange={setIsOptimizingLogo}
+                        onRemoveExisting={() => setRemoveLogo(true)}
+                        onUndoRemoval={() => setRemoveLogo(false)}
+                        isExistingMarkedForRemoval={removeLogo}
                         disabled={submitting}
-                        error={faviconError}
-                        accept="image/png,image/jpeg,image/webp"
-                        aspectRatioGuidance="Use a square PNG, JPEG, or WebP. It is resized to at most 512×512 and optimized below 200 KB."
+                        error={logoError}
+                        // aspectRatioGuidance="JPEG, PNG, or WebP up to 10 MB. Transparent or wide logo artwork works best."
                         accent="cyan"
-                        optimizationOptions={{ maxDimension: 512, targetBytes: 200 * 1024 }}
                       />
-                      <p className="text-slate-600 text-[10px] mt-2">
-                        Square image recommended (e.g. 32×32 or 64×64px).
-                      </p>
+
+                      <div className="space-y-2">
+                        <AdminImageField
+                          label="Favicon"
+                          existingImageUrl={getImageUrl(settings.favicon)}
+                         
+                          existingImageAlt="Current site favicon"
+                          selectedFile={faviconFile}
+                          onSelectFile={setFaviconFile}
+                          onClearSelection={() => setFaviconFile(null)}
+                          onProcessingChange={setIsOptimizingFavicon}
+                          onRemoveExisting={() => setRemoveFavicon(true)}
+                          onUndoRemoval={() => setRemoveFavicon(false)}
+                          isExistingMarkedForRemoval={removeFavicon}
+                          disabled={submitting}
+                          error={faviconError}
+                          accept="image/png,image/jpeg,image/webp"
+                          // aspectRatioGuidance="Use a square PNG, JPEG, or WebP. It is resized to at most 512×512 and optimized below 200 KB."
+                          accent="cyan"
+                          optimizationOptions={{ maxDimension: 512, targetBytes: 200 * 1024 }}
+                        />
+                        {/* <p className="text-slate-600 text-[10px] mt-2">
+                          Square image recommended (e.g. 32×32 or 64×64px).
+                        </p> */}
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
 
-              {/* Contact Information */}
-              {activeTab === "contact" && (
-                <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4 animate-in fade-in duration-200">
-                  <h3 className="text-sm font-bold text-emerald-400 uppercase tracking-wider">
-                    Contact & Address Details
-                  </h3>
-
-                  {/* Contact Page Hero Content */}
-                  <div className="border border-slate-800/80 rounded-xl p-4 bg-slate-950/40 space-y-3">
-                    <span className="text-xs font-semibold text-cyan-400 uppercase tracking-wider">
-                      Contact Page Hero Banner
-                    </span>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  {/* General Company Profile */}
+                  <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+                    <h3 className="text-sm font-bold text-emerald-400 uppercase tracking-wider">
+                      General Company Profile
+                    </h3>
+                    <div className="space-y-3 text-xs">
                       <div>
-                        <label className="block text-slate-400 mb-1">Eyebrow Badge</label>
-                        <input
-                          type="text"
-                          maxLength={255}
-                          value={settings.contact_eyebrow || ""}
-                          onChange={(e) => setSettings({ ...settings, contact_eyebrow: e.target.value })}
-                          className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
-                          placeholder="e.g. Contact Raise Tech"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-slate-400 mb-1">Hero Main Title</label>
-                        <input
-                          type="text"
-                          maxLength={255}
-                          value={settings.contact_title || ""}
-                          onChange={(e) => setSettings({ ...settings, contact_title: e.target.value })}
-                          className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
-                          placeholder="e.g. Let's Build Something Exceptional Together"
-                        />
-                      </div>
-                      <div className="sm:col-span-2">
-                        <label className="block text-slate-400 mb-1">Hero Subtitle / Description</label>
+                        <label className="block text-slate-400 mb-1">Short Description</label>
                         <textarea
-                          rows={2}
-                          maxLength={2000}
-                          value={settings.contact_description || ""}
-                          onChange={(e) => setSettings({ ...settings, contact_description: e.target.value })}
+                          rows={3}
+                          value={settings.short_description || ""}
+                          onChange={(e) => setSettings({ ...settings, short_description: e.target.value })}
                           className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
-                          placeholder="e.g. Have a project in mind, need technical assistance, or want to discuss enterprise solutions?..."
+                          placeholder="Enterprise summary displayed in footer and about metadata..."
                         />
                       </div>
                     </div>
                   </div>
 
-                  {/* Headquarters & Operating Hours */}
-                  <div className="border border-slate-800/80 rounded-xl p-4 bg-slate-950/40 space-y-3">
-                    <span className="text-xs font-semibold text-cyan-400 uppercase tracking-wider">
-                      Headquarters & Operating Hours
-                    </span>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  {/* Contact & Address Details */}
+                  <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+                    <h3 className="text-sm font-bold text-emerald-400 uppercase tracking-wider">
+                      Contact & Address Details
+                    </h3>
+
+                    {/* Contact Page Hero Content */}
+                    <div className="border border-slate-800/80 rounded-xl p-4 bg-slate-950/40 space-y-3">
+                      <span className="text-xs font-semibold text-cyan-400 uppercase tracking-wider">
+                        Contact Page Hero Banner
+                      </span>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                        <div>
+                          <label className="block text-slate-400 mb-1">Eyebrow Badge</label>
+                          <input
+                            type="text"
+                            maxLength={255}
+                            value={settings.contact_eyebrow || ""}
+                            onChange={(e) => setSettings({ ...settings, contact_eyebrow: e.target.value })}
+                            className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
+                            placeholder="e.g. Contact Raise Tech"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-slate-400 mb-1">Hero Main Title</label>
+                          <input
+                            type="text"
+                            maxLength={255}
+                            value={settings.contact_title || ""}
+                            onChange={(e) => setSettings({ ...settings, contact_title: e.target.value })}
+                            className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
+                            placeholder="e.g. Let's Build Something Exceptional Together"
+                          />
+                        </div>
+                        <div className="sm:col-span-2">
+                          <label className="block text-slate-400 mb-1">Hero Subtitle / Description</label>
+                          <textarea
+                            rows={2}
+                            maxLength={2000}
+                            value={settings.contact_description || ""}
+                            onChange={(e) => setSettings({ ...settings, contact_description: e.target.value })}
+                            className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
+                            placeholder="e.g. Have a project in mind, need technical assistance, or want to discuss enterprise solutions?..."
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Headquarters & Operating Hours */}
+                    <div className="border border-slate-800/80 rounded-xl p-4 bg-slate-950/40 space-y-3">
+                      <span className="text-xs font-semibold text-cyan-400 uppercase tracking-wider">
+                        Headquarters & Operating Hours
+                      </span>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                        <div>
+                          <label className="block text-slate-400 mb-1">Company / Headquarters Name</label>
+                          <input
+                            type="text"
+                            maxLength={255}
+                            value={settings.company_name || ""}
+                            onChange={(e) => setSettings({ ...settings, company_name: e.target.value })}
+                            className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
+                            placeholder="e.g. Raise Tech Pvt. Ltd."
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-slate-400 mb-1">Operating Hours</label>
+                          <input
+                            type="text"
+                            maxLength={255}
+                            value={settings.operating_hours || ""}
+                            onChange={(e) => setSettings({ ...settings, operating_hours: e.target.value })}
+                            className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
+                            placeholder="e.g. Sun - Fri: 9:00 AM - 6:00 PM (NPT)"
+                          />
+                        </div>
+                        <div className="sm:col-span-2">
+                          <label className="block text-slate-400 mb-1">Operating Hours Secondary Note</label>
+                          <input
+                            type="text"
+                            maxLength={255}
+                            value={settings.operating_hours_note || ""}
+                            onChange={(e) => setSettings({ ...settings, operating_hours_note: e.target.value })}
+                            className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
+                            placeholder="e.g. 24/7 client portal access for critical issues."
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Direct Contact Channels */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
                       <div>
-                        <label className="block text-slate-400 mb-1">Company / Headquarters Name</label>
+                        <label className="block text-slate-400 mb-1">Primary Phone</label>
                         <input
                           type="text"
-                          maxLength={255}
-                          value={settings.company_name || ""}
-                          onChange={(e) => setSettings({ ...settings, company_name: e.target.value })}
+                          maxLength={25}
+                          value={settings.phone1 || ""}
+                          onChange={(e) => setSettings({ ...settings, phone1: e.target.value })}
                           className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
-                          placeholder="e.g. Raise Tech Pvt. Ltd."
+                          placeholder="+977 9844702762"
                         />
                       </div>
                       <div>
-                        <label className="block text-slate-400 mb-1">Operating Hours</label>
+                        <label className="block text-slate-400 mb-1">Secondary Phone</label>
                         <input
                           type="text"
-                          maxLength={255}
-                          value={settings.operating_hours || ""}
-                          onChange={(e) => setSettings({ ...settings, operating_hours: e.target.value })}
+                          maxLength={25}
+                          value={settings.phone2 || ""}
+                          onChange={(e) => setSettings({ ...settings, phone2: e.target.value })}
                           className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
-                          placeholder="e.g. Sun - Fri: 9:00 AM - 6:00 PM (NPT)"
+                          placeholder="015705475"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-400 mb-1">Third Phone (Optional)</label>
+                        <input
+                          type="text"
+                          maxLength={25}
+                          value={settings.phone3 || ""}
+                          onChange={(e) => setSettings({ ...settings, phone3: e.target.value })}
+                          className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
+                          placeholder="+977 9800000000"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                      <div>
+                        <label className="block text-slate-400 mb-1">Primary Email</label>
+                        <input
+                          type="email"
+                          maxLength={255}
+                          value={settings.email1 || ""}
+                          onChange={(e) => setSettings({ ...settings, email1: e.target.value })}
+                          className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
+                          placeholder="info@raisetech.com"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-400 mb-1">Support Email</label>
+                        <input
+                          type="email"
+                          maxLength={255}
+                          value={settings.email2 || ""}
+                          onChange={(e) => setSettings({ ...settings, email2: e.target.value })}
+                          className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
+                          placeholder="support@raisetech.com"
                         />
                       </div>
                       <div className="sm:col-span-2">
-                        <label className="block text-slate-400 mb-1">Operating Hours Secondary Note</label>
+                        <label className="block text-slate-400 mb-1">Physical Location Address</label>
                         <input
                           type="text"
-                          maxLength={255}
-                          value={settings.operating_hours_note || ""}
-                          onChange={(e) => setSettings({ ...settings, operating_hours_note: e.target.value })}
+                          maxLength={500}
+                          value={settings.location || ""}
+                          onChange={(e) => setSettings({ ...settings, location: e.target.value })}
                           className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
-                          placeholder="e.g. 24/7 client portal access for critical issues."
+                          placeholder="e.g. New Road, Kathmandu, Nepal"
                         />
                       </div>
-                    </div>
-                  </div>
-
-                  {/* Direct Contact Channels */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-                    <div>
-                      <label className="block text-slate-400 mb-1">Primary Phone</label>
-                      <input
-                        type="text"
-                        maxLength={25}
-                        value={settings.phone1 || ""}
-                        onChange={(e) => setSettings({ ...settings, phone1: e.target.value })}
-                        className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
-                        placeholder="+977 9844702762"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-slate-400 mb-1">Secondary Phone</label>
-                      <input
-                        type="text"
-                        maxLength={25}
-                        value={settings.phone2 || ""}
-                        onChange={(e) => setSettings({ ...settings, phone2: e.target.value })}
-                        className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
-                        placeholder="015705475"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-slate-400 mb-1">Third Phone (Optional)</label>
-                      <input
-                        type="text"
-                        maxLength={25}
-                        value={settings.phone3 || ""}
-                        onChange={(e) => setSettings({ ...settings, phone3: e.target.value })}
-                        className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
-                        placeholder="+977 9800000000"
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                    <div>
-                      <label className="block text-slate-400 mb-1">Primary Email</label>
-                      <input
-                        type="email"
-                        maxLength={255}
-                        value={settings.email1 || ""}
-                        onChange={(e) => setSettings({ ...settings, email1: e.target.value })}
-                        className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
-                        placeholder="info@raisetech.com"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-slate-400 mb-1">Support Email</label>
-                      <input
-                        type="email"
-                        maxLength={255}
-                        value={settings.email2 || ""}
-                        onChange={(e) => setSettings({ ...settings, email2: e.target.value })}
-                        className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
-                        placeholder="support@raisetech.com"
-                      />
-                    </div>
-                    <div className="sm:col-span-2">
-                      <label className="block text-slate-400 mb-1">Physical Location Address</label>
-                      <input
-                        type="text"
-                        maxLength={500}
-                        value={settings.location || ""}
-                        onChange={(e) => setSettings({ ...settings, location: e.target.value })}
-                        className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
-                        placeholder="e.g. New Road, Kathmandu, Nepal"
-                      />
-                    </div>
-                    <div className="sm:col-span-2">
-                      <label className="block text-slate-400 mb-1">Google Maps Embed / Direct URL</label>
-                      <input
-                        type="url"
-                        value={settings.map_url || ""}
-                        onChange={(e) => setSettings({ ...settings, map_url: e.target.value })}
-                        className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
-                        placeholder="https://www.google.com/maps/embed?pb=..."
-                      />
+                      <div className="sm:col-span-2">
+                        <label className="block text-slate-400 mb-1">Google Maps Embed / Direct URL</label>
+                        <input
+                          type="url"
+                          value={settings.map_url || ""}
+                          onChange={(e) => setSettings({ ...settings, map_url: e.target.value })}
+                          className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
+                          placeholder="https://www.google.com/maps/embed?pb=..."
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* Email & Notifications */}
-              {activeTab === "email-notifications" && (
+              {/* Authorization */}
+              {activeTab === "authorization" && (
                 <div className="space-y-6 animate-in fade-in duration-200">
                   {/* Card 1: Outgoing Mail Server (SMTP) */}
                   <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-5">
@@ -789,11 +777,11 @@ export default function AdminSettingsPage() {
                             mail_from_address: e.target.value,
                           })}
                           className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-cyan-500"
-                          placeholder="e.g. baniyapradip58@gmail.com or info@raisetech.com.np"
+                          placeholder="e.g. info@raisetech.com.np"
                         />
-                        <p className="text-[11px] text-slate-500 mt-1">
+                        {/* <p className="text-[11px] text-slate-500 mt-1">
                           Account used by the server to send out emails.
-                        </p>
+                        </p> */}
                       </div>
 
                       {/* Sender Display Name */}
@@ -813,9 +801,9 @@ export default function AdminSettingsPage() {
                           className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-cyan-500"
                           placeholder="e.g. Raise Tech"
                         />
-                        <p className="text-[11px] text-slate-500 mt-1">
+                        {/* <p className="text-[11px] text-slate-500 mt-1">
                           Friendly name displayed in the inbox sender header.
-                        </p>
+                        </p> */}
                       </div>
 
                       {/* Password */}
@@ -844,13 +832,13 @@ export default function AdminSettingsPage() {
                             }
                           />
                           <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
-                            <button
+                            {/* <button
                               type="button"
                               onClick={() => setShowSmtpPassword(!showSmtpPassword)}
                               className="px-2 py-1 text-[11px] text-slate-400 hover:text-white bg-slate-800 rounded-lg transition cursor-pointer"
                             >
                               {showSmtpPassword ? "Hide" : "Show"}
-                            </button>
+                            </button> */}
                             {settings.has_mail_password && !settings.remove_mail_password && (
                               <button
                                 type="button"
@@ -868,9 +856,7 @@ export default function AdminSettingsPage() {
                             Password will be cleared upon saving (reverts to server default).
                           </p>
                         ) : (
-                          <p className="text-[11px] text-slate-500 mt-1">
-                            Stored with AES-256 database encryption. For Gmail accounts, use a 16-character Google App Password.
-                          </p>
+                          null
                         )}
                       </div>
                     </div>
@@ -897,7 +883,7 @@ export default function AdminSettingsPage() {
                             SMTP Port
                           </label>
                           <input
-                            type="number"
+                            type="text"
                             value={settings.mail_port || ""}
                             onChange={(e) => setSettings({ ...settings, mail_port: e.target.value })}
                             className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-cyan-500"
@@ -978,9 +964,9 @@ export default function AdminSettingsPage() {
                         className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
                         placeholder="e.g. baniyapradip58@gmail.com"
                       />
-                      <p className="text-[11px] text-slate-500 mt-1">
+                      {/* <p className="text-[11px] text-slate-500 mt-1">
                         Where contact form messages submitted by website visitors will be delivered.
-                      </p>
+                      </p> */}
                     </div>
 
                     {/* Live SMTP Verification Tool */}
@@ -989,9 +975,9 @@ export default function AdminSettingsPage() {
                         <h4 className="text-xs font-bold text-white uppercase tracking-wider">
                           Live Delivery Verification
                         </h4>
-                        <p className="text-[11px] text-slate-400">
+                        {/* <p className="text-[11px] text-slate-400">
                           Send a real test email through your configured SMTP server to verify inbox deliverability.
-                        </p>
+                        </p> */}
                       </div>
 
                       <div className="flex flex-col sm:flex-row items-center gap-3">
@@ -1038,13 +1024,8 @@ export default function AdminSettingsPage() {
                       )}
                     </div>
                   </div>
-                </div>
-              )}
 
-              {/* Google OAuth & Authentication */}
-              {activeTab === "google-auth" && (
-                <div className="space-y-6 animate-in fade-in duration-200">
-                  {/* Card 1: Google OAuth Credentials */}
+                  {/* Google OAuth & Single Sign-On */}
                   <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-5">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div>
@@ -1099,7 +1080,7 @@ export default function AdminSettingsPage() {
                           <label className="block text-slate-400 font-medium">
                             Google Client ID
                           </label>
-                          <span className="text-[10px] text-slate-500">Public Key</span>
+                          {/* <span className="text-[10px] text-slate-500">Public Key</span> */}
                         </div>
                         <input
                           type="text"
@@ -1109,9 +1090,9 @@ export default function AdminSettingsPage() {
                           className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white font-mono text-xs focus:outline-none focus:border-cyan-500"
                           placeholder="e.g. 123456789-abcdefg.apps.googleusercontent.com"
                         />
-                        <p className="text-[11px] text-slate-500 mt-1">
+                        {/* <p className="text-[11px] text-slate-500 mt-1">
                           The OAuth 2.0 Web Client ID from Google Cloud Console. Used by the browser login popup.
-                        </p>
+                        </p> */}
                       </div>
 
                       {/* Client Secret */}
@@ -1126,7 +1107,7 @@ export default function AdminSettingsPage() {
                               Custom secret is saved & encrypted (AES-256)
                             </span>
                           ) : (
-                            <span className="text-[10px] text-amber-400/80">Confidential Key</span>
+                            null
                           )}
                         </div>
                         <div className="relative">
@@ -1142,13 +1123,13 @@ export default function AdminSettingsPage() {
                             }
                           />
                           <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
-                            <button
+                            {/* <button
                               type="button"
                               onClick={() => setShowGoogleSecret(!showGoogleSecret)}
                               className="px-2 py-1 text-[11px] text-slate-400 hover:text-white bg-slate-800 rounded-lg transition cursor-pointer"
                             >
                               {showGoogleSecret ? "Hide" : "Show"}
-                            </button>
+                            </button> */}
                             {settings.has_google_client_secret && !settings.remove_google_client_secret && (
                               <button
                                 type="button"
@@ -1173,15 +1154,13 @@ export default function AdminSettingsPage() {
                             </button>
                           </div>
                         ) : (
-                          <p className="text-[11px] text-slate-500 mt-1">
-                            Kept encrypted in your database and never sent to the browser.
-                          </p>
+                          null
                         )}
                       </div>
                     </div>
                   </div>
 
-                  {/* Card 2: Setup Guidance */}
+                  {/* Card 2: Setup Guidance
                   <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
                     <h3 className="text-sm font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
                       <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1206,7 +1185,7 @@ export default function AdminSettingsPage() {
                         <li>Copy the generated <strong className="text-white">Client ID</strong> and <strong className="text-white">Client Secret</strong> into the fields above and click <strong className="text-white">Save Settings</strong>.</li>
                       </ol>
                     </div>
-                  </div>
+                  </div> */}
                 </div>
               )}
 
@@ -1281,35 +1260,17 @@ export default function AdminSettingsPage() {
                 </div>
               )}
 
-              {/* General Profile & E-Commerce Options */}
-              {activeTab === "general-checkout" && (
+              {/* E-Commerce & Checkout */}
+              {activeTab === "checkout" && (
                 <div className="space-y-6 animate-in fade-in duration-200">
-                  <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
-                    <h3 className="text-sm font-bold text-emerald-400 uppercase tracking-wider">
-                      General Company Profile
-                    </h3>
-                    <div className="space-y-3 text-xs">
-                      <div>
-                        <label className="block text-slate-400 mb-1">Short Description / Footer Blurb</label>
-                        <textarea
-                          rows={3}
-                          value={settings.short_description || ""}
-                          onChange={(e) => setSettings({ ...settings, short_description: e.target.value })}
-                          className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
-                          placeholder="Enterprise summary displayed in footer and about metadata..."
-                        />
-                      </div>
-                    </div>
-                  </div>
-
                   <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-5">
                     <div>
                       <h3 className="text-sm font-bold text-emerald-400 uppercase tracking-wider">
                         E-Commerce Delivery Options & Charges
                       </h3>
-                      <p className="text-xs text-slate-400 mt-1">
+                      {/* <p className="text-xs text-slate-400 mt-1">
                         Select which delivery methods are available for customer orders. If both options are unchecked, the delivery method step will not appear at checkout and delivery will be free.
-                      </p>
+                      </p> */}
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-1">
