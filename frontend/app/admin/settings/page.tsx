@@ -353,7 +353,7 @@ export default function AdminSettingsPage() {
   return (
     <ProtectedRoute allowedRoles={["admin"]}>
       <div className="min-h-screen bg-slate-950 text-slate-100 pb-12">
-        <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+        <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
           {/* Header */}
           <div className="flex items-center justify-between border-b border-slate-800 pb-6">
             <div>
@@ -482,7 +482,7 @@ export default function AdminSettingsPage() {
                         <AdminImageField
                           label="Favicon"
                           existingImageUrl={getImageUrl(settings.favicon)}
-                         
+                          // existingImageFilename={getImageFilename(settings.favicon)}
                           existingImageAlt="Current site favicon"
                           selectedFile={faviconFile}
                           onSelectFile={setFaviconFile}
@@ -579,7 +579,7 @@ export default function AdminSettingsPage() {
                       </span>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                         <div>
-                          <label className="block text-slate-400 mb-1">Company / Headquarters Name</label>
+                          <label className="block text-slate-400 mb-1">Company Name</label>
                           <input
                             type="text"
                             maxLength={255}
@@ -598,6 +598,17 @@ export default function AdminSettingsPage() {
                             onChange={(e) => setSettings({ ...settings, operating_hours: e.target.value })}
                             className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
                             placeholder="e.g. Sun - Fri: 9:00 AM - 6:00 PM (NPT)"
+                          />
+                        </div>
+                        <div className="sm:col-span-2">
+                          <label className="block text-slate-400 mb-1">Physical Location Address</label>
+                          <input
+                            type="text"
+                            maxLength={500}
+                            value={settings.location || ""}
+                            onChange={(e) => setSettings({ ...settings, location: e.target.value })}
+                            className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
+                            placeholder="e.g. New Road, Kathmandu, Nepal"
                           />
                         </div>
                         <div className="sm:col-span-2">
@@ -672,18 +683,7 @@ export default function AdminSettingsPage() {
                           className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
                           placeholder="support@raisetech.com"
                         />
-                      </div>
-                      <div className="sm:col-span-2">
-                        <label className="block text-slate-400 mb-1">Physical Location Address</label>
-                        <input
-                          type="text"
-                          maxLength={500}
-                          value={settings.location || ""}
-                          onChange={(e) => setSettings({ ...settings, location: e.target.value })}
-                          className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
-                          placeholder="e.g. New Road, Kathmandu, Nepal"
-                        />
-                      </div>
+                      </div>                      
                       <div className="sm:col-span-2">
                         <label className="block text-slate-400 mb-1">Google Maps Embed / Direct URL</label>
                         <input
@@ -962,7 +962,7 @@ export default function AdminSettingsPage() {
                         value={settings.inquiry_recipient_email || ""}
                         onChange={(e) => setSettings({ ...settings, inquiry_recipient_email: e.target.value })}
                         className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-emerald-500"
-                        placeholder="e.g. baniyapradip58@gmail.com"
+                        placeholder="e.g. raisetech@gmail.com"
                       />
                       {/* <p className="text-[11px] text-slate-500 mt-1">
                         Where contact form messages submitted by website visitors will be delivered.
@@ -1293,7 +1293,7 @@ export default function AdminSettingsPage() {
                         <div>
                           <label className="block text-slate-400 text-xs mb-1">Standard Delivery Charge (NPR)</label>
                           <input
-                            type="number"
+                            type="text"
                             min="0"
                             step="0.01"
                             disabled={!settings.is_standard_delivery_enabled}
@@ -1325,7 +1325,7 @@ export default function AdminSettingsPage() {
                         <div>
                           <label className="block text-slate-400 text-xs mb-1">Express Delivery Charge (NPR)</label>
                           <input
-                            type="number"
+                            type="text"
                             min="0"
                             step="0.01"
                             disabled={!settings.is_express_delivery_enabled}

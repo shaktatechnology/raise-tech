@@ -64,13 +64,13 @@ export default function ServicesPageContent() {
     <PageIntro className="w-full">
       {/* Dynamic Hero Banner */}
       <section className="relative w-full h-[280px] sm:h-[360px] md:h-[440px] lg:h-[520px] overflow-hidden bg-[#022c43] flex items-center justify-center">
-        <Image
+          <Image
           src={heroImageUrl}
           alt="Raise Tech Services Banner"
           fill
           priority
           unoptimized
-          className="object-cover [object-position:75%_center]"
+          className="object-cover [object-position:75%_center] animate-[kenBurns_8s_ease-out_forwards]"
         />
 
         {/* Vibrant Cyan-Blue Cover Up Color Gradient Overlay */}
@@ -82,8 +82,8 @@ export default function ServicesPageContent() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {loading ? (
             <div className="py-20 text-center text-gray-500">
-              <div className="w-8 h-8 border-3 border-[#01A7E5] border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-              <p className="text-sm font-medium">Loading service offerings...</p>
+              {/* <div className="w-8 h-8 border-3 border-[#01A7E5] border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+              <p className="text-sm font-medium">Loading service offerings...</p> */}
             </div>
           ) : error ? (
             <div className="bg-rose-50 border border-rose-200 rounded-2xl p-8 text-center max-w-md mx-auto my-8">
@@ -103,8 +103,9 @@ export default function ServicesPageContent() {
                 .map((service, idx) => (
                   <Reveal
                     key={service.id}
-                    variant="fadeUp"
-                    className="bg-white rounded-3xl p-8 sm:p-12 shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-300 overflow-hidden"
+                    variant={idx % 2 === 0 ? "slideLeft" : "slideRight"}
+                    delay={idx * 0.25}
+                    className="bg-white rounded-3xl p-8 sm:p-12"
                   >
                     <ServiceCard
                       service={service}

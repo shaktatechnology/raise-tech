@@ -594,23 +594,34 @@ export default function CheckoutForm() {
                 </span>
               </div>
             ) : (
-              <button
-                type="button"
-                onClick={() => setLoginOpen(true)}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#01A7E5] hover:bg-[#018bc0] text-white text-sm font-semibold rounded-xl transition shadow-xs cursor-pointer"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24">
-                  <path
-                    fill="currentColor"
-                    d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"
-                  />
-                  <path
-                    fill="currentColor"
-                    d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.29v3.15C3.26 21.3 7.31 24 12 24z"
-                  />
-                </svg>
-                <span>Sign in with Google</span>
-              </button>
+              <div className="inline-flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setLoginOpen(true)}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#01A7E5] hover:bg-[#018bc0] text-white text-sm font-semibold rounded-xl transition shadow-xs cursor-pointer"
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24">
+                    <path
+                      fill="currentColor"
+                      d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"
+                    />
+                    <path
+                      fill="currentColor"
+                      d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.29v3.15C3.26 21.3 7.31 24 12 24z"
+                    />
+                  </svg>
+                  <span>Sign in with Google</span>
+                </button>
+
+                <div className="relative group">
+                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-gray-200 text-gray-500 text-[10px] font-bold cursor-help select-none">
+                    i
+                  </span>
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-gray-900 text-white text-xs rounded-lg whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none z-10 shadow-lg">
+                    Login for checkout history
+                  </div>
+                </div>
+              </div>
             )}
           </div>
         </div>
@@ -848,7 +859,7 @@ export default function CheckoutForm() {
                         {method === "standard" ? "Standard delivery" : "Express priority"}
                       </span>
                       <span className="block text-xs text-gray-500 mt-0.5">
-                        {method === "standard" ? "3–5 business days" : "1–2 business days"}
+                        {method === "standard"}
                       </span>
                       <span className="block text-xs font-extrabold text-[#018bc0] mt-2">
                         NPR {shippingFees[method].toLocaleString()}
